@@ -344,10 +344,11 @@ export default function DocumentHistoryPage() {
   }, [leaveRequests, resignationRequests, certificateRequests, generalRequests]);
 
   const stats = useMemo(() => {
-    const approved = documents.filter((d) => d.status === 'APPROVED').length;
+    const approved = documents.filter((d) => normalizeStatus(d.status) === 'APPROVED').length;
     const pending = documents.filter((d) => d.status === 'PENDING').length;
     const rejected = documents.filter((d) => d.status === 'REJECTED').length;
-    return { approved, pending, rejected, total: documents.length };
+    const cancelled = documents.filter((d) => d.status === 'CANCELLED').length;
+    return { approved, pending, rejected, cancelled, total: documents.length };
   }, [documents]);
 
   // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───

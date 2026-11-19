@@ -401,11 +401,24 @@ function WorkCalendarPageContent() {
 
   const handleSaveHoliday = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nameTrimmed = holidayForm.holidayName.trim();
+    if (!holidayForm.holidayDate) {
+      toast.error('กรุณาเลือกวันที่วันหยุด');
+      return;
+    }
+    if (!nameTrimmed) {
+      toast.error('กรุณากรอกชื่อวันหยุด');
+      return;
+    }
+    if (modalMode === 'create' && holidays.some((h) => h.holidayDate === holidayForm.holidayDate)) {
+      toast.error(`วันที่ ${holidayForm.holidayDate} ถูกกำหนดเป็นวันหยุดแล้ว`);
+      return;
+    }
     try {
       if (modalMode === 'create') {
         const created = await workCalendarService.createHoliday({
           holidayDate: holidayForm.holidayDate,
-          holidayName: holidayForm.holidayName,
+          holidayName: nameTrimmed,
           holidayType: holidayForm.holidayType,
         });
         setHolidays((prev) => [...prev, created].sort((a, b) => a.holidayDate.localeCompare(b.holidayDate)));

@@ -1291,21 +1291,21 @@ function DailyAttendanceContent() {
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <RefreshIndicator active={dailyPhase.refreshing} />
-              <table className="table-standard w-full min-w-[1000px] text-left text-xs border-collapse whitespace-nowrap">
+              <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-primary text-white font-semibold whitespace-nowrap">
-                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อ-นามสกุล</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">กะการทำงาน</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">เวลาตามกะ</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">เวลาเข้าจริง</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">เวลาออกจริง</th>
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ทำงานจริง</th>
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap">สาย</th>
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ออกก่อน</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">การจัดการ</th>
+                    <th className="py-3 px-3 whitespace-nowrap">รหัสพนักงาน</th>
+                    <th className="py-3 px-3 whitespace-nowrap">ชื่อ-นามสกุล</th>
+                    <th className="py-3 px-3 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                    <th className="py-3 px-3 whitespace-nowrap">กะการทำงาน</th>
+                    <th className="py-3 px-3 whitespace-nowrap">เวลาตามกะ</th>
+                    <th className="py-3 px-3 whitespace-nowrap">เวลาเข้าจริง</th>
+                    <th className="py-3 px-3 whitespace-nowrap">เวลาออกจริง</th>
+                    <th className="py-3 px-3 text-center whitespace-nowrap">ทำงานจริง</th>
+                    <th className="py-3 px-3 text-center whitespace-nowrap">สาย</th>
+                    <th className="py-3 px-3 text-center whitespace-nowrap">ออกก่อน</th>
+                    <th className="py-3 px-3 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3 px-3 text-right whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">

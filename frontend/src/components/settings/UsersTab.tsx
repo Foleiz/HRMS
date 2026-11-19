@@ -2,6 +2,7 @@
 
 import { TableToolbar } from '@/components/ui';
 import React, { useState, useRef, useEffect } from 'react';
+import { getThaiInitial } from '@/components/ui/AvatarName';
 import {
   Search,
   Plus,
@@ -189,21 +190,21 @@ export const UsersTab: React.FC<UsersTabProps> = ({
 
         {/* User Accounts Table (no m-4) */}
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
+          <table className="table-standard text-xs w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase whitespace-nowrap">
-                <th className="py-3.5 px-4 w-12 text-center">ลำดับ</th>
-                <th className="py-3.5 px-4 min-w-[120px]">ชื่อผู้ใช้งาน</th>
-                <th className="py-3.5 px-4 min-w-[180px]">ชื่อ-นามสกุล</th>
-                <th className="py-3.5 px-4 min-w-[200px]">อีเมลองค์กร</th>
-                <th className="py-3.5 px-4 min-w-[180px]">บทบาท</th>
-                <th className="py-3.5 px-4 min-w-[110px] text-center">สถานะ</th>
-                <th className="py-3.5 px-4 min-w-[160px]">เข้าสู่ระบบล่าสุด</th>
-                <th className="py-3.5 px-4 w-12 text-center">จัดการ</th>
+              <tr className="bg-slate-50/70 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase whitespace-nowrap">
+                <th className="py-3 px-3 w-10 text-center">ลำดับ</th>
+                <th className="py-3 px-3">ชื่อผู้ใช้งาน</th>
+                <th className="py-3 px-3">ชื่อ-นามสกุล</th>
+                <th className="py-3 px-3">อีเมลองค์กร</th>
+                <th className="py-3 px-3">บทบาท</th>
+                <th className="py-3 px-3 text-center">สถานะ</th>
+                <th className="py-3 px-3 whitespace-nowrap">เข้าสู่ระบบล่าสุด</th>
+                <th className="py-3 px-3 w-14 text-center whitespace-nowrap">จัดการ</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:text-slate-300">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs text-slate-700 dark:text-slate-300">
               {isLoading ? (
                 <TableLoading colSpan={8} text="กำลังโหลดข้อมูลผู้ใช้งาน..." />
               ) : users.length === 0 ? (
@@ -224,25 +225,25 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                     return (
                       <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/50 transition-colors">
                         {/* 1. ลำดับ */}
-                        <td className="py-3.5 px-4 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
+                        <td className="py-2.5 px-3 text-center text-slate-400 dark:text-slate-500 font-medium">
                           {rowNumber}
                         </td>
 
                         {/* 2. ชื่อผู้ใช้งาน */}
-                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                        <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200 tracking-tight whitespace-nowrap">
                           {user.username}
                         </td>
 
                         {/* 3. ชื่อ-นามสกุล + Avatar + แผนก/ตำแหน่ง */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200 dark:border-slate-700">
-                            {user.fullName.charAt(0) || <User className="w-4 h-4" />}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200 dark:border-slate-700">
+                            {getThaiInitial(user.fullName) || <User className="w-3.5 h-3.5" />}
                           </div>
-                          <div className="leading-tight">
-                            <div className="font-semibold text-slate-800 dark:text-slate-200">{user.fullName}</div>
+                          <div className="leading-tight min-w-0">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">{user.fullName}</div>
                             {(user.departmentName || user.positionName) && (
-                              <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 whitespace-nowrap">
                                 {user.positionName ? user.positionName : ''}
                                 {user.departmentName ? ` • ${user.departmentName}` : ''}
                               </div>
@@ -252,13 +253,13 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 4. อีเมลองค์กร */}
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                      <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 font-mono text-[11px] whitespace-nowrap">
                         {user.corporateEmail || '-'}
                       </td>
 
                       {/* 5. บทบาท (Badges) */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap gap-1.5">
+                      <td className="py-2.5 px-3">
+                        <div className="flex flex-wrap gap-1">
                           {user.roles.map((r, i) => {
                             const roleColor =
                               r.color ||
@@ -272,7 +273,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                                   color: roleColor,
                                   borderColor: `${roleColor}33`,
                                 }}
-                                className="px-2 py-0.5 border rounded text-[10px] font-semibold tracking-wide inline-flex items-center gap-1"
+                                className="px-2 py-0.5 border rounded text-[10px] font-semibold tracking-wide inline-flex items-center gap-1 whitespace-nowrap"
                               >
                                 <span
                                   className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -286,7 +287,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 6. สถานะ */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {user.status === 'ACTIVE' && (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/60">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -321,12 +322,12 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
 
                       {/* 7. เข้าสู่ระบบล่าสุด */}
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">
+                      <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
                         {formatLastLogin(user.lastLoginAt)}
                       </td>
 
                       {/* 8. จัดการ (3 dots actions menu) */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <ActionDropdown
                           id={actionButtonId}
                           dataTour={isTargetResignation ? 'tour-user-action-resignation' : 'tour-user-action-btn'}

@@ -186,18 +186,15 @@ export const UpcomingEventsWidget: React.FC = () => {
     next7Days.setDate(next7Days.getDate() + 7);
     next7Days.setHours(23, 59, 59, 999);
 
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const next7DaysStr = `${next7Days.getFullYear()}-${String(next7Days.getMonth() + 1).padStart(2, '0')}-${String(next7Days.getDate()).padStart(2, '0')}`;
-
     // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และอยู่ในช่วง 7 วันข้างหน้า
     const validActivities = activities.filter((act) => {
       if (act.status === 'DRAFT') return false;
       const startStr = act.publishedAt || act.createdAt;
       if (!startStr) return false;
-      const startDateOnly = startStr.substring(0, 10);
-      const endDateOnly = act.expireAt ? act.expireAt.substring(0, 10) : startDateOnly;
+      const startDate = new Date(startStr);
+      const endDate = act.expireAt ? new Date(act.expireAt) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-      return startDateOnly <= next7DaysStr && endDateOnly >= todayStr;
+      return startDate <= next7Days && endDate >= today;
     });
 
     // แมปกิจกรรมลงในแต่ละวันของช่วง 7 วันข้างหน้า
@@ -206,14 +203,17 @@ export const UpcomingEventsWidget: React.FC = () => {
     for (const act of validActivities) {
       const startStr = act.publishedAt || act.createdAt || '';
       const startDate = new Date(startStr);
-      const endDate = act.expireAt ? new Date(act.expireAt) : startDate;
+      const endDate = act.expireAt ? new Date(act.expireAt) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000 - 1);
       const time = parseActivityTime(act.content);
       const startTimeSort = getStartTimeSort(time);
 
       const cur = new Date(startDate);
+      cur.setHours(0, 0, 0, 0);
+      const endLimit = new Date(endDate);
+      endLimit.setHours(23, 59, 59, 999);
+
       let count = 0;
-      while (cur <= endDate && count < 31) {
-        cur.setHours(0, 0, 0, 0);
+      while (cur <= endLimit && count < 31) {
         if (cur >= today && cur <= next7Days) {
           const dateStr = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
           const list = dayMap.get(dateStr) || [];

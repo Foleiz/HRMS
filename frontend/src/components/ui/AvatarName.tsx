@@ -56,6 +56,15 @@ interface AvatarNameProps {
   hideName?: boolean;
 }
 
+export function getThaiInitial(name?: string | null): string {
+  if (!name) return '?';
+  const cleanName = name
+    .replace(/^(นาย|นางสาว|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|คุณ|Mr\.|Mrs\.|Ms\.|Miss)\s*/i, '')
+    .trim();
+  const strippedName = cleanName.replace(/^[เแโใไ]/, '');
+  return (strippedName.charAt(0) || cleanName.charAt(0) || name.trim().charAt(0) || '?').toUpperCase();
+}
+
 /** วงกลมรูปโปรไฟล์จริง (หรือตัวอักษรแรกเมื่อไม่มีรูป) + ชื่อ — รูปแบบเดียวกับหน้าจัดการพนักงาน */
 export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '', hideName = false }: AvatarNameProps) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -80,10 +89,7 @@ export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '
 
   const resolvedUrl = avatarUrl ?? autoAvatarUrl;
   const src = resolvedUrl && !imgFailed ? getAvatarUrl(resolvedUrl) : null;
-  const cleanName = (name ?? '')
-    .replace(/^(นาย|นางสาว|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Ms\.|Miss)\s*/i, '')
-    .trim();
-  const letter = (initial ?? cleanName.charAt(0).toUpperCase()) || (name?.trim().charAt(0).toUpperCase() ?? '?');
+  const letter = initial ?? getThaiInitial(name);
 
   if (hideName) {
     return (

@@ -2,7 +2,7 @@
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   FileSpreadsheet,
@@ -191,12 +191,21 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
   const [downloadingType, setDownloadingType] = useState<FormatTab | null>(null);
   const toast = useToast();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleDownload = async (type: FormatTab) => {
     try {
       setDownloadingType(type);
-      const fileName = type === 'deliy' ? 'attendance_sample_deliy.xlsx' : 'attendance_sample_record.xlsx';
+      const fileName = type === 'deliy' ? 'attendance_sample_daily.xlsx' : 'attendance_sample_record.xlsx';
       const thaiName = type === 'deliy' ? 'ไฟล์สรุปทั้งเดือน' : 'ไฟล์บันทึกรายวัน';
 
       const link = document.createElement('a');
@@ -217,13 +226,18 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
   };
 
   const tabs: { key: FormatTab; label: string; sub: string; Icon: React.ElementType; badge?: string }[] = [
-    { key: 'deliy', label: 'ไฟล์สรุปทั้งเดือน', sub: 'ไฟล์ที่มีข้อมูลของทั้งเดือน', Icon: CalendarDays, badge: 'แนะนำ' },
-    { key: 'record', label: 'ไฟล์บันทึกรายวัน', sub: 'ไฟล์ที่เลือกแบบรายวัน หรือบางวันมาใส่', Icon: Clock },
+    { key: 'deliy', label: 'ไฟล์สรุปทั้งเดือน (Daily Summary)', sub: 'ไฟล์ที่มีข้อมูลสรุปของทั้งเดือน', Icon: CalendarDays, badge: 'แนะนำ' },
+    { key: 'record', label: 'ไฟล์บันทึกรายวัน (Time Log)', sub: 'ไฟล์ที่เลือกแบบรายวัน หรือบางวันมาใส่', Icon: Clock },
   ];
 
   return (
     <ModalShell className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-3 sm:p-6">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="attendance-format-title"
+        className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col"
+      >
         {/* Header */}
         <ModalHeader
           icon={FileSpreadsheet}

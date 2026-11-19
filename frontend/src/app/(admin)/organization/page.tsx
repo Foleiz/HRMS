@@ -1,6 +1,7 @@
 'use client';
 
 import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
+import { getThaiInitial } from '@/components/ui/AvatarName';
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -219,7 +220,7 @@ function OrganizationPageContent() {
 
   const renderEmployeeCell = (name?: string | null) => {
     if (!name) return <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">-</span>;
-    const initial = name.trim().charAt(0);
+    const initial = getThaiInitial(name);
     return (
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full bg-blue-100 text-primary flex items-center justify-center text-[10px] font-bold ring-1 ring-blue-200 shrink-0">
@@ -1436,20 +1437,20 @@ function OrganizationPageContent() {
               }
             />
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="table-standard w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
-                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">สังกัดฝ่าย</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">ระดับพนักงาน</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap text-center">อัตรากำลัง (มีคน/อัตรา)</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขวันที่</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
+                    <th className="py-3 px-3 whitespace-nowrap">รหัสตำแหน่ง</th>
+                    <th className="py-3 px-3 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
+                    <th className="py-3 px-3 whitespace-nowrap">สังกัดแผนก</th>
+                    <th className="py-3 px-3 whitespace-nowrap">สังกัดฝ่าย</th>
+                    <th className="py-3 px-3 whitespace-nowrap">ระดับพนักงาน</th>
+                    <th className="py-3 px-3 whitespace-nowrap text-center">อัตรากำลัง (มีคน/อัตรา)</th>
+                    <th className="py-3 px-3 whitespace-nowrap">วันที่สร้าง</th>
+                    <th className="py-3 px-3 whitespace-nowrap">แก้ไขวันที่</th>
+                    <th className="py-3 px-3 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3 px-3 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
