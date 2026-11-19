@@ -4112,16 +4112,16 @@ export default function PayrollPage() {
                           <Button
                             id="tour-payroll-calc-btn"
                             data-tour="tour-payroll-calc-btn"
-                            variant="success"
+                            variant="orange"
                             size="sm"
-                            className="h-9"
+                            className="h-9 whitespace-nowrap shrink-0"
                             onClick={handleCalculatePayroll}
                             loading={isCalculating}
                             disabled={
                               !selectedPeriod ||
                               (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
                             }
-                            icon={<Scale className="w-3.5 h-3.5" />}
+                            icon={<Scale className="w-3.5 h-3.5 shrink-0" />}
                           >
                             {isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}
                           </Button>
