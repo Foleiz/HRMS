@@ -39,6 +39,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const [newType, setNewType] = useState<'EARNING' | 'DEDUCTION'>('EARNING');
   const [newTaxable, setNewTaxable] = useState(true);
   const [newSso, setNewSso] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const handleAdd = async () => {
     if (!record) return;
@@ -67,6 +68,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
       setNewName('');
       setNewAmount('');
       setNewNote('');
+      setShowAddForm(false);
       onChanged?.();
     } catch (err: any) {
       setError(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
@@ -91,6 +93,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   };
 
   useEffect(() => {
+    setShowAddForm(false);
     if (isOpen && record) {
       setLoading(true);
       salaryService
@@ -231,47 +234,91 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
               {/* เพิ่มหัวข้อรายการรายได้/รายหักใหม่ (เฉพาะรอบ DRAFT/REVIEW) */}
               {canEdit && (
-                <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50">
-                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">เพิ่มรายการรายได้ / รายหัก</h4>
-                  <SegmentedControl
-                    value={newType}
-                    onChange={setNewType}
-                    disabled={saving}
-                    options={[
-                      { value: 'EARNING', label: 'รายได้' },
-                      { value: 'DEDUCTION', label: 'รายหัก' },
-                    ]}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    disabled={saving}
-                    maxLength={100}
-                  />
-                  <div className="grid grid-cols-[9rem_1fr] gap-2">
-                    <NumberInput value={newAmount} onChange={setNewAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
+                !showAddForm ? (
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      setShowAddForm(true);
+                      setError(null);
+                    }}
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                  >
+                    เพิ่มรายการและคำนวณใหม่
+                  </Button>
+                ) : (
+                  <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">เพิ่มรายการรายได้ / รายหัก</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setError(null);
+                          setNewName('');
+                          setNewAmount('');
+                          setNewNote('');
+                        }}
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                    <SegmentedControl
+                      value={newType}
+                      onChange={setNewType}
+                      disabled={saving}
+                      options={[
+                        { value: 'EARNING', label: 'รายได้' },
+                        { value: 'DEDUCTION', label: 'รายหัก' },
+                      ]}
+                    />
                     <Input
                       type="text"
-                      placeholder="หมายเหตุ (แสดงบนสลิป)"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
                       disabled={saving}
-                      maxLength={200}
+                      maxLength={100}
                     />
-                  </div>
-                  {newType === 'EARNING' && (
-                    <div className="space-y-2">
-                      <OptionCheckCard checked={newTaxable} onChange={setNewTaxable} {...TAX_OPTION_TEXT} />
-                      <OptionCheckCard checked={newSso} onChange={setNewSso} {...SSO_OPTION_TEXT} />
+                    <div className="grid grid-cols-[9rem_1fr] gap-2">
+                      <NumberInput value={newAmount} onChange={setNewAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
+                      <Input
+                        type="text"
+                        placeholder="หมายเหตุ (แสดงบนสลิป)"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        disabled={saving}
+                        maxLength={200}
+                      />
                     </div>
-                  )}
-                  {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                  <Button fullWidth onClick={handleAdd} loading={saving} icon={<Plus className="w-3.5 h-3.5" />}>
-                    {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
-                  </Button>
-                </div>
+                    {newType === 'EARNING' && (
+                      <div className="space-y-2">
+                        <OptionCheckCard checked={newTaxable} onChange={setNewTaxable} {...TAX_OPTION_TEXT} />
+                        <OptionCheckCard checked={newSso} onChange={setNewSso} {...SSO_OPTION_TEXT} />
+                      </div>
+                    )}
+                    {error && <p className="text-[11px] text-rose-600">{error}</p>}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setError(null);
+                          setNewName('');
+                          setNewAmount('');
+                          setNewNote('');
+                        }}
+                        className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        ยกเลิก
+                      </button>
+                      <Button fullWidth onClick={handleAdd} loading={saving} disabled={!newName || !newAmount} icon={<Plus className="w-3.5 h-3.5" />}>
+                        {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
+                      </Button>
+                    </div>
+                  </div>
+                )
               )}
               {!canEdit && error && <p className="text-[11px] text-rose-600">{error}</p>}
 
