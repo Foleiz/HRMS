@@ -37,6 +37,7 @@ public class AttendanceImportController : ControllerBase
         [FromForm] bool allowDuplicate = false,
         [FromForm] bool overwriteExistingPeriod = false,
         [FromForm] string? overlapResolution = null,
+        [FromForm] string? keepExistingDates = null,
         [FromForm] string? dateFrom = null,
         [FromForm] string? dateTo = null,
         [FromForm] int? targetYear = null,
@@ -99,6 +100,7 @@ public class AttendanceImportController : ControllerBase
             parsedDateTo,
             overwriteExistingPeriod,
             overlapResolution,
+            keepExistingDates,
             cancellationToken);
 
         if (result.IsPeriodOverlap)

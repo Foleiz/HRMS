@@ -33,6 +33,7 @@ public class AttendanceImportService : IAttendanceImportService
         DateOnly? customDateTo = null,
         bool overwriteExistingPeriod = false,
         string? overlapResolution = null,
+        string? keepExistingDates = null,
         CancellationToken cancellationToken = default)
     {
         // 1. Read Stream and Compute SHA-256 Hash
@@ -216,28 +217,33 @@ public class AttendanceImportService : IAttendanceImportService
 
         if (detectedDateFrom.HasValue && detectedDateTo.HasValue)
         {
-            var overlappingBatch = await _context.AttendanceImportBatches
+            var allOverlappingBatches = await _context.AttendanceImportBatches
                 .Include(b => b.ImportedByUser)
                 .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
                 .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
                 .OrderByDescending(b => b.ImportedAt)
-                .FirstOrDefaultAsync(cancellationToken);
+                .ToListAsync(cancellationToken);
 
-            if (overlappingBatch != null)
+            if (allOverlappingBatches.Count > 0)
             {
-                var existFrom = overlappingBatch.DateFrom!.Value;
-                var existTo = overlappingBatch.DateTo!.Value;
-                var oFrom = existFrom > detectedDateFrom.Value ? existFrom : detectedDateFrom.Value;
-                var oTo = existTo < detectedDateTo.Value ? existTo : detectedDateTo.Value;
-                var oDaysCount = (oFrom <= oTo) ? (oTo.DayNumber - oFrom.DayNumber + 1) : 0;
-                var oDatesList = new List<string>();
-                if (oDaysCount > 0)
+                var overlappingBatch = allOverlappingBatches.First();
+                var allOverlapDates = new HashSet<DateOnly>();
+                foreach (var b in allOverlappingBatches)
                 {
-                    for (var d = oFrom; d <= oTo; d = d.AddDays(1))
+                    var existFrom = b.DateFrom!.Value;
+                    var existTo = b.DateTo!.Value;
+                    var sFrom = existFrom > detectedDateFrom.Value ? existFrom : detectedDateFrom.Value;
+                    var sTo = existTo < detectedDateTo.Value ? existTo : detectedDateTo.Value;
+                    for (var d = sFrom; d <= sTo; d = d.AddDays(1))
                     {
-                        oDatesList.Add(d.ToString("yyyy-MM-dd"));
+                        allOverlapDates.Add(d);
                     }
                 }
+
+                var oDatesList = allOverlapDates.OrderBy(d => d).Select(d => d.ToString("yyyy-MM-dd")).ToList();
+                var oDaysCount = oDatesList.Count;
+                var oFrom = allOverlapDates.Count > 0 ? allOverlapDates.Min() : detectedDateFrom.Value;
+                var oTo = allOverlapDates.Count > 0 ? allOverlapDates.Max() : detectedDateTo.Value;
 
                 if (!overwriteExistingPeriod)
                 {
@@ -276,58 +282,57 @@ public class AttendanceImportService : IAttendanceImportService
                 else
                 {
                     // ผู้ใช้ยืนยันการนำเข้าและผสานข้อมูล (Merge)
-                    var allOverlappingBatches = await _context.AttendanceImportBatches
-                        .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
-                        .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
-                        .ToListAsync(cancellationToken);
-
                     bool isKeepExisting = string.Equals(overlapResolution, "KEEP_EXISTING", StringComparison.OrdinalIgnoreCase);
+                    bool isCustom = string.Equals(overlapResolution, "CUSTOM", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrWhiteSpace(keepExistingDates);
 
                     if (isKeepExisting)
                     {
-                        // กรณี "ข้ามข้อมูลไฟล์ใหม่ ให้ใช้ข้อมูลวันที่ซ้อนทับกันเป็นอันเดิม" (KEEP_EXISTING):
-                        // รวบรวมวันที่ที่ซ้อนทับกับทุก Batch เดิมไว้ใน skippedDates เพื่อไม่ให้ ProcessRowsAsync นำเข้าหรือเขียนทับ
+                        // กรณี "ใช้ข้อมูลเดิมทั้งหมด": ข้ามทุกวันที่ซ้อนทับกัน
+                        skippedDates = new HashSet<DateOnly>(allOverlapDates);
+                    }
+                    else if (isCustom && !string.IsNullOrWhiteSpace(keepExistingDates))
+                    {
+                        // กรณี "เลือกทีละวัน": ข้ามเฉพาะวันที่ผู้ใช้ระบุว่าต้องการคงข้อมูลเดิม
                         skippedDates = new HashSet<DateOnly>();
-                        foreach (var oldBatch in allOverlappingBatches)
+                        foreach (var ds in keepExistingDates.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                         {
-                            var bFrom = oldBatch.DateFrom!.Value;
-                            var bTo = oldBatch.DateTo!.Value;
-                            var sFrom = bFrom > detectedDateFrom.Value ? bFrom : detectedDateFrom.Value;
-                            var sTo = bTo < detectedDateTo.Value ? bTo : detectedDateTo.Value;
-                            for (var d = sFrom; d <= sTo; d = d.AddDays(1))
+                            if (DateOnly.TryParse(ds, out var parsedD))
                             {
-                                skippedDates.Add(d);
+                                skippedDates.Add(parsedD);
                             }
                         }
-                        // Batch เดิมยังคงครอบคลุมช่วงวันเดิมทั้งหมดตามเดิม ไม่ตัดลด DateTo
                     }
-                    else
+
+                    foreach (var oldBatch in allOverlappingBatches)
                     {
-                        // กรณี "เขียนทับด้วยข้อมูลจากไฟล์ใหม่" (OVERWRITE)
-                        foreach (var oldBatch in allOverlappingBatches)
+                        bool anyDateKept = skippedDates != null && skippedDates.Any(d => d >= oldBatch.DateFrom!.Value && d <= oldBatch.DateTo!.Value);
+
+                        // หากชุดข้อมูลเดิมถูกครอบคลุมโดยชุดข้อมูลใหม่ทั้งหมด และไม่มีวันใดที่เลือกคงข้อมูลเดิม -> ยกเลิกชุดเก่า
+                        if (detectedDateFrom.Value <= oldBatch.DateFrom!.Value && detectedDateTo.Value >= oldBatch.DateTo!.Value && !anyDateKept)
                         {
-                            // หากชุดข้อมูลเดิมถูกครอบคลุมโดยชุดข้อมูลใหม่ทั้งหมด (เช่น นำเข้าทับทั้งงวด / ทั้งเดือน) -> ยกเลิกชุดเก่าทั้งหมด
-                            if (detectedDateFrom.Value <= oldBatch.DateFrom!.Value && detectedDateTo.Value >= oldBatch.DateTo!.Value)
+                            try
                             {
-                                try
-                                {
-                                    await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
-                                }
-                                catch
-                                {
-                                    // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
-                                }
+                                await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
                             }
-                            else
+                            catch
                             {
-                                // กรณีทับซ้อนแค่บางวัน (Partial Overlap):
-                                // ไม่ revert ทั้งชุดข้อมูลเดิม เพื่อรักษาข้อมูลวันที่ไม่ทับซ้อนไว้
-                                // ข้อมูลของวันที่ทับซ้อนจะถูก ProcessRowsAsync อัปเดตทับด้วยข้อมูลจากไฟล์ใหม่โดยอัตโนมัติ
-                                if (oldBatch.DateFrom < detectedDateFrom.Value && oldBatch.DateTo >= detectedDateFrom.Value)
+                                // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                            }
+                        }
+                        else
+                        {
+                            // กรณีทับซ้อนแค่บางวัน (Partial Overlap) หรือมีวันที่เลือกคงข้อมูลเดิม:
+                            // ไม่ revert ทั้งชุดข้อมูลเดิม เพื่อรักษาข้อมูลวันที่ไม่ทับซ้อนไว้
+                            if (oldBatch.DateFrom < detectedDateFrom.Value && oldBatch.DateTo >= detectedDateFrom.Value)
+                            {
+                                if (skippedDates == null || !skippedDates.Contains(detectedDateFrom.Value))
                                 {
                                     oldBatch.DateTo = detectedDateFrom.Value.AddDays(-1);
                                 }
-                                else if (oldBatch.DateFrom <= detectedDateTo.Value && oldBatch.DateTo > detectedDateTo.Value)
+                            }
+                            else if (oldBatch.DateFrom <= detectedDateTo.Value && oldBatch.DateTo > detectedDateTo.Value)
+                            {
+                                if (skippedDates == null || !skippedDates.Contains(detectedDateTo.Value))
                                 {
                                     oldBatch.DateFrom = detectedDateTo.Value.AddDays(1);
                                 }

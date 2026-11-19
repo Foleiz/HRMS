@@ -80,7 +80,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { confirmAction } from '@/lib/sweetalert';
-import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
+import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
+
+const THAI_DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 const THAI_MONTHS = TH_MONTHS;
@@ -259,7 +261,8 @@ function DailyAttendanceContent() {
   // Period Overlap Confirmation Modal State
   const [overlapModalOpen, setOverlapModalOpen] = useState<boolean>(false);
   const [overlapData, setOverlapData] = useState<AttendanceImportResult | null>(null);
-  const [overlapResolution, setOverlapResolution] = useState<'OVERWRITE' | 'KEEP_EXISTING'>('OVERWRITE');
+  const [overlapResolutionMode, setOverlapResolutionMode] = useState<'ALL_OVERWRITE' | 'ALL_KEEP' | 'CUSTOM'>('ALL_OVERWRITE');
+  const [perDayChoices, setPerDayChoices] = useState<Record<string, 'NEW' | 'EXISTING'>>({});
 
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
@@ -637,7 +640,8 @@ function DailyAttendanceContent() {
 
   const handleUploadSubmit = async (
     overwrite: boolean = false,
-    resolution: 'OVERWRITE' | 'KEEP_EXISTING' = 'OVERWRITE'
+    resolution: 'OVERWRITE' | 'KEEP_EXISTING' | 'CUSTOM' = 'OVERWRITE',
+    keepDates?: string[]
   ) => {
     if (!selectedFile) return;
 
@@ -658,13 +662,30 @@ function DailyAttendanceContent() {
         undefined,
         undefined,
         overwrite,
-        resolution
+        resolution,
+        keepDates
       );
 
       // กรณีพบว่าช่วงเดือน/ปีของไฟล์ซ้ำกับที่มีอยู่แล้วในระบบ และยังไม่ได้กดยืนยันการผสานข้อมูล
       if (res.data?.isPeriodOverlap && !overwrite) {
         setOverlapData(res.data);
-        setOverlapResolution('OVERWRITE');
+        setOverlapResolutionMode('ALL_OVERWRITE');
+
+        const initialChoices: Record<string, 'NEW' | 'EXISTING'> = {};
+        if (res.data.overlapDates && res.data.overlapDates.length > 0) {
+          res.data.overlapDates.forEach((d) => {
+            initialChoices[d] = 'NEW';
+          });
+        } else if (res.data.overlapDateFrom && res.data.overlapDateTo) {
+          const cur = new Date(res.data.overlapDateFrom);
+          const end = new Date(res.data.overlapDateTo);
+          while (cur <= end) {
+            const ds = cur.toISOString().split('T')[0];
+            initialChoices[ds] = 'NEW';
+            cur.setDate(cur.getDate() + 1);
+          }
+        }
+        setPerDayChoices(initialChoices);
         setOverlapModalOpen(true);
         setIsUploading(false);
         return;
@@ -694,6 +715,8 @@ function DailyAttendanceContent() {
           const successNotice = overwrite 
             ? (resolution === 'KEEP_EXISTING'
                 ? `นำเข้าและรวมข้อมูลสำเร็จ (คงข้อมูลเดิมในวันที่ซ้อนทับ) ${res.data.successRecords.toLocaleString()} รายการ`
+                : resolution === 'CUSTOM'
+                ? `นำเข้าและรวมข้อมูลสำเร็จตามที่เลือกรายวัน ${res.data.successRecords.toLocaleString()} รายการ`
                 : `นำเข้าและรวมข้อมูลสำเร็จ (เขียนทับข้อมูลในวันที่ซ้อนทับ) ${res.data.successRecords.toLocaleString()} รายการ`)
             : `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords.toLocaleString()} รายการ)`;
           toast.success(
@@ -757,31 +780,89 @@ function DailyAttendanceContent() {
     toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
   };
 
-  // คำนวณช่วงวันที่ซ้อนทับกันสำหรับแสดงผลใน Modal
-  const overlapInfo = useMemo(() => {
+  // คำนวณข้อมูลปฏิทินและวันที่ซ้อนทับสำหรับ Modal รูปแบบใหม่
+  const overlapCalendarData = useMemo(() => {
     if (!overlapData) return null;
-    const oFrom = overlapData.overlapDateFrom || (
-      overlapData.dateFrom && overlapData.existingBatchDateFrom
-        ? (overlapData.dateFrom > overlapData.existingBatchDateFrom ? overlapData.dateFrom : overlapData.existingBatchDateFrom)
-        : null
-    );
-    const oTo = overlapData.overlapDateTo || (
-      overlapData.dateTo && overlapData.existingBatchDateTo
-        ? (overlapData.dateTo < overlapData.existingBatchDateTo ? overlapData.dateTo : overlapData.existingBatchDateTo)
-        : null
-    );
+    const refDateStr = overlapData.overlapDateFrom || overlapData.dateFrom || overlapData.existingBatchDateFrom;
+    if (!refDateStr) return null;
+    const [yearStr, monthStr] = refDateStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    if (!year || !month) return null;
 
-    if (!oFrom || !oTo) return null;
-    const s = new Date(oFrom);
-    const e = new Date(oTo);
-    const days = overlapData.overlapDaysCount || Math.max(1, Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    const thaiMonthShort = TH_MONTHS_SHORT[month - 1] || `${month}`;
+    const thaiYear = year + 543;
+    const monthHeader = `${thaiMonthShort} ${thaiYear}`;
 
-    const label = oFrom === oTo 
-      ? formatDateThai(oFrom)
-      : `${formatDateThai(oFrom)} ถึง ${formatDateThai(oTo)}`;
+    const totalDays = new Date(year, month, 0).getDate();
+    const days = Array.from({ length: totalDays }, (_, i) => i + 1);
 
-    return { from: oFrom, to: oTo, days, label };
+    const overlapSet = new Set<string>();
+    if (overlapData.overlapDates && overlapData.overlapDates.length > 0) {
+      overlapData.overlapDates.forEach((d) => overlapSet.add(d));
+    } else if (overlapData.overlapDateFrom && overlapData.overlapDateTo) {
+      const cur = new Date(overlapData.overlapDateFrom);
+      const end = new Date(overlapData.overlapDateTo);
+      while (cur <= end) {
+        overlapSet.add(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    const overlapDatesSorted = Array.from(overlapSet).sort();
+
+    return {
+      year,
+      month,
+      monthHeader,
+      days,
+      overlapSet,
+      overlapDatesSorted,
+      totalOverlapCount: overlapDatesSorted.length,
+    };
   }, [overlapData]);
+
+  // คำนวณยอดสรุปไฟล์ใหม่ / คงข้อมูลเดิม
+  const overlapCounts = useMemo(() => {
+    if (!overlapCalendarData) return { newCount: 0, oldCount: 0, total: 0 };
+    const total = overlapCalendarData.totalOverlapCount;
+    if (overlapResolutionMode === 'ALL_OVERWRITE') {
+      return { newCount: total, oldCount: 0, total };
+    }
+    if (overlapResolutionMode === 'ALL_KEEP') {
+      return { newCount: 0, oldCount: total, total };
+    }
+    let newCount = 0;
+    let oldCount = 0;
+    overlapCalendarData.overlapDatesSorted.forEach((d) => {
+      const choice = perDayChoices[d] ?? 'NEW';
+      if (choice === 'NEW') newCount++;
+      else oldCount++;
+    });
+    return { newCount, oldCount, total };
+  }, [overlapCalendarData, overlapResolutionMode, perDayChoices]);
+
+  const formatOverlapRowDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayOfWeek = THAI_DAY_NAMES[dateObj.getDay()] || '';
+    const monthShort = TH_MONTHS_SHORT[m - 1] || '';
+    return `${d} ${monthShort} · ${dayOfWeek}`;
+  };
+
+  const handleConfirmOverlapSubmit = () => {
+    if (!overlapCalendarData) return;
+    if (overlapResolutionMode === 'ALL_OVERWRITE') {
+      handleUploadSubmit(true, 'OVERWRITE', []);
+    } else if (overlapResolutionMode === 'ALL_KEEP') {
+      handleUploadSubmit(true, 'KEEP_EXISTING', overlapCalendarData.overlapDatesSorted);
+    } else {
+      const keepDates = overlapCalendarData.overlapDatesSorted.filter(
+        (d) => perDayChoices[d] === 'EXISTING'
+      );
+      handleUploadSubmit(true, 'CUSTOM', keepDates);
+    }
+  };
 
   const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
     setBatchToRevert(batch);
@@ -2392,127 +2473,266 @@ function DailyAttendanceContent() {
       )}
 
 
-      {/* Modal: ยืนยันการผสานข้อมูลเมื่อพบช่วงวันที่ซ้อนทับกัน */}
+      {/* Modal: ยืนยันการผสานข้อมูลเมื่อพบช่วงวันที่ซ้อนทับกัน (UI ตามรูปแบบปฏิทินและเลือกรายวัน) */}
       {overlapModalOpen && overlapData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             <ModalHeader title="ตรวจพบข้อมูลวันที่ซ้อนทับกัน" onClose={cancelOverlapImport} />
 
-            {/* Overlap Notice Banner */}
-            <div className="p-3 mx-6 mt-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 flex items-center gap-2.5">
-              <div className="p-1.5 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 shrink-0">
-                <CalendarRange className="w-4 h-4" />
-              </div>
-              <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                วันที่ซ้อนทับกัน: <span className="underline decoration-amber-400 font-extrabold">{overlapInfo?.label || 'วันที่ระบุ'}</span> {overlapInfo ? `(รวม ${overlapInfo.days} วัน)` : ''}
-              </div>
-            </div>
+            <div className="p-6 overflow-y-auto space-y-4">
+              {/* Top Subtitle */}
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                ไฟล์ใหม่ ({selectedFile?.name || overlapData.fileName || 'part2'}) มีข้อมูลซ้ำกับไฟล์เดิมใน Batch #{overlapData.existingBatchId || '-'} เลือกวิธีจัดการก่อนนำเข้า
+              </p>
 
-            {/* File Comparison Summary */}
-            <div className="px-6 pt-3 pb-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                <div className="truncate">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">📄 ไฟล์เดิมในระบบ (Batch #{overlapData.existingBatchId}):</span>
-                  <div className="truncate text-slate-600 dark:text-slate-300 font-mono text-[10px] mt-0.5">{overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}</div>
-                  <div className="text-[10px] text-slate-500">ช่วง {formatDateThai(overlapData.existingBatchDateFrom || '')} - {formatDateThai(overlapData.existingBatchDateTo || '')}</div>
+              {/* Calendar Grid Card */}
+              <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {overlapCalendarData?.monthHeader || ''}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    <span className="w-3.5 h-3.5 rounded bg-amber-200 dark:bg-amber-900/80 border border-amber-400 dark:border-amber-600 inline-block shrink-0" />
+                    <span>วันที่ซ้อนทับ</span>
+                  </div>
                 </div>
-                <div className="truncate sm:border-l sm:border-slate-200/80 sm:dark:border-slate-800 sm:pl-3">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">📥 ไฟล์ใหม่ที่กำลังนำเข้า:</span>
-                  <div className="truncate text-slate-600 dark:text-slate-300 font-mono text-[10px] mt-0.5">{selectedFile?.name || overlapData.fileName}</div>
-                  <div className="text-[10px] text-slate-500">ช่วง {formatDateThai(overlapData.dateFrom || '')} - {formatDateThai(overlapData.dateTo || '')}</div>
+
+                <div className="grid grid-cols-10 gap-1.5">
+                  {overlapCalendarData?.days.map((dayNum) => {
+                    const dayStr = `${overlapCalendarData.year}-${String(overlapCalendarData.month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                    const isOverlap = overlapCalendarData.overlapSet.has(dayStr);
+                    return (
+                      <div
+                        key={dayNum}
+                        className={`h-7 sm:h-8 flex items-center justify-center rounded-lg text-xs transition-colors select-none ${
+                          isOverlap
+                            ? 'bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 font-bold shadow-2xs'
+                            : 'bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-slate-400 dark:text-slate-500 font-normal'
+                        }`}
+                      >
+                        {dayNum}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
 
-            {/* Strategy Selection Cards */}
-            <div className="p-6 pt-2 space-y-2.5">
-              {/* Option 1: OVERWRITE (เขียนทับไฟล์เก่า) */}
+              {/* Strategy Section Heading */}
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-1">
+                ต้องการจัดการวันที่ซ้ำอย่างไร
+              </div>
+
+              {/* Option 1: เขียนทับทั้ง X วัน */}
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => setOverlapResolution('OVERWRITE')}
+                onClick={() => setOverlapResolutionMode('ALL_OVERWRITE')}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('OVERWRITE');
+                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolutionMode('ALL_OVERWRITE');
                 }}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
-                  overlapResolution === 'OVERWRITE'
-                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
-                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
+                  overlapResolutionMode === 'ALL_OVERWRITE'
+                    ? 'border-slate-800 dark:border-slate-300 ring-1 ring-slate-800/10 dark:ring-slate-300/20 bg-white dark:bg-slate-800/90 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/30 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-xs font-semibold">
+                <div className="flex items-start gap-3">
                   <span
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      overlapResolution === 'OVERWRITE'
-                        ? 'border-primary bg-primary'
+                    className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      overlapResolutionMode === 'ALL_OVERWRITE'
+                        ? 'border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100'
                         : 'border-slate-300 dark:border-slate-600 bg-transparent'
                     }`}
                   >
-                    {overlapResolution === 'OVERWRITE' && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    {overlapResolutionMode === 'ALL_OVERWRITE' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900" />
                     )}
                   </span>
-                  <span className={overlapResolution === 'OVERWRITE' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
-                    เขียนทับไฟล์เก่า
-                  </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      เขียนทับทั้ง {overlapCalendarData?.totalOverlapCount ?? 0} วัน
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      ใช้ข้อมูลจากไฟล์ใหม่ทั้งหมด
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Option 2: KEEP_EXISTING (ใช้ข้อมูลเดิม) */}
+              {/* Option 2: ใช้ข้อมูลเดิมทั้ง X วัน */}
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => setOverlapResolution('KEEP_EXISTING')}
+                onClick={() => setOverlapResolutionMode('ALL_KEEP')}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('KEEP_EXISTING');
+                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolutionMode('ALL_KEEP');
                 }}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
-                  overlapResolution === 'KEEP_EXISTING'
-                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
-                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
+                  overlapResolutionMode === 'ALL_KEEP'
+                    ? 'border-slate-800 dark:border-slate-300 ring-1 ring-slate-800/10 dark:ring-slate-300/20 bg-white dark:bg-slate-800/90 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/30 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-xs font-semibold">
+                <div className="flex items-start gap-3">
                   <span
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      overlapResolution === 'KEEP_EXISTING'
-                        ? 'border-primary bg-primary'
+                    className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      overlapResolutionMode === 'ALL_KEEP'
+                        ? 'border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100'
                         : 'border-slate-300 dark:border-slate-600 bg-transparent'
                     }`}
                   >
-                    {overlapResolution === 'KEEP_EXISTING' && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    {overlapResolutionMode === 'ALL_KEEP' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900" />
                     )}
                   </span>
-                  <span className={overlapResolution === 'KEEP_EXISTING' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
-                    ใช้ข้อมูลเดิม
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      ใช้ข้อมูลเดิมทั้ง {overlapCalendarData?.totalOverlapCount ?? 0} วัน
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      คงข้อมูลในระบบไว้ ไม่นำเข้าวันที่ซ้ำ
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Option 3: เลือกทีละวัน */}
+              <div
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  overlapResolutionMode === 'CUSTOM'
+                    ? 'border-slate-800 dark:border-slate-300 ring-1 ring-slate-800/10 dark:ring-slate-300/20 bg-white dark:bg-slate-800/90 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/30 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOverlapResolutionMode('CUSTOM')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setOverlapResolutionMode('CUSTOM');
+                  }}
+                  className="flex items-start gap-3 cursor-pointer select-none"
+                >
+                  <span
+                    className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      overlapResolutionMode === 'CUSTOM'
+                        ? 'border-slate-900 dark:border-slate-100 bg-slate-900 dark:bg-slate-100'
+                        : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                    }`}
+                  >
+                    {overlapResolutionMode === 'CUSTOM' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900" />
+                    )}
                   </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      เลือกทีละวัน
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      กำหนดว่าแต่ละวันจะใช้ข้อมูลจากไฟล์ไหน
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overlap Rows List */}
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                  {overlapCalendarData?.overlapDatesSorted.map((dateStr) => {
+                    const choice = perDayChoices[dateStr] ?? 'NEW';
+                    return (
+                      <div key={dateStr} className="flex items-center justify-between text-xs py-1">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {formatOverlapRowDate(dateStr)}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {/* Button: ไฟล์เดิม */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOverlapResolutionMode('CUSTOM');
+                              setPerDayChoices((prev) => ({ ...prev, [dateStr]: 'EXISTING' }));
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                              choice === 'EXISTING'
+                                ? 'bg-[#0f172a] text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs'
+                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${
+                                choice === 'EXISTING'
+                                  ? 'border-white dark:border-slate-900 bg-white dark:bg-slate-900'
+                                  : 'border-slate-400 dark:border-slate-500 bg-transparent'
+                              }`}
+                            >
+                              {choice === 'EXISTING' && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#0f172a] dark:bg-slate-100" />
+                              )}
+                            </span>
+                            <span>ไฟล์เดิม</span>
+                          </button>
+
+                          {/* Button: ไฟล์ใหม่ */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOverlapResolutionMode('CUSTOM');
+                              setPerDayChoices((prev) => ({ ...prev, [dateStr]: 'NEW' }));
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                              choice === 'NEW'
+                                ? 'bg-[#0f172a] text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs'
+                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${
+                                choice === 'NEW'
+                                  ? 'border-white dark:border-slate-900 bg-white dark:bg-slate-900'
+                                  : 'border-slate-400 dark:border-slate-500 bg-transparent'
+                              }`}
+                            >
+                              {choice === 'NEW' && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#0f172a] dark:bg-slate-100" />
+                              )}
+                            </span>
+                            <span>ไฟล์ใหม่</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-100 dark:border-slate-700">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={isUploading}
-                onClick={cancelOverlapImport}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={isUploading}
-                loading={isUploading}
-                onClick={() => handleUploadSubmit(true, overlapResolution)}
-                icon={!isUploading ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
-              >
-                ตกลง
-              </Button>
+            {/* Bottom Footer: Dynamic Summary and Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30">
+              <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                ใช้ไฟล์ใหม่ {overlapCounts.newCount} วัน · คงข้อมูลเดิม {overlapCounts.oldCount} วัน
+              </div>
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isUploading}
+                  onClick={cancelOverlapImport}
+                  className="px-4 rounded-xl"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={isUploading}
+                  loading={isUploading}
+                  onClick={handleConfirmOverlapSubmit}
+                  className="px-5 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white"
+                >
+                  ยืนยันและนำเข้า
+                </Button>
+              </div>
             </div>
           </div>
         </div>

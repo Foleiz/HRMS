@@ -15,6 +15,7 @@ public interface IAttendanceImportService
         DateOnly? customDateTo = null,
         bool overwriteExistingPeriod = false,
         string? overlapResolution = null,
+        string? keepExistingDates = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>จับคู่แถวที่เคยหาพนักงานไม่เจอ (จากไฟล์ที่นำเข้าไว้แล้ว) กับพนักงานคนนี้ใหม่ — คืนจำนวนแถวที่บันทึกเวลาได้</summary>
