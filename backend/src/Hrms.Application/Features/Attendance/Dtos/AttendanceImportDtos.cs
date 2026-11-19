@@ -58,6 +58,14 @@ public class AttendanceImportResultDto
     /// <summary>ช่วงวันที่ของไฟล์เดิมที่ทับซ้อน (yyyy-MM-dd)</summary>
     public string? ExistingBatchDateFrom { get; set; }
     public string? ExistingBatchDateTo { get; set; }
+    /// <summary>วันที่เริ่มต้นที่ซ้อนทับกัน (yyyy-MM-dd)</summary>
+    public string? OverlapDateFrom { get; set; }
+    /// <summary>วันที่สิ้นสุดที่ซ้อนทับกัน (yyyy-MM-dd)</summary>
+    public string? OverlapDateTo { get; set; }
+    /// <summary>จำนวนวันที่ซ้อนทับกัน</summary>
+    public int OverlapDaysCount { get; set; }
+    /// <summary>รายการวันที่ซ้อนทับกันทั้งหมด (yyyy-MM-dd)</summary>
+    public List<string> OverlapDates { get; set; } = new();
     public List<AttendanceImportErrorDto> Errors { get; set; } = new();
 }
 

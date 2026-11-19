@@ -4,7 +4,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell, TabBar, type TabBarItem, TablePagination, ActionDropdown } from '@/components/ui';
-import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -44,6 +44,8 @@ import {
   Plus,
   Pencil,
   FileEdit,
+  CalendarRange,
+  ShieldCheck,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
@@ -258,7 +260,7 @@ function DailyAttendanceContent() {
   // Period Overlap Confirmation Modal State
   const [overlapModalOpen, setOverlapModalOpen] = useState<boolean>(false);
   const [overlapData, setOverlapData] = useState<AttendanceImportResult | null>(null);
-  const [selectedOverlapChoice, setSelectedOverlapChoice] = useState<'existing' | 'new'>('new');
+  const [overlapResolution, setOverlapResolution] = useState<'OVERWRITE' | 'KEEP_EXISTING'>('OVERWRITE');
 
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
@@ -634,7 +636,10 @@ function DailyAttendanceContent() {
     }
   };
 
-  const handleUploadSubmit = async (overwrite: boolean = false) => {
+  const handleUploadSubmit = async (
+    overwrite: boolean = false,
+    resolution: 'OVERWRITE' | 'KEEP_EXISTING' = 'OVERWRITE'
+  ) => {
     if (!selectedFile) return;
 
     try {
@@ -653,13 +658,14 @@ function DailyAttendanceContent() {
         undefined,
         undefined,
         undefined,
-        overwrite
+        overwrite,
+        resolution
       );
 
-      // กรณีพบว่าช่วงเดือน/ปีของไฟล์ซ้ำกับที่มีอยู่แล้วในระบบ และยังไม่ได้กดเลือกเขียนทับ
+      // กรณีพบว่าช่วงเดือน/ปีของไฟล์ซ้ำกับที่มีอยู่แล้วในระบบ และยังไม่ได้กดยืนยันการผสานข้อมูล
       if (res.data?.isPeriodOverlap && !overwrite) {
         setOverlapData(res.data);
-        setSelectedOverlapChoice('new');
+        setOverlapResolution('OVERWRITE');
         setOverlapModalOpen(true);
         setIsUploading(false);
         return;
@@ -687,7 +693,9 @@ function DailyAttendanceContent() {
           );
         } else {
           const successNotice = overwrite 
-            ? `นำเข้าข้อมูลไฟล์ใหม่สำเร็จและเขียนทับข้อมูลเดิมเรียบร้อย (${res.data.successRecords.toLocaleString()} รายการ)`
+            ? (resolution === 'KEEP_EXISTING'
+                ? `นำเข้าและรวมข้อมูลสำเร็จ (คงข้อมูลเดิมในวันที่ซ้อนทับ) ${res.data.successRecords.toLocaleString()} รายการ`
+                : `นำเข้าและรวมข้อมูลสำเร็จ (เขียนทับข้อมูลในวันที่ซ้อนทับ) ${res.data.successRecords.toLocaleString()} รายการ`)
             : `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords.toLocaleString()} รายการ)`;
           toast.success(
             successNotice,
@@ -749,6 +757,32 @@ function DailyAttendanceContent() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
   };
+
+  // คำนวณช่วงวันที่ซ้อนทับกันสำหรับแสดงผลใน Modal
+  const overlapInfo = useMemo(() => {
+    if (!overlapData) return null;
+    const oFrom = overlapData.overlapDateFrom || (
+      overlapData.dateFrom && overlapData.existingBatchDateFrom
+        ? (overlapData.dateFrom > overlapData.existingBatchDateFrom ? overlapData.dateFrom : overlapData.existingBatchDateFrom)
+        : null
+    );
+    const oTo = overlapData.overlapDateTo || (
+      overlapData.dateTo && overlapData.existingBatchDateTo
+        ? (overlapData.dateTo < overlapData.existingBatchDateTo ? overlapData.dateTo : overlapData.existingBatchDateTo)
+        : null
+    );
+
+    if (!oFrom || !oTo) return null;
+    const s = new Date(oFrom);
+    const e = new Date(oTo);
+    const days = overlapData.overlapDaysCount || Math.max(1, Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    const label = oFrom === oTo 
+      ? formatDateThai(oFrom)
+      : `${formatDateThai(oFrom)} ถึง ${formatDateThai(oTo)}`;
+
+    return { from: oFrom, to: oTo, days, label };
+  }, [overlapData]);
 
   const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
     setBatchToRevert(batch);
@@ -2359,69 +2393,55 @@ function DailyAttendanceContent() {
       )}
 
 
-      {/* Modal: ยืนยันการนำเข้าไฟล์เดือน/ปีที่ซ้ำซ้อน (เลือกใช้ไฟล์ใหม่หรือไฟล์เก่า) */}
+      {/* Modal: ยืนยันการผสานข้อมูลเมื่อพบช่วงวันที่ซ้อนทับกัน */}
       {overlapModalOpen && overlapData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
-            <ModalHeader title="ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว" onClose={cancelOverlapImport} />
+            <ModalHeader title="ตรวจพบข้อมูลวันที่ซ้อนทับกัน" onClose={cancelOverlapImport} />
 
-            {/* Comparison Cards (Selectable) */}
-            <div className="p-6 pb-0 space-y-3">
-              {/* Existing File Info */}
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedOverlapChoice('existing')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') setSelectedOverlapChoice('existing');
-                }}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
-                  selectedOverlapChoice === 'existing'
-                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
-                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
-                }`}
-              >
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        selectedOverlapChoice === 'existing'
-                          ? 'border-primary bg-primary'
-                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
-                      }`}
-                    >
-                      {selectedOverlapChoice === 'existing' && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      )}
-                    </span>
-                    <FileText className="w-3.5 h-3.5 text-slate-500" />
-                    <span>ไฟล์เดิมในระบบ</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    Batch #{overlapData.existingBatchId}
-                  </span>
+            {/* Overlap Notice Banner */}
+            <div className="p-4 mx-6 mt-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5">
+                <CalendarRange className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  วันที่ซ้อนทับกัน: <span className="underline decoration-amber-400 font-extrabold">{overlapInfo?.label || 'วันที่ระบุ'}</span> {overlapInfo ? `(รวม ${overlapInfo.days} วัน)` : ''}
                 </div>
-                <div className="pl-6 text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
-                  {overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}
+                <p className="text-[11px] text-amber-700/90 dark:text-amber-300/90 leading-relaxed">
+                  ระบบจะทำการนำข้อมูลทั้งสองไฟล์มารวมกัน (Merge) โปรดเลือกว่าต้องการจัดการข้อมูลเฉพาะในวันที่ซ้อนทับกันนี้อย่างไร:
+                </p>
+              </div>
+            </div>
+
+            {/* File Comparison Summary */}
+            <div className="px-6 pt-3 pb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                <div className="truncate">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">📄 ไฟล์เดิมในระบบ (Batch #{overlapData.existingBatchId}):</span>
+                  <div className="truncate text-slate-600 dark:text-slate-300 font-mono text-[10px] mt-0.5">{overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}</div>
+                  <div className="text-[10px] text-slate-500">ช่วง {formatDateThai(overlapData.existingBatchDateFrom || '')} - {formatDateThai(overlapData.existingBatchDateTo || '')}</div>
                 </div>
-                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400">
-                  ช่วงวันที่:{' '}
-                  {overlapData.existingBatchDateFrom && overlapData.existingBatchDateTo
-                    ? `${formatDateThai(overlapData.existingBatchDateFrom)} ถึง ${formatDateThai(overlapData.existingBatchDateTo)}`
-                    : '-'}
+                <div className="truncate sm:border-l sm:border-slate-200/80 sm:dark:border-slate-800 sm:pl-3">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">📥 ไฟล์ใหม่ที่กำลังนำเข้า:</span>
+                  <div className="truncate text-slate-600 dark:text-slate-300 font-mono text-[10px] mt-0.5">{selectedFile?.name || overlapData.fileName}</div>
+                  <div className="text-[10px] text-slate-500">ช่วง {formatDateThai(overlapData.dateFrom || '')} - {formatDateThai(overlapData.dateTo || '')}</div>
                 </div>
               </div>
+            </div>
 
-              {/* New Uploading File Info */}
+            {/* Strategy Selection Cards */}
+            <div className="p-6 pt-2 space-y-2.5">
+              {/* Option 1: OVERWRITE (เขียนทับด้วยข้อมูลจากไฟล์ใหม่) */}
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedOverlapChoice('new')}
+                onClick={() => setOverlapResolution('OVERWRITE')}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') setSelectedOverlapChoice('new');
+                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('OVERWRITE');
                 }}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
-                  selectedOverlapChoice === 'new'
+                  overlapResolution === 'OVERWRITE'
                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
                     : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
@@ -2430,35 +2450,73 @@ function DailyAttendanceContent() {
                   <span className="flex items-center gap-2">
                     <span
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        selectedOverlapChoice === 'new'
+                        overlapResolution === 'OVERWRITE'
                           ? 'border-primary bg-primary'
                           : 'border-slate-300 dark:border-slate-600 bg-transparent'
                       }`}
                     >
-                      {selectedOverlapChoice === 'new' && (
+                      {overlapResolution === 'OVERWRITE' && (
                         <span className="w-1.5 h-1.5 rounded-full bg-white" />
                       )}
                     </span>
-                    <UploadCloud className="w-3.5 h-3.5 text-primary" />
-                    <span className={selectedOverlapChoice === 'new' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'}>
-                      ไฟล์ใหม่ที่กำลังนำเข้า
+                    <RefreshCw className={`w-3.5 h-3.5 ${overlapResolution === 'OVERWRITE' ? 'text-primary' : 'text-slate-500'}`} />
+                    <span className={overlapResolution === 'OVERWRITE' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
+                      เขียนทับด้วยข้อมูลจากไฟล์ใหม่
                     </span>
                   </span>
-                  <span className="text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                    ไฟล์ใหม่
+                  <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                    แนะนำ
                   </span>
                 </div>
-                <div className="pl-6 text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                  {selectedFile?.name || overlapData.fileName}
+                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  สำหรับวันที่ซ้อนทับ ({overlapInfo?.label || 'วันที่ระบุ'}) จะ<strong>ถูกแทนที่ด้วยข้อมูลจากไฟล์ใหม่</strong> และนำข้อมูลวันที่เหลือของทั้งสองไฟล์มารวมกัน
                 </div>
-                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400">
-                  ช่วงวันที่: {overlapData.dateFrom && formatDateThai(overlapData.dateFrom)} ถึง {overlapData.dateTo && formatDateThai(overlapData.dateTo)}
+              </div>
+
+              {/* Option 2: KEEP_EXISTING (ข้ามข้อมูลไฟล์ใหม่ ใช้ข้อมูลเดิม) */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setOverlapResolution('KEEP_EXISTING')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('KEEP_EXISTING');
+                }}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                  overlapResolution === 'KEEP_EXISTING'
+                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        overlapResolution === 'KEEP_EXISTING'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                      }`}
+                    >
+                      {overlapResolution === 'KEEP_EXISTING' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </span>
+                    <ShieldCheck className={`w-3.5 h-3.5 ${overlapResolution === 'KEEP_EXISTING' ? 'text-primary' : 'text-slate-500'}`} />
+                    <span className={overlapResolution === 'KEEP_EXISTING' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
+                      ใช้ข้อมูลเดิมต่อไป (ข้ามข้อมูลในไฟล์ใหม่)
+                    </span>
+                  </span>
+                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                    คงข้อมูลเดิม
+                  </span>
+                </div>
+                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  สำหรับวันที่ซ้อนทับ ({overlapInfo?.label || 'วันที่ระบุ'}) จะ<strong>รักษาข้อมูลเดิมไว้ตามเดิม ไม่แก้ไข</strong> และนำเข้าเฉพาะวันที่ยังไม่มีจากไฟล์ใหม่มารวมกัน
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 px-6 py-4 mt-5 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-100 dark:border-slate-700">
               <Button
                 type="button"
                 variant="secondary"
@@ -2474,16 +2532,10 @@ function DailyAttendanceContent() {
                 size="sm"
                 disabled={isUploading}
                 loading={isUploading}
-                onClick={() => {
-                  if (selectedOverlapChoice === 'new') {
-                    handleUploadSubmit(true);
-                  } else {
-                    cancelOverlapImport();
-                  }
-                }}
+                onClick={() => handleUploadSubmit(true, overlapResolution)}
                 icon={!isUploading ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
               >
-                ใช้
+                นำเข้าและรวมข้อมูล
               </Button>
             </div>
           </div>

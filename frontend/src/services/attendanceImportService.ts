@@ -24,7 +24,8 @@ export const attendanceImportService = {
     dateTo?: string,
     targetYear?: number,
     targetMonth?: number,
-    overwriteExistingPeriod: boolean = false
+    overwriteExistingPeriod: boolean = false,
+    overlapResolution?: 'OVERWRITE' | 'KEEP_EXISTING'
   ): Promise<ApiResponse<AttendanceImportResult>> {
     const formData = new FormData();
     formData.append('file', file);
@@ -32,6 +33,7 @@ export const attendanceImportService = {
     if (deviceName) formData.append('deviceName', deviceName);
     formData.append('allowDuplicate', String(allowDuplicate));
     formData.append('overwriteExistingPeriod', String(overwriteExistingPeriod));
+    if (overlapResolution) formData.append('overlapResolution', overlapResolution);
     if (dateFrom) formData.append('dateFrom', dateFrom);
     if (dateTo) formData.append('dateTo', dateTo);
     if (targetYear) formData.append('targetYear', String(targetYear));
