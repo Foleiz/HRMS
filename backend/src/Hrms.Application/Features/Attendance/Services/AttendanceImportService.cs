@@ -184,32 +184,33 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        // 4.1 ตรวจสอบขอบเขตวันที่ของไฟล์ (Date Range Discovery)
-        DateOnly? detectedDateFrom = customDateFrom ?? metadataDateFrom;
-        DateOnly? detectedDateTo = customDateTo ?? metadataDateTo;
+        // 4.1 ตรวจสอบขอบเขตวันที่จริงจากข้อมูลในไฟล์ (Actual Date Range from Data Rows)
+        // สแกนวันที่จริงจากแถวข้อมูลในไฟล์เป็นหลัก (ไม่ยึดเพียงข้อความ date from: ... ที่หัวกระดาษ Row 1)
+        DateOnly? actualRowMinDate = null;
+        DateOnly? actualRowMaxDate = null;
 
-        if (detectedDateFrom == null || detectedDateTo == null)
+        foreach (var (_, scanRow) in rawRows)
         {
-            foreach (var (_, scanRow) in rawRows)
+            var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
+                ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+            if (d == null) continue;
+
+            DateOnly? parsed = ParseDate(d);
+            if (parsed == null && ParseDateTime(d) is DateTime pdt)
             {
-                var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
-                    ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
-                if (d == null) continue;
-
-                DateOnly? parsed = ParseDate(d);
-                if (parsed == null && ParseDateTime(d) is DateTime pdt)
-                {
-                    var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
-                    parsed = new DateOnly(y, pdt.Month, pdt.Day);
-                }
-                if (parsed == null) continue;
-
-                if (detectedDateFrom == null || parsed < detectedDateFrom) detectedDateFrom = parsed;
-                if (detectedDateTo == null || parsed > detectedDateTo) detectedDateTo = parsed;
+                var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
+                parsed = new DateOnly(y, pdt.Month, pdt.Day);
             }
+            if (parsed == null) continue;
+
+            if (actualRowMinDate == null || parsed < actualRowMinDate) actualRowMinDate = parsed;
+            if (actualRowMaxDate == null || parsed > actualRowMaxDate) actualRowMaxDate = parsed;
         }
 
-        // 4.2 ตรวจสอบช่วงเดือน/ปีที่ทับซ้อนกับ Batch ที่มีอยู่แล้ว (Date Range / Month Overlap Check)
+        DateOnly? detectedDateFrom = customDateFrom ?? actualRowMinDate ?? metadataDateFrom;
+        DateOnly? detectedDateTo = customDateTo ?? actualRowMaxDate ?? metadataDateTo;
+
+        // 4.2 ตรวจสอบช่วงวันที่ทับซ้อนกับ Batch ที่มีอยู่แล้ว (Date Range Overlap Check)
         if (detectedDateFrom.HasValue && detectedDateTo.HasValue)
         {
             var overlappingBatch = await _context.AttendanceImportBatches
@@ -253,7 +254,7 @@ public class AttendanceImportService : IAttendanceImportService
                 }
                 else
                 {
-                    // ผู้ใช้ยืนยันเลือก "ใช้ไฟล์ใหม่ (เขียนทับ)" -> ยกเลิก (Revert) ชุดข้อมูลเดิมก่อน
+                    // ผู้ใช้ยืนยันเลือก "ใช้ไฟล์ใหม่ (เขียนทับ)"
                     var allOverlappingBatches = await _context.AttendanceImportBatches
                         .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
                         .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
@@ -261,13 +262,31 @@ public class AttendanceImportService : IAttendanceImportService
 
                     foreach (var oldBatch in allOverlappingBatches)
                     {
-                        try
+                        // หากชุดข้อมูลเดิมถูกครอบคลุมโดยชุดข้อมูลใหม่ทั้งหมด (เช่น นำเข้าทับทั้งงวด / ทั้งเดือน) -> ยกเลิกชุดเก่าทั้งหมด
+                        if (detectedDateFrom.Value <= oldBatch.DateFrom!.Value && detectedDateTo.Value >= oldBatch.DateTo!.Value)
                         {
-                            await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
+                            try
+                            {
+                                await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
+                            }
+                            catch
+                            {
+                                // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                            }
                         }
-                        catch
+                        else
                         {
-                            // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                            // กรณีทับซ้อนแค่บางวัน (Partial Overlap เช่น ไฟล์เก่ามี 1-16 แต่ไฟล์ใหม่มี 16-31):
+                            // ไม่ revert ทั้งชุดข้อมูลเดิม เพื่อรักษาข้อมูลวันที่ไม่ทับซ้อน (เช่น วันที่ 1-15) ไว้
+                            // ข้อมูลของวันที่ทับซ้อน (เช่น วันที่ 16) จะถูก ProcessRowsAsync อัปเดตทับด้วยข้อมูลจากไฟล์ใหม่โดยอัตโนมัติ
+                            if (oldBatch.DateFrom < detectedDateFrom.Value && oldBatch.DateTo >= detectedDateFrom.Value)
+                            {
+                                oldBatch.DateTo = detectedDateFrom.Value.AddDays(-1);
+                            }
+                            else if (oldBatch.DateFrom <= detectedDateTo.Value && oldBatch.DateTo > detectedDateTo.Value)
+                            {
+                                oldBatch.DateFrom = detectedDateTo.Value.AddDays(1);
+                            }
                         }
                     }
                 }
@@ -354,8 +373,8 @@ public class AttendanceImportService : IAttendanceImportService
         // ใช้เวลารวมนานเกิน timeout ฝั่ง Frontend) — ถ้าหาช่วงวันที่ไม่ได้เลย จะไม่ preload
         // และใช้วิธี query ทีละแถว (fallback เดิม) เพื่อความปลอดภัยของข้อมูล
         {
-            DateOnly? preloadFrom = customDateFrom ?? metadataDateFrom;
-            DateOnly? preloadTo = customDateTo ?? metadataDateTo;
+            DateOnly? preloadFrom = customDateFrom ?? actualRowMinDate ?? metadataDateFrom;
+            DateOnly? preloadTo = customDateTo ?? actualRowMaxDate ?? metadataDateTo;
 
             if (preloadFrom == null || preloadTo == null)
             {
