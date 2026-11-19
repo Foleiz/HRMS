@@ -344,36 +344,38 @@ function MySalaryContent() {
           </div>
 
           {/* Earnings & Deductions 2 Columns Grid (B2, B3, B4, B8) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
             {/* LEFT COLUMN: รายได้ (Earnings) */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-emerald-600 tracking-wide pb-1">
-                รายได้
-              </h3>
+            <div className="flex flex-col justify-between h-full">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-emerald-600 tracking-wide pb-1">
+                  รายได้
+                </h3>
 
-              <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {detailData?.earnings && detailData.earnings.length > 0 ? (
-                  detailData.earnings.map((item, idx) => (
-                    <div key={idx} className="py-3 flex items-start justify-between gap-4">
-                      <div>
-                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
-                          {item.itemName}
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                  {detailData?.earnings && detailData.earnings.length > 0 ? (
+                    detailData.earnings.map((item, idx) => (
+                      <div key={idx} className="py-3 flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
+                            {item.itemName}
+                          </span>
+                          {/* B2: เอาข้อความรองใต้ชื่อรายการออกทั้งหมด */}
+                        </div>
+                        {/* B4: ฟอนต์ปกติ tabular-nums */}
+                        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 tabular-nums text-right shrink-0">
+                          {formatMoney(item.amount)}
                         </span>
-                        {/* B2: เอาข้อความรองใต้ชื่อรายการออกทั้งหมด */}
                       </div>
-                      {/* B4: ฟอนต์ปกติ tabular-nums */}
-                      <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 tabular-nums text-right shrink-0">
-                        {formatMoney(item.amount)}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-3 text-xs text-slate-400">ไม่มีรายการรายได้เพิ่มเติม</div>
-                )}
+                    ))
+                  ) : (
+                    <div className="py-3 text-xs text-slate-400">ไม่มีรายการรายได้เพิ่มเติม</div>
+                  )}
+                </div>
               </div>
 
               {/* Total Earnings Bottom Line */}
-              <div className="border-t-2 border-slate-800 dark:border-slate-200 pt-4 flex items-center justify-between">
+              <div className="border-t-2 border-slate-800 dark:border-slate-200 pt-4 mt-4 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายได้</span>
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                   {formatMoney(detailData?.totalGrossIncome)}
@@ -382,34 +384,36 @@ function MySalaryContent() {
             </div>
 
             {/* RIGHT COLUMN: รายหัก (Deductions) */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-rose-600 tracking-wide pb-1">
-                รายหัก
-              </h3>
+            <div className="flex flex-col justify-between h-full">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-rose-600 tracking-wide pb-1">
+                  รายหัก
+                </h3>
 
-              <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {detailData?.deductions && detailData.deductions.length > 0 ? (
-                  detailData.deductions.map((item, idx) => (
-                    <div key={idx} className="py-3 flex items-start justify-between gap-4">
-                      <div>
-                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
-                          {item.itemName}
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                  {detailData?.deductions && detailData.deductions.length > 0 ? (
+                    detailData.deductions.map((item, idx) => (
+                      <div key={idx} className="py-3 flex items-start justify-between gap-4">
+                        <div>
+                          <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
+                            {item.itemName}
+                          </span>
+                          {/* B2: เอาข้อความรองใต้ชื่อรายการออกทั้งหมด */}
+                        </div>
+                        {/* B3: ยอดฝั่งรายหักไม่ต้องมีเครื่องหมายลบ แสดงเป็นบวกเหมือน PDF, B4: tabular-nums */}
+                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums text-right shrink-0">
+                          {formatMoney(item.amount)}
                         </span>
-                        {/* B2: เอาข้อความรองใต้ชื่อรายการออกทั้งหมด */}
                       </div>
-                      {/* B3: ยอดฝั่งรายหักไม่ต้องมีเครื่องหมายลบ แสดงเป็นบวกเหมือน PDF, B4: tabular-nums */}
-                      <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums text-right shrink-0">
-                        {formatMoney(item.amount)}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-3 text-xs text-slate-400">ไม่มีรายการหัก</div>
-                )}
+                    ))
+                  ) : (
+                    <div className="py-3 text-xs text-slate-400">ไม่มีรายการหัก</div>
+                  )}
+                </div>
               </div>
 
               {/* B3: ยอดรวมรายหักไม่ต้องมีเครื่องหมายลบ, B4: tabular-nums */}
-              <div className="border-t-2 border-slate-800 dark:border-slate-200 pt-4 flex items-center justify-between">
+              <div className="border-t-2 border-slate-800 dark:border-slate-200 pt-4 mt-4 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายการหัก</span>
                 <span className="text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                   {formatMoney(detailData?.totalDeductions)}
