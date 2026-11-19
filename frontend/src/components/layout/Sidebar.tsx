@@ -892,7 +892,7 @@ export const Sidebar: React.FC = () => {
                         <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${parentActive ? 'text-primary dark:text-blue-400 scale-105' : 'text-slate-500 dark:text-slate-400'}`} />
                         <span
                           className={`truncate transition-all duration-300 ease-in-out whitespace-nowrap ${
-                            isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[150px] opacity-100 translate-x-0'
+                            isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[195px] opacity-100 translate-x-0'
                           }`}
                         >
                           {item.title}
@@ -979,7 +979,7 @@ export const Sidebar: React.FC = () => {
                   <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${active ? 'text-white scale-105' : 'text-slate-500 dark:text-slate-400'}`} />
                   <span
                     className={`truncate transition-all duration-300 ease-in-out whitespace-nowrap ${
-                      isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0'
+                      isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[210px] opacity-100 translate-x-0'
                     }`}
                   >
                     {item.title}
@@ -1029,7 +1029,7 @@ export const Sidebar: React.FC = () => {
       {/* ===== Desktop Sidebar: Static flex child, hidden on mobile ===== */}
       <aside
         className={`hidden lg:flex bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
-          isCollapsed ? 'w-20' : 'w-64'
+          isCollapsed ? 'w-20' : 'w-72'
         }`}
       >
         {sidebarContent}
