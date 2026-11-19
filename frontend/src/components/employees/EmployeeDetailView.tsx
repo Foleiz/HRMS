@@ -1103,7 +1103,15 @@ export default function EmployeeDetailView({
                     <span className="flex-1 min-w-0">
                       <span className="flex items-center gap-2">
                         <span className="text-sm font-bold text-slate-900 dark:text-slate-100">ลายเซ็น</span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500">{signatureUrl ? 'ตั้งค่าแล้ว' : 'ยังไม่กำหนด'}</span>
+                        <span
+                          className={`text-xs ${
+                            signatureUrl
+                              ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+                              : 'text-slate-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {signatureUrl ? 'ตั้งค่าแล้ว' : 'ยังไม่กำหนด'}
+                        </span>
                       </span>
                       <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1">
                         รูปลายเซ็นที่ใช้ลงนามในเอกสารและใบอนุมัติในระบบ
