@@ -3906,15 +3906,15 @@ export default function PayrollPage() {
             {/* ── PANEL 1: TOP PERIOD SELECTOR & ACTIONS BAR (คงเดิม) ── */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5">
               {/* ── TIER 1: Period Selection & Period Management (สร้าง/ลบรอบ) ── */}
-              <div className="flex flex-col lg:flex-row lg:items-start xl:items-center justify-between gap-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
                 {/* Left: Period Selector & Status Badge */}
-                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                   <div
                     id="tour-payroll-period-selector"
                     data-tour="tour-payroll-period-selector"
-                    className="flex flex-wrap items-center gap-2"
+                    className="flex items-center gap-2 shrink-0 flex-wrap"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
                         <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
@@ -3924,7 +3924,7 @@ export default function PayrollPage() {
                     </div>
 
                     {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
-                    <div className="relative inline-block">
+                    <div className="relative inline-block shrink-0">
                       <CustomSelect
                         value={
                           selectedProcessMonth != null
@@ -3947,7 +3947,7 @@ export default function PayrollPage() {
                         }}
                         numbered={false}
                         size="sm"
-                        className="min-w-[130px] sm:min-w-[145px]"
+                        className="min-w-[125px] sm:min-w-[135px]"
                         buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                         title="เลือกรอบเดือน"
                       >
@@ -3983,7 +3983,7 @@ export default function PayrollPage() {
                     </div>
 
                     {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
-                    <div className="relative inline-block">
+                    <div className="relative inline-block shrink-0">
                       <YearPicker
                         value={activeYear}
                         onChange={(y) => handleYearFilterChange(y)}
@@ -3997,7 +3997,7 @@ export default function PayrollPage() {
                   {/* สถานะรอบ */}
                   {selectedPeriod ? (
                     <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
                         selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
                           : selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT'
@@ -4034,14 +4034,14 @@ export default function PayrollPage() {
                         : selectedPeriod.statusText}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
                       ยังไม่มีรอบเงินเดือน
                     </span>
                   )}
                   {(!isAdmin &&
                     [canAccessHrView, canAccessFinanceView, canAccessApproverView, canAccessBankView].filter(Boolean)
                       .length <= 1) && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600 whitespace-nowrap shrink-0">
                       {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
                       {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
                       {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
@@ -4153,10 +4153,11 @@ export default function PayrollPage() {
                             <button
                               type="button"
                               onClick={() => setIsRejectModalOpen(true)}
-                              className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                              className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                              title="ไม่อนุมัติ (ส่งคืน HR แก้ไข)"
                             >
-                              <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                              <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
+                              <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                              <span>ไม่อนุมัติ (ส่งคืน HR)</span>
                             </button>
                           )}
 
@@ -4164,11 +4165,12 @@ export default function PayrollPage() {
                             <Button
                               variant="success"
                               size="sm"
-                              className="h-9"
+                              className="h-9 whitespace-nowrap shrink-0"
                               onClick={handleVerifyByFinance}
-                              icon={<CheckCircle className="w-3.5 h-3.5" />}
+                              title="การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)"
+                              icon={<CheckCircle className="w-3.5 h-3.5 shrink-0" />}
                             >
-                              การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)
+                              ยืนยันความถูกต้อง (ส่งขออนุมัติ CEO)
                             </Button>
                           )}
 
