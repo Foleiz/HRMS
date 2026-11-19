@@ -2399,17 +2399,12 @@ function DailyAttendanceContent() {
             <ModalHeader title="ตรวจพบข้อมูลวันที่ซ้อนทับกัน" onClose={cancelOverlapImport} />
 
             {/* Overlap Notice Banner */}
-            <div className="p-4 mx-6 mt-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5">
-                <CalendarRange className="w-5 h-5" />
+            <div className="p-3 mx-6 mt-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 flex items-center gap-2.5">
+              <div className="p-1.5 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 shrink-0">
+                <CalendarRange className="w-4 h-4" />
               </div>
-              <div className="space-y-1">
-                <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                  วันที่ซ้อนทับกัน: <span className="underline decoration-amber-400 font-extrabold">{overlapInfo?.label || 'วันที่ระบุ'}</span> {overlapInfo ? `(รวม ${overlapInfo.days} วัน)` : ''}
-                </div>
-                <p className="text-[11px] text-amber-700/90 dark:text-amber-300/90 leading-relaxed">
-                  ระบบจะทำการนำข้อมูลทั้งสองไฟล์มารวมกัน (Merge) โปรดเลือกว่าต้องการจัดการข้อมูลเฉพาะในวันที่ซ้อนทับกันนี้อย่างไร:
-                </p>
+              <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                วันที่ซ้อนทับกัน: <span className="underline decoration-amber-400 font-extrabold">{overlapInfo?.label || 'วันที่ระบุ'}</span> {overlapInfo ? `(รวม ${overlapInfo.days} วัน)` : ''}
               </div>
             </div>
 
