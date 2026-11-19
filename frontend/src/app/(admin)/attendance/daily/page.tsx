@@ -822,26 +822,6 @@ function DailyAttendanceContent() {
     };
   }, [overlapData]);
 
-  // คำนวณยอดสรุปไฟล์ใหม่ / คงข้อมูลเดิม
-  const overlapCounts = useMemo(() => {
-    if (!overlapCalendarData) return { newCount: 0, oldCount: 0, total: 0 };
-    const total = overlapCalendarData.totalOverlapCount;
-    if (overlapResolutionMode === 'ALL_OVERWRITE') {
-      return { newCount: total, oldCount: 0, total };
-    }
-    if (overlapResolutionMode === 'ALL_KEEP') {
-      return { newCount: 0, oldCount: total, total };
-    }
-    let newCount = 0;
-    let oldCount = 0;
-    overlapCalendarData.overlapDatesSorted.forEach((d) => {
-      const choice = perDayChoices[d] ?? 'NEW';
-      if (choice === 'NEW') newCount++;
-      else oldCount++;
-    });
-    return { newCount, oldCount, total };
-  }, [overlapCalendarData, overlapResolutionMode, perDayChoices]);
-
   const formatOverlapRowDate = (dateStr: string) => {
     const [y, m, d] = dateStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
@@ -2705,34 +2685,29 @@ function DailyAttendanceContent() {
               </div>
             </div>
 
-            {/* Bottom Footer: Dynamic Summary and Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30">
-              <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                ใช้ไฟล์ใหม่ {overlapCounts.newCount} วัน · คงข้อมูลเดิม {overlapCounts.oldCount} วัน
-              </div>
-              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={isUploading}
-                  onClick={cancelOverlapImport}
-                  className="px-4 rounded-xl"
-                >
-                  ยกเลิก
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  disabled={isUploading}
-                  loading={isUploading}
-                  onClick={handleConfirmOverlapSubmit}
-                  className="px-5 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white"
-                >
-                  ยืนยันและนำเข้า
-                </Button>
-              </div>
+            {/* Bottom Footer: Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isUploading}
+                onClick={cancelOverlapImport}
+                className="px-4 rounded-xl"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={isUploading}
+                loading={isUploading}
+                onClick={handleConfirmOverlapSubmit}
+                className="px-5 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white"
+              >
+                ยืนยันและนำเข้า
+              </Button>
             </div>
           </div>
         </div>
