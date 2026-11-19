@@ -1290,6 +1290,10 @@ export default function PayrollPage() {
   }, [selectedPeriod?.id, selectedPeriod?.status, selectedPeriod?.paymentMethod, isFinance, isCEO, isAdmin]);
 
   const handleOpenSlipModal = (item: PayrollTransferItem) => {
+    if (selectedPeriod?.paymentMethod === 'BANK_BATCH') {
+      showToast('รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร (Bank Batch) จึงไม่ต้องบันทึกการโอนหรือแนบสลิปรายบุคคล');
+      return;
+    }
     setSlipModalTarget(item);
     setSlipFile(null);
     setSlipTransferRef(item.transferReference || '');
@@ -1312,6 +1316,11 @@ export default function PayrollPage() {
 
   const handleMarkTransferred = async () => {
     if (!selectedPeriod || !slipModalTarget) {
+      return;
+    }
+    if (selectedPeriod.paymentMethod === 'BANK_BATCH') {
+      showToast('รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร (Bank Batch) ไม่สามารถบันทึกการโอนรายบุคคลได้');
+      setSlipModalOpen(false);
       return;
     }
     setIsMarkingTransferred(slipModalTarget.payrollId);
@@ -5484,14 +5493,14 @@ export default function PayrollPage() {
                             <th className="py-3 px-4 text-center font-semibold">Ref No.</th>
                             <th className="py-3 px-4 text-center font-semibold">สลิป</th>
                             <th className="py-3 px-4 text-center font-semibold">สถานะ</th>
-                            {selectedPeriod?.status !== 'PAID' && (isCEO || isFinance || isAdmin) && (
+                            {selectedPeriod?.status !== 'PAID' && selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (isCEO || isFinance || isAdmin) && (
                               <th className="py-3 px-4 text-center font-semibold">การดำเนินการ</th>
                             )}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
                           {!transferList || transferList.items.length === 0 ? (
-                            <TableEmpty colSpan={7} text="ยังไม่มีรายการเงินเดือนในรอบนี้" />
+                            <TableEmpty colSpan={selectedPeriod?.status !== 'PAID' && selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (isCEO || isFinance || isAdmin) ? 7 : 6} text="ยังไม่มีรายการเงินเดือนในรอบนี้" />
                           ) : (
                             transferList.items.map((item) => (
                               <tr key={item.payrollId} className="hover:bg-slate-50/50 dark:hover:bg-slate-750/50 transition-colors">
@@ -5537,7 +5546,9 @@ export default function PayrollPage() {
                                       <span className="truncate">{item.slipFileName || 'slip'}</span>
                                     </button>
                                   ) : (
-                                    <span className="text-slate-300 dark:text-slate-600 text-[11px]">ยังไม่มีสลิป</span>
+                                    <span className="text-slate-300 dark:text-slate-600 text-[11px]">
+                                      {selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ตามไฟล์รวม' : 'ยังไม่มีสลิป'}
+                                    </span>
                                   )}
                                 </td>
                                 {/* Status Badge */}
@@ -5564,8 +5575,8 @@ export default function PayrollPage() {
                                     </span>
                                   )}
                                 </td>
-                                {/* Action */}
-                                {selectedPeriod?.status !== 'PAID' && (isCEO || isFinance || isAdmin) && (
+                                {/* Action (เฉพาะกรณีโอนเองทีละคน DIRECT_TRANSFER) */}
+                                {selectedPeriod?.status !== 'PAID' && selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (isCEO || isFinance || isAdmin) && (
                                   <td className="py-3.5 px-4 text-center">
                                     {(item.netPayableSalary ?? 0) <= 0 ? (
                                       <span className="text-slate-400 text-xs font-mono">-</span>

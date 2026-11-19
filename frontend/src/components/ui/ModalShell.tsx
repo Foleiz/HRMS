@@ -38,7 +38,15 @@ function playCloseAnimation(node: HTMLElement) {
     if (!target) return;
     if (el.scrollTop) target.scrollTop = el.scrollTop;
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-      (target as HTMLInputElement).value = el.value;
+      if (el instanceof HTMLInputElement && el.type === 'file') {
+        // <input type="file"> ไม่อนุญาตให้เซ็ต .value เป็นชื่อไฟล์ทางโค้ด (ป้องกัน InvalidStateError)
+      } else {
+        try {
+          (target as HTMLInputElement).value = el.value;
+        } catch {
+          // ละเว้นกรณี input บางประเภทที่เบราว์เซอร์ล็อกการกำหนดค่า
+        }
+      }
       if (el instanceof HTMLInputElement) (target as HTMLInputElement).checked = el.checked;
     }
   });
