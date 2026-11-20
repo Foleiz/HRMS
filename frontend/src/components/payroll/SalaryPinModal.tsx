@@ -48,6 +48,8 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
   const [newResetPin, setNewResetPin] = useState<string>('');
   const [confirmResetPin, setConfirmResetPin] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showNewResetPin, setShowNewResetPin] = useState<boolean>(false);
+  const [showConfirmResetPin, setShowConfirmResetPin] = useState<boolean>(false);
 
   // Trigger shake animation on error
   const triggerShake = (msg: string) => {
@@ -214,48 +216,46 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 dark:bg-black/75 backdrop-blur-xl animate-in fade-in duration-300">
-      {/* Outer wrapper: 2 separate stacked panels */}
-      <div className="w-full max-w-md flex flex-col gap-3.5 sm:gap-4">
-        
-        {/* PANEL 1: Standalone Security Notification Card */}
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-amber-200/80 dark:border-amber-900/50 shadow-lg p-4 sm:p-5 transition-all">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-300/40 dark:border-amber-700/50 shadow-2xs">
-              <ShieldAlert className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <p className="flex-1 text-sm sm:text-[15px] font-medium leading-relaxed text-slate-800 dark:text-slate-100">
-              ข้อมูลค่าตอบแทนเป็นความลับเฉพาะบุคคลตามนโยบายบริษัท โปรดระมัดระวังการเปิดเผยต่อผู้อื่น
-            </p>
+      {/* Cohesive unified security card */}
+      <div
+        className={`w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl overflow-hidden transition-all duration-200 ${
+          isShaking ? 'animate-[shake_0.4s_ease-in-out]' : ''
+        }`}
+      >
+        {/* Unified Security Notification Banner */}
+        <div className="bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-200/60 dark:border-amber-900/40 p-4 sm:p-4.5 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 dark:bg-amber-500/25 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-300/40 dark:border-amber-700/50 shadow-2xs">
+            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
+          <p className="flex-1 text-xs sm:text-[13px] font-medium leading-relaxed text-amber-900 dark:text-amber-200">
+            ข้อมูลค่าตอบแทนเป็นความลับเฉพาะบุคคลตามนโยบายบริษัท โปรดระมัดระวังการเปิดเผยต่อผู้อื่น
+          </p>
         </div>
 
-        {/* PANEL 2: Standalone PIN Entry Card */}
-        <div
-          className={`w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 transition-all duration-200 ${
-            isShaking ? 'animate-[shake_0.4s_ease-in-out]' : ''
-          }`}
-        >
+        {/* Modal Card Content */}
+        <div className="p-6 sm:p-7">
           {mode === 'RESET' ? (
             /* ========================================================= */
             /* VIEW: RESET PIN FORM                                      */
             /* ========================================================= */
             <form onSubmit={handleResetSubmit} className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
                     setErrorMsg('');
                     setMode('VERIFY');
                   }}
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                  title="ย้อนกลับ"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-4 h-4" />
                 </button>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 truncate">
                     เปลี่ยนรหัส PIN 6 หลัก
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     ยืนยันตัวตนด้วยรหัสผ่านบัญชีผู้ใช้ปัจจุบัน
                   </p>
                 </div>
@@ -268,80 +268,119 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div className="space-y-3.5">
+                {/* 1. รหัสผ่านผู้ใช้ปัจจุบัน */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รหัสผ่านบัญชีผู้ใช้ปัจจุบัน
+                    รหัสผ่านบัญชีผู้ใช้ปัจจุบัน <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      onChange={(e) => {
+                        setCurrentPassword(e.target.value);
+                        setErrorMsg('');
+                      }}
                       placeholder="กรอกรหัสผ่านที่ใช้เข้าสู่ระบบ"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       required
+                      autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
+                {/* 2. รหัส PIN 6 หลักใหม่ */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รหัส PIN 6 หลักใหม่ (ตัวเลข)
+                    รหัส PIN 6 หลักใหม่ (ตัวเลข) <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={newResetPin}
-                    onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="กรอกตัวเลข 6 หลัก"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm tracking-widest text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewResetPin ? 'text' : 'password'}
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={newResetPin}
+                      onChange={(e) => {
+                        setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 6));
+                        setErrorMsg('');
+                      }}
+                      placeholder="กำหนดตัวเลข 6 หลัก (0-9)"
+                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewResetPin(!showNewResetPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                    >
+                      {showNewResetPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
+                {/* 3. ยืนยันรหัส PIN 6 หลักใหม่อีกครั้ง */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ยืนยันรหัส PIN 6 หลักใหม่อีกครั้ง
+                    ยืนยันรหัส PIN 6 หลักใหม่อีกครั้ง <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={confirmResetPin}
-                    onChange={(e) => setConfirmResetPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="กรอกตัวเลข 6 หลักเดิมซ้ำ"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm tracking-widest text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmResetPin ? 'text' : 'password'}
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={confirmResetPin}
+                      onChange={(e) => {
+                        setConfirmResetPin(e.target.value.replace(/\D/g, '').slice(0, 6));
+                        setErrorMsg('');
+                      }}
+                      placeholder="กรอกตัวเลข 6 หลักเดิมอีกครั้ง"
+                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmResetPin(!showConfirmResetPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                    >
+                      {showConfirmResetPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center gap-2">
+              {/* Action Buttons */}
+              <div className="pt-3 flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setErrorMsg('');
                     setMode('VERIFY');
                   }}
-                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex-1 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                 >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'บันทึกและปลดล็อก'}
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>บันทึกและปลดล็อก</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
