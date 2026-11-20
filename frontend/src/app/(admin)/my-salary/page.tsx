@@ -413,8 +413,8 @@ function MySalaryContent() {
 
               {/* Total Earnings Bottom Line */}
               <div className="border-t-2 border-slate-800 dark:border-slate-200 pt-4 mt-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายได้</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">รวมรายการได้</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                   {formatMoney(detailData?.totalGrossIncome)}
                 </span>
               </div>
@@ -438,7 +438,7 @@ function MySalaryContent() {
                           {/* B2: เอาข้อความรองใต้ชื่อรายการออกทั้งหมด */}
                         </div>
                         {/* B3: ยอดฝั่งรายหักไม่ต้องมีเครื่องหมายลบ แสดงเป็นบวกเหมือน PDF, B4: tabular-nums */}
-                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums text-right shrink-0">
+                        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 tabular-nums text-right shrink-0">
                           {formatMoney(item.amount)}
                         </span>
                       </div>
