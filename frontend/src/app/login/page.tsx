@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircle } from 'lucide-react';
@@ -163,6 +164,15 @@ export default function LoginPage() {
               >
                 {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
+            </div>
+
+            <div className="flex justify-end pt-0.5">
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-slate-500 hover:text-primary transition-colors cursor-pointer"
+              >
+                ลืมรหัสผ่าน?
+              </Link>
             </div>
 
             <button

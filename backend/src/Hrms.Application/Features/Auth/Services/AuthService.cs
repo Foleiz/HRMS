@@ -5,6 +5,7 @@ using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Auth.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Hrms.Application.Features.Auth.Services;
 
@@ -17,17 +18,23 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
     public AuthService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _currentUserService = currentUserService;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
@@ -278,5 +285,198 @@ public class AuthService : IAuthService
             DivisionId = divisionId,
             TeamId = teamId
         };
+    }
+
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.EmailOrUsername))
+        {
+            throw new ValidationException("กรุณากรอกอีเมลหรือชื่อผู้ใช้งาน");
+        }
+
+        var input = request.EmailOrUsername.Trim().ToLower();
+
+        // ค้นหาจาก username หรือ อีเมล (personal_email / organization_email)
+        var user = await _dbContext.UserAccounts
+            .Include(u => u.Employee)
+                .ThenInclude(e => e.Contact)
+            .FirstOrDefaultAsync(u => 
+                u.Username.ToLower() == input ||
+                (u.Employee != null && u.Employee.Contact != null && (
+                    (u.Employee.Contact.PersonalEmail != null && u.Employee.Contact.PersonalEmail.ToLower() == input) ||
+                    (u.Employee.Contact.OrganizationEmail != null && u.Employee.Contact.OrganizationEmail.ToLower() == input)
+                )), cancellationToken);
+
+        if (user == null || user.Status != "ACTIVE")
+        {
+            throw new ValidationException("ไม่พบบัญชีผู้ใช้งานที่ตรงกับข้อมูลดังกล่าว หรือบัญชีถูกระงับการใช้งาน");
+        }
+
+        // หาอีเมลที่จะใช้ส่ง
+        string? targetEmail = null;
+        if (user.Employee?.Contact != null)
+        {
+            if (!string.IsNullOrWhiteSpace(user.Employee.Contact.PersonalEmail) && user.Employee.Contact.PersonalEmail.ToLower() == input)
+            {
+                targetEmail = user.Employee.Contact.PersonalEmail;
+            }
+            else if (!string.IsNullOrWhiteSpace(user.Employee.Contact.OrganizationEmail) && user.Employee.Contact.OrganizationEmail.ToLower() == input)
+            {
+                targetEmail = user.Employee.Contact.OrganizationEmail;
+            }
+            else
+            {
+                targetEmail = !string.IsNullOrWhiteSpace(user.Employee.Contact.PersonalEmail)
+                    ? user.Employee.Contact.PersonalEmail
+                    : user.Employee.Contact.OrganizationEmail;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(targetEmail))
+        {
+            throw new ValidationException("บัญชีผู้ใช้นี้ยังไม่ได้ระบุอีเมลในระบบ โปรดติดต่อฝ่ายทรัพยากรบุคคล (HR)");
+        }
+
+        // ยกเลิก token เดิมที่ยังไม่หมดอายุของ user คนนี้
+        var activeTokens = await _dbContext.PasswordResetTokens
+            .Where(t => t.UserAccountId == user.Id && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync(cancellationToken);
+        foreach (var oldToken in activeTokens)
+        {
+            oldToken.IsUsed = true;
+        }
+
+        // สร้าง Token แบบสุ่มความปลอดภัยสูง (Cryptographic 32-byte hex)
+        var rawToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLower();
+
+        var resetToken = new PasswordResetToken
+        {
+            UserAccountId = user.Id,
+            Token = rawToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            IsUsed = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        _dbContext.PasswordResetTokens.Add(resetToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // กำหนด URL รีเซ็ต
+        var frontendUrl = _configuration["Smtp:FrontendUrl"]?.TrimEnd('/') ?? "http://localhost:3000";
+        var resetUrl = $"{frontendUrl}/reset-password?token={rawToken}";
+
+        var recipientName = user.Employee?.FullName ?? user.Username;
+
+        // ส่งอีเมลไปยังปลายทาง
+        await _emailService.SendPasswordResetEmailAsync(targetEmail, recipientName, resetUrl, cancellationToken);
+
+        return true;
+    }
+
+    public async Task<ValidateResetTokenResponseDto> ValidateResetTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return new ValidateResetTokenResponseDto { IsValid = false, ErrorMessage = "ไม่พบรหัสโทเค็น" };
+        }
+
+        var resetToken = await _dbContext.PasswordResetTokens
+            .Include(t => t.UserAccount)
+                .ThenInclude(u => u.Employee)
+                    .ThenInclude(e => e.Contact)
+            .FirstOrDefaultAsync(t => t.Token == token.Trim(), cancellationToken);
+
+        if (resetToken == null)
+        {
+            return new ValidateResetTokenResponseDto { IsValid = false, ErrorMessage = "ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หรือหมดอายุแล้ว" };
+        }
+
+        if (resetToken.IsUsed)
+        {
+            return new ValidateResetTokenResponseDto { IsValid = false, ErrorMessage = "ลิงก์รีเซ็ตรหัสผ่านนี้ถูกใช้งานไปแล้ว กรุณาส่งคำขอใหม่อีกครั้ง" };
+        }
+
+        if (resetToken.ExpiresAt < DateTime.UtcNow)
+        {
+            return new ValidateResetTokenResponseDto { IsValid = false, ErrorMessage = "ลิงก์รีเซ็ตรหัสผ่านหมดอายุแล้ว (อายุการใช้งาน 15 นาที) กรุณาส่งคำขอใหม่อีกครั้ง" };
+        }
+
+        string? email = resetToken.UserAccount?.Employee?.Contact?.PersonalEmail 
+            ?? resetToken.UserAccount?.Employee?.Contact?.OrganizationEmail;
+        string? masked = null;
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var parts = email.Split('@');
+            if (parts.Length == 2 && parts[0].Length > 2)
+            {
+                masked = $"{parts[0][..2]}***@{parts[1]}";
+            }
+            else
+            {
+                masked = email;
+            }
+        }
+
+        return new ValidateResetTokenResponseDto
+        {
+            IsValid = true,
+            Username = resetToken.UserAccount?.Username,
+            MaskedEmail = masked
+        };
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            throw new ValidationException("ไม่พบรหัสโทเค็นสำหรับตั้งรหัสผ่านใหม่");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        {
+            throw new ValidationException("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+        }
+
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            throw new ValidationException("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        }
+
+        var resetToken = await _dbContext.PasswordResetTokens
+            .Include(t => t.UserAccount)
+            .FirstOrDefaultAsync(t => t.Token == request.Token.Trim(), cancellationToken);
+
+        if (resetToken == null || resetToken.IsUsed || resetToken.ExpiresAt < DateTime.UtcNow)
+        {
+            throw new ValidationException("ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หมดอายุ หรือถูกใช้งานไปแล้ว");
+        }
+
+        var user = resetToken.UserAccount;
+        if (user == null || user.Status != "ACTIVE")
+        {
+            throw new ValidationException("ไม่พบบัญชีผู้ใช้งาน หรือบัญชีถูกระงับการใช้งาน");
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        resetToken.IsUsed = true;
+
+        var auditLog = new AuditLog
+        {
+            Action = "RESET_PASSWORD",
+            EntityType = "USER_ACCOUNT",
+            EntityId = user.Id,
+            FieldName = "รีเซ็ตรหัสผ่านผ่านอีเมลสำเร็จ",
+            OldValue = null,
+            NewValue = JsonSerializer.Serialize(new { username = user.Username, resetAt = DateTime.UtcNow }),
+            UserId = user.Id,
+            IpAddress = _currentUserService.IpAddress,
+            UserAgent = _currentUserService.UserAgent,
+            CreatedAt = DateTime.UtcNow
+        };
+        _dbContext.AuditLogs.Add(auditLog);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

@@ -21,6 +21,7 @@ public interface IHrmsDbContext
     DbSet<FamilyMember> FamilyMembers { get; }
     DbSet<EmergencyContact> EmergencyContacts { get; }
     DbSet<UserAccount> UserAccounts { get; }
+    DbSet<PasswordResetToken> PasswordResetTokens { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }
     DbSet<UserRole> UserRoles { get; }

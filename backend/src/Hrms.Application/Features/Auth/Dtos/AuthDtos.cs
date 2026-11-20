@@ -61,3 +61,32 @@ public class ChangePasswordRequestDto
     public string NewPassword { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// คำขอส่งลิงก์รีเซ็ตรหัสผ่าน (Forgot Password Request)
+/// </summary>
+public class ForgotPasswordRequestDto
+{
+    public string EmailOrUsername { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// คำขอตั้งรหัสผ่านใหม่ด้วย Token (Reset Password Request)
+/// </summary>
+public class ResetPasswordRequestDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// ผลการตรวจสอบความถูกต้องของ Reset Token
+/// </summary>
+public class ValidateResetTokenResponseDto
+{
+    public bool IsValid { get; set; }
+    public string? MaskedEmail { get; set; }
+    public string? Username { get; set; }
+    public string? ErrorMessage { get; set; }
+}
