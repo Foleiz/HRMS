@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailOrUsername.trim()) {
-      const msg = 'กรุณากรอกอีเมลหรือชื่อผู้ใช้งาน';
+      const msg = 'กรุณากรอกอีเมลองค์กรของคุณ';
       setError(msg);
       toast.warning(msg);
       return;
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
 
               <h1 className="mt-5 text-2xl font-bold text-[#0F172A] tracking-tight">ส่งลิงก์สำเร็จแล้ว!</h1>
               <p className="mt-2 text-sm leading-relaxed text-[#64748B]">
-                ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว โปรดตรวจสอบที่กล่องจดหมายเข้า (Inbox) หรือโฟลเดอร์จดหมายขยะ (Junk/Spam)
+                ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลองค์กรของคุณเรียบร้อยแล้ว โปรดตรวจสอบที่กล่องจดหมายเข้า (Inbox) หรือโฟลเดอร์จดหมายขยะ (Junk/Spam)
               </p>
 
               <div className="mt-5 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-800 text-xs text-left leading-relaxed">
@@ -125,7 +125,7 @@ export default function ForgotPasswordPage() {
 
               <h1 className="mt-5 text-center text-2xl font-bold text-[#0F172A] tracking-tight">ลืมรหัสผ่าน</h1>
               <p className="mt-1.5 text-center text-sm leading-relaxed text-[#64748B]">
-                กรอกอีเมลส่วนตัว (เช่น Gmail) หรือชื่อผู้ใช้งานที่ลงทะเบียนไว้ในระบบ เพื่อรับลิงก์สำหรับตั้งรหัสผ่านใหม่
+                กรอกอีเมลองค์กรของคุณที่ลงทะเบียนไว้ในระบบ เพื่อรับลิงก์สำหรับตั้งรหัสผ่านใหม่
               </p>
 
               {error && (
@@ -138,7 +138,7 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="forgot-email">
-                    อีเมล หรือ ชื่อผู้ใช้งาน
+                    อีเมลองค์กร
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#94A3B8]">
@@ -150,7 +150,7 @@ export default function ForgotPasswordPage() {
                       autoComplete="email"
                       value={emailOrUsername}
                       onChange={(e) => setEmailOrUsername(e.target.value)}
-                      placeholder="กรอกอีเมล Gmail หรือ Username"
+                      placeholder="กรอกอีเมลองค์กร เช่น your-id@mut.ac.th"
                       className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
                       required
                     />
