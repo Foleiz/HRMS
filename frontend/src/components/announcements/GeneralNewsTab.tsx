@@ -823,14 +823,14 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
             <RefreshIndicator active={listPhase.refreshing} />
             <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
+                <tr className="bg-slate-50/80 dark:bg-slate-750/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4 w-12 text-center">ลำดับ</th>
+                  <th className="py-3 px-4">วันที่เผยแพร่</th>
                   <th className="py-3 px-4">หัวข้อประกาศ</th>
                   <th className="py-3 px-4">หมวดหมู่</th>
                   <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
                   <th className="py-3 px-4">ยอดเปิดอ่าน</th>
                   <th className="py-3 px-4">สถานะ</th>
-                  <th className="py-3 px-4">วันที่เผยแพร่</th>
                   <th className="py-3 px-4 text-center">จัดการ</th>
                 </tr>
               </thead>
@@ -839,62 +839,67 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                   <TableLoading colSpan={8} text="กำลังโหลดข้อมูลประกาศ..." />
                 ) : announcements.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-14 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-1.5">
                         <Megaphone className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
                         <span className="font-semibold text-slate-600 dark:text-slate-400">ไม่พบข้อมูลข่าวประกาศ</span>
-                        <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
+                        <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "+ สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  announcements.map((a) => {
+                  announcements.map((a, idx) => {
                     const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
                     const readPct =
                       a.totalTargetCount > 0 ? Math.round((a.readCount / a.totalTargetCount) * 100) : 0;
+                    const startDateStr = a.publishedAt || a.createdAt;
 
                     return (
-                      <tr key={a.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-750/50 transition-colors">
-                        {/* Pin Toggle */}
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            type="button"
-                            onClick={() => canEdit && handleTogglePin(a)}
-                            disabled={!canEdit}
-                            title={canEdit ? (a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด') : 'ไม่มีสิทธิ์แก้ไขประกาศ'}
-                            className={`p-1.5 rounded-lg transition-colors ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${
-                              a.isPinned
-                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 hover:bg-amber-100'
-                                : 'text-slate-300 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                            }`}
-                          >
-                            <Pin className={`w-4 h-4 ${a.isPinned ? 'fill-amber-500' : ''}`} />
-                          </button>
+                      <tr key={a.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-750/50 transition-colors">
+                        {/* Row Number */}
+                        <td className="py-3 px-4 text-center font-mono text-slate-400">
+                          {(page - 1) * pageSize + idx + 1}
                         </td>
 
-                        {/* Title */}
-                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 max-w-xs">
+                        {/* Published Date */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-750 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                              {formatDate(startDateStr)}
+                            </span>
+                            {a.expireAt && (
+                              <span className="text-slate-400 text-2xs">
+                                ถึง {formatDate(a.expireAt)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Title & Content Description */}
+                        <td className="py-3 px-4 max-w-xs">
                           <div className="flex items-center gap-2">
                             {a.isPinned && (
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="ปักหมุดบนสุด" />
                             )}
                             <button
                               type="button"
                               onClick={() => handleOpenReading(a)}
                               className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
-                              title="คลิกเพื่อดูตัวอย่างประกาศฉบับเต็ม"
+                              title="คลิกเพื่อดูรายละเอียดประกาศฉบับเต็ม"
                             >
                               {a.title}
                             </button>
                           </div>
-                          <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
-                            {a.content}
-                          </span>
+                          {a.content && (
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5 max-w-xs">
+                              {a.content}
+                            </span>
+                          )}
                         </td>
 
                         {/* Category */}
                         <td className="py-3 px-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
                             {cat.label}
                           </span>
                         </td>
@@ -919,36 +924,26 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
                         {/* Status */}
                         <td className="py-3 px-4">
-                          <button
-                            type="button"
-                            onClick={() => canEdit && handleTogglePublish(a)}
-                            disabled={!canEdit}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
                               a.status === 'PUBLISHED'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                                 : a.status === 'DRAFT'
-                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                 : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                             }`}
-                            title={canEdit ? 'คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง' : undefined}
                           >
-                            {a.status === 'PUBLISHED' ? (
-                              <>
-                                <Eye className="w-3 h-3" />
-                                <span>เผยแพร่แล้ว</span>
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="w-3 h-3" />
-                                <span>ฉบับร่าง</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
-
-                        {/* Published At */}
-                        <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
-                          {formatDateTime(a.publishedAt || a.createdAt)}
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                a.status === 'PUBLISHED'
+                                  ? 'bg-emerald-500'
+                                  : a.status === 'DRAFT'
+                                  ? 'bg-slate-400'
+                                  : 'bg-rose-500'
+                              }`}
+                            />
+                            <span>{a.status === 'PUBLISHED' ? 'เผยแพร่แล้ว' : a.status === 'DRAFT' ? 'ฉบับร่าง' : 'ยกเลิก'}</span>
+                          </span>
                         </td>
 
                         {/* Actions */}
