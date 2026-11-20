@@ -553,12 +553,12 @@ public class AuthService : IAuthService
 
         var auditLog = new AuditLog
         {
-            Action = "RESET_PASSWORD",
+            Action = "UPDATE",
             EntityType = "USER_ACCOUNT",
             EntityId = user.Id,
             FieldName = "รีเซ็ตรหัสผ่านผ่านอีเมลสำเร็จ",
             OldValue = null,
-            NewValue = JsonSerializer.Serialize(new { username = user.Username, resetAt = DateTime.UtcNow }),
+            NewValue = JsonSerializer.Serialize(new { username = user.Username, eventType = "RESET_PASSWORD", resetAt = DateTime.UtcNow }),
             UserId = user.Id,
             IpAddress = _currentUserService.IpAddress,
             UserAgent = _currentUserService.UserAgent,
