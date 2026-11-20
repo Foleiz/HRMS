@@ -3883,29 +3883,29 @@ export default function PayrollPage() {
           {
             num: 1,
             subTab: 'HR',
-            title: 'ฝ่ายบุคคลกำลังตรวจสอบ',
-            sub: 'คำนวณเงินเดือน (HR)',
+            title: 'คำนวณ',
+            sub: 'ฝ่ายบุคคล (HR)',
             canAccess: Boolean(canAccessHrView || isAdmin),
           },
           {
             num: 2,
             subTab: 'FINANCE',
-            title: 'ฝ่ายการเงินกำลังตรวจสอบ',
+            title: 'ตรวจสอบ',
             sub: 'ฝ่ายการเงิน',
             canAccess: Boolean(canAccessFinanceView || isAdmin),
           },
           {
             num: 3,
             subTab: 'APPROVER',
-            title: 'ผู้อนุมัติกำลังตรวจสอบ',
-            sub: 'พิจารณาอนุมัติรอบ',
+            title: 'อนุมัติ',
+            sub: 'ผู้บริหาร (CEO)',
             canAccess: Boolean(canAccessApproverView || isAdmin),
           },
           {
             num: 4,
             subTab: 'BANK',
-            title: 'ได้รับการอนุมัติแล้ว',
-            sub: 'ชำระเงิน / โอนเงินธนาคาร',
+            title: 'ชำระเงิน',
+            sub: 'โอนเงินธนาคาร',
             canAccess: Boolean(canAccessBankView || isAdmin),
           },
         ];
@@ -4045,7 +4045,7 @@ export default function PayrollPage() {
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600 whitespace-nowrap shrink-0">
                       {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
                       {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
-                      {processSubTab === 'APPROVER' && 'ผู้อนุมัติ (Approver)'}
+                      {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
                       {processSubTab === 'BANK' && 'โอนเงินธนาคาร (Bank Transfer)'}
                     </span>
                   )}
