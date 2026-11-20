@@ -255,7 +255,7 @@ export default function ForgotPasswordPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="กรอกรหัสผ่านใหม่"
-                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                       required
                       autoFocus
                     />
@@ -285,7 +285,7 @@ export default function ForgotPasswordPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                       required
                     />
                     <button

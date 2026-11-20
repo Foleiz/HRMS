@@ -105,6 +105,14 @@ select {
   cursor: pointer;
 }
 
+/* ซ่อนปุ่มเปิด/ปิดรหัสผ่านเริ่มต้นของเบราว์เซอร์ Edge/Chromium */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* =========================================================================
    Standardized Modern Select Dropdown System (ทั้งระบบ)
    ========================================================================= */
