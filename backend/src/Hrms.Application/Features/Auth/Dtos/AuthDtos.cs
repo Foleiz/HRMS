@@ -68,6 +68,7 @@ public class ChangePasswordRequestDto
 public class ForgotPasswordRequestDto
 {
     public string EmailOrUsername { get; set; } = string.Empty;
+    public string? ClientOrigin { get; set; }
 }
 
 /// <summary>

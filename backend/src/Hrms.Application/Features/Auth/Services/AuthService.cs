@@ -360,8 +360,10 @@ public class AuthService : IAuthService
         _dbContext.PasswordResetTokens.Add(resetToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // กำหนด URL รีเซ็ต
-        var frontendUrl = _configuration["Smtp:FrontendUrl"]?.TrimEnd('/') ?? "http://localhost:3000";
+        // กำหนด URL รีเซ็ต (ตรวจสอบจาก ClientOrigin ที่เรียกมา หรือ Fallback ไปที่ Configuration Smtp:FrontendUrl)
+        var frontendUrl = !string.IsNullOrWhiteSpace(request.ClientOrigin)
+            ? request.ClientOrigin.TrimEnd('/')
+            : (_configuration["Smtp:FrontendUrl"]?.TrimEnd('/') ?? "http://localhost:4001");
         var resetUrl = $"{frontendUrl}/reset-password?token={rawToken}";
 
         var recipientName = user.Employee?.FullName ?? user.Username;
