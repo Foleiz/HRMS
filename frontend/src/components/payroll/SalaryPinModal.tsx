@@ -242,9 +242,6 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                 <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
                   เปลี่ยนรหัส PIN 6 หลัก
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  ยืนยันตัวตนด้วยรหัสผ่านบัญชีผู้ใช้ปัจจุบัน
-                </p>
               </div>
 
               {errorMsg && (
