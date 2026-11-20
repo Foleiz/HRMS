@@ -238,11 +238,11 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
             /* VIEW: RESET PIN FORM                                      */
             /* ========================================================= */
             <form onSubmit={handleResetSubmit} className="space-y-4">
-              <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 truncate">
+              <div className="pb-3 border-b border-slate-100 dark:border-slate-800 text-center">
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
                   เปลี่ยนรหัส PIN 6 หลัก
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   ยืนยันตัวตนด้วยรหัสผ่านบัญชีผู้ใช้ปัจจุบัน
                 </p>
               </div>
