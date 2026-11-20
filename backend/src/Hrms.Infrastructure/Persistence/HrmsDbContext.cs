@@ -34,6 +34,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
     public DbSet<EmergencyContact> EmergencyContacts => Set<EmergencyContact>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
@@ -447,6 +448,24 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.Employee)
                 .WithOne(e => e.UserAccount)
                 .HasForeignKey<UserAccount>(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: PasswordResetToken
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.ToTable("password_reset_token", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.UserAccountId).HasColumnName("user_account_id").IsRequired();
+            entity.Property(e => e.Token).HasColumnName("token").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+            entity.Property(e => e.IsUsed).HasColumnName("is_used").IsRequired().HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+
+            entity.HasOne(e => e.UserAccount)
+                .WithMany()
+                .HasForeignKey(e => e.UserAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

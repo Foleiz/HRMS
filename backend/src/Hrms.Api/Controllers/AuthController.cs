@@ -94,4 +94,41 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(success, "เปลี่ยนรหัสผ่านสำเร็จแล้ว"));
     }
 
+    /// <summary>
+    /// ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของพนักงาน (Self-Service Forgot Password)
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request, CancellationToken cancellationToken)
+    {
+        var success = await _authService.ForgotPasswordAsync(request, cancellationToken);
+        return Ok(ApiResponse<bool>.Ok(success, "ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>
+    /// ตรวจสอบความถูกต้องและสถานะของโทเค็นรีเซ็ตรหัสผ่าน
+    /// </summary>
+    [HttpGet("validate-reset-token")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<ValidateResetTokenResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ValidateResetToken([FromQuery] string token, CancellationToken cancellationToken)
+    {
+        var result = await _authService.ValidateResetTokenAsync(token, cancellationToken);
+        return Ok(ApiResponse<ValidateResetTokenResponseDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// ตั้งรหัสผ่านใหม่ด้วยโทเค็นที่ได้รับทางอีเมล (Self-Service Reset Password)
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken cancellationToken)
+    {
+        var success = await _authService.ResetPasswordAsync(request, cancellationToken);
+        return Ok(ApiResponse<bool>.Ok(success, "ตั้งรหัสผ่านใหม่สำเร็จแล้ว สามารถเข้าสู่ระบบได้ทันที"));
+    }
 }

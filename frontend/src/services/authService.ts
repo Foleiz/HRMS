@@ -40,4 +40,39 @@ export const authService = {
     }
     return response.data.data ?? true;
   },
+
+  /**
+   * ส่งคำขอรีเซ็ตรหัสผ่านไปยังอีเมล (Self-Service Forgot Password)
+   */
+  async forgotPassword(emailOrUsername: string): Promise<boolean> {
+    const response = await apiClient.post<ApiResponse<boolean>>('/auth/forgot-password', { emailOrUsername });
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้');
+    }
+    return response.data.data ?? true;
+  },
+
+  /**
+   * ตรวจสอบความถูกต้องของ Token ก่อนแสดงฟอร์มตั้งรหัสผ่านใหม่
+   */
+  async validateResetToken(token: string): Promise<{ isValid: boolean; username?: string; maskedEmail?: string; errorMessage?: string }> {
+    const response = await apiClient.get<ApiResponse<{ isValid: boolean; username?: string; maskedEmail?: string; errorMessage?: string }>>(
+      `/auth/validate-reset-token?token=${encodeURIComponent(token)}`
+    );
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.message || 'โทเค็นไม่ถูกต้องหรือหมดอายุแล้ว');
+    }
+    return response.data.data;
+  },
+
+  /**
+   * ตั้งรหัสผ่านใหม่ด้วย Token
+   */
+  async resetPassword(payload: { token: string; newPassword: string; confirmPassword: string }): Promise<boolean> {
+    const response = await apiClient.post<ApiResponse<boolean>>('/auth/reset-password', payload);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ');
+    }
+    return response.data.data ?? true;
+  },
 };
