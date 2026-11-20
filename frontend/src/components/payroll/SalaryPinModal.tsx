@@ -268,11 +268,11 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                 </div>
               )}
 
-              <div className="space-y-3.5">
-                {/* 1. รหัสผ่านผู้ใช้ปัจจุบัน */}
+              <div className="space-y-4">
+                {/* 1. รหัสผ่านผู้ใช้งาน */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รหัสผ่านบัญชีผู้ใช้ปัจจุบัน <span className="text-rose-500">*</span>
+                    รหัสผ่านผู้ใช้งาน (Password) <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -282,25 +282,29 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                         setCurrentPassword(e.target.value);
                         setErrorMsg('');
                       }}
-                      placeholder="กรอกรหัสผ่านที่ใช้เข้าสู่ระบบ"
-                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="กรอกรหัสผ่านเข้าสู่ระบบเพื่อยืนยันตัวตน"
+                      className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-400" />
+                    <span>ยืนยันด้วยรหัสผ่านบัญชีผู้ใช้เข้าสู่ระบบของคุณ</span>
+                  </p>
                 </div>
 
                 {/* 2. รหัส PIN 6 หลักใหม่ */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รหัส PIN 6 หลักใหม่ (ตัวเลข) <span className="text-rose-500">*</span>
+                    รหัส PIN ใหม่ (6 หลัก) <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -312,24 +316,24 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                         setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 6));
                         setErrorMsg('');
                       }}
-                      placeholder="กำหนดตัวเลข 6 หลัก (0-9)"
-                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="ตัวเลข 6 หลัก (0-9)"
+                      className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 tracking-wider focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewResetPin(!showNewResetPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showNewResetPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                {/* 3. ยืนยันรหัส PIN 6 หลักใหม่อีกครั้ง */}
+                {/* 3. ยืนยันรหัส PIN ใหม่อีกครั้ง */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ยืนยันรหัส PIN 6 หลักใหม่อีกครั้ง <span className="text-rose-500">*</span>
+                    ยืนยันรหัส PIN ใหม่อีกครั้ง <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -341,14 +345,14 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                         setConfirmResetPin(e.target.value.replace(/\D/g, '').slice(0, 6));
                         setErrorMsg('');
                       }}
-                      placeholder="กรอกตัวเลข 6 หลักเดิมอีกครั้ง"
-                      className="w-full h-10 px-3.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-xs sm:text-sm tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="กรอกตัวเลข 6 หลักอีกครั้ง"
+                      className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 tracking-wider focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmResetPin(!showConfirmResetPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     >
                       {showConfirmResetPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
