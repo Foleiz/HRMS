@@ -662,6 +662,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
         prev.map((a) => (a.id === act.id ? { ...a, isPinned: newPin } : a))
       );
       showToast(newPin ? 'ปักหมุดกิจกรรมขึ้นบนสุดแล้ว' : 'ยกเลิกการปักหมุดแล้ว');
+      fetchActivities();
       onRefreshNewsFeed?.();
     } catch (err: any) {
       showToast(err?.message || 'ไม่สามารถเปลี่ยนสถานะการปักหมุดได้');
@@ -999,9 +1000,9 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
               <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 dark:bg-slate-750/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-4 w-12 text-center">ลำดับ</th>
-                    <th className="py-3 px-4">วันที่จัดกิจกรรม</th>
+                    <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
                     <th className="py-3 px-4">ชื่อกิจกรรม</th>
+                    <th className="py-3 px-4">วันที่จัดกิจกรรม</th>
                     <th className="py-3 px-4">เวลาจัดกิจกรรม</th>
                     <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
                     <th className="py-3 px-4">สถานะ</th>
@@ -1026,7 +1027,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    pagedActivities.map((act, idx) => {
+                    pagedActivities.map((act) => {
                       const { timeRange, description } = parseActivityMeta(act.content);
                       const statusInfo = getActivityStatusInfo(act);
                       const startDateStr = act.publishedAt || act.createdAt;
@@ -1037,9 +1038,43 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                           key={act.id}
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-750/50 transition-colors"
                         >
-                          {/* Row Number */}
-                          <td className="py-3 px-4 text-center font-mono text-slate-400">
-                            {(page - 1) * pageSize + idx + 1}
+                          {/* Pin Toggle */}
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => canEdit && handleTogglePin(act)}
+                              disabled={!canEdit}
+                              title={canEdit ? (act.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด') : 'ไม่มีสิทธิ์แก้ไขประกาศ'}
+                              className={`p-1.5 rounded-lg transition-colors ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${
+                                act.isPinned
+                                  ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 hover:bg-amber-100'
+                                  : 'text-slate-300 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              <Pin className={`w-4 h-4 ${act.isPinned ? 'fill-amber-500' : ''}`} />
+                            </button>
+                          </td>
+
+                          {/* Title & Description */}
+                          <td className="py-3 px-4 max-w-xs">
+                            <div className="flex items-center gap-2">
+                              {act.isPinned && (
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="ปักหมุดบนสุด" />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setReadingActivity(act)}
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
+                                title="คลิกเพื่อดูรายละเอียดกิจกรรม"
+                              >
+                                {act.title}
+                              </button>
+                            </div>
+                            {description && (
+                              <span className="text-[11px] text-slate-400 block truncate mt-0.5 max-w-xs">
+                                {description}
+                              </span>
+                            )}
                           </td>
 
                           {/* Activity Date */}
@@ -1059,28 +1094,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                                 </span>
                               )}
                             </div>
-                          </td>
-
-                          {/* Title & Description */}
-                          <td className="py-3 px-4 max-w-xs">
-                            <div className="flex items-center gap-2">
-                              {act.isPinned && (
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => setReadingActivity(act)}
-                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
-                                title="คลิกเพื่อดูรายละเอียดกิจกรรม"
-                              >
-                                {act.title}
-                              </button>
-                            </div>
-                            {description && (
-                              <span className="text-[11px] text-slate-400 block truncate mt-0.5 max-w-xs">
-                                {description}
-                              </span>
-                            )}
                           </td>
 
                           {/* Activity Time */}

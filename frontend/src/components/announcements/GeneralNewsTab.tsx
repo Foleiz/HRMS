@@ -866,9 +866,9 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
             <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 dark:bg-slate-750/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-12 text-center">ลำดับ</th>
-                  <th className="py-3 px-4">วันที่เผยแพร่</th>
+                  <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
                   <th className="py-3 px-4">หัวข้อประกาศ</th>
+                  <th className="py-3 px-4">วันที่เผยแพร่</th>
                   <th className="py-3 px-4">หมวดหมู่</th>
                   <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
                   <th className="py-3 px-4">ยอดเปิดอ่าน</th>
@@ -890,7 +890,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  announcements.map((a, idx) => {
+                  announcements.map((a) => {
                     const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
                     const readPct =
                       a.totalTargetCount > 0 ? Math.round((a.readCount / a.totalTargetCount) * 100) : 0;
@@ -898,23 +898,21 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
                     return (
                       <tr key={a.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-750/50 transition-colors">
-                        {/* Row Number */}
-                        <td className="py-3 px-4 text-center font-mono text-slate-400">
-                          {(page - 1) * pageSize + idx + 1}
-                        </td>
-
-                        {/* Published Date */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-750 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                              {formatDate(startDateStr)}
-                            </span>
-                            {a.expireAt && (
-                              <span className="text-slate-400 text-2xs">
-                                ถึง {formatDate(a.expireAt)}
-                              </span>
-                            )}
-                          </div>
+                        {/* Pin Toggle */}
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            type="button"
+                            onClick={() => canEdit && handleTogglePin(a)}
+                            disabled={!canEdit}
+                            title={canEdit ? (a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด') : 'ไม่มีสิทธิ์แก้ไขประกาศ'}
+                            className={`p-1.5 rounded-lg transition-colors ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${
+                              a.isPinned
+                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 hover:bg-amber-100'
+                                : 'text-slate-300 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            <Pin className={`w-4 h-4 ${a.isPinned ? 'fill-amber-500' : ''}`} />
+                          </button>
                         </td>
 
                         {/* Title & Content Description */}
@@ -937,6 +935,20 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                               {a.content}
                             </span>
                           )}
+                        </td>
+
+                        {/* Published Date */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-750 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                              {formatDate(startDateStr)}
+                            </span>
+                            {a.expireAt && (
+                              <span className="text-slate-400 text-2xs">
+                                ถึง {formatDate(a.expireAt)}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Category */}
