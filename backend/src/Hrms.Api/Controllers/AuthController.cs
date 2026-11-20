@@ -114,6 +114,23 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// ตรวจสอบความถูกต้องของรหัส OTP 6 หลัก
+    /// </summary>
+    [HttpPost("validate-otp")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<ValidateOtpResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ValidateOtp([FromBody] ValidateOtpRequestDto request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.ValidateOtpAsync(request, cancellationToken);
+        if (!result.IsValid)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorMessage ?? "รหัส OTP ไม่ถูกต้อง"));
+        }
+        return Ok(ApiResponse<ValidateOtpResponseDto>.Ok(result, "รหัส OTP ถูกต้อง"));
+    }
+
+    /// <summary>
     /// ตรวจสอบความถูกต้องและสถานะของโทเค็นรีเซ็ตรหัสผ่าน
     /// </summary>
     [HttpGet("validate-reset-token")]

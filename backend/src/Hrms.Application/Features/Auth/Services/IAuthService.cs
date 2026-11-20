@@ -11,6 +11,7 @@ public interface IAuthService
     Task<UserInfoDto> GetCurrentUserProfileAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> ChangePasswordAsync(long userId, ChangePasswordRequestDto request, CancellationToken cancellationToken = default);
     Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request, CancellationToken cancellationToken = default);
+    Task<ValidateOtpResponseDto> ValidateOtpAsync(ValidateOtpRequestDto request, CancellationToken cancellationToken = default);
     Task<ValidateResetTokenResponseDto> ValidateResetTokenAsync(string token, CancellationToken cancellationToken = default);
     Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default);
 }

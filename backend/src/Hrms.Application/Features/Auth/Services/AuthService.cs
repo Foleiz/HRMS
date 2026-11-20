@@ -442,6 +442,45 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task<ValidateOtpResponseDto> ValidateOtpAsync(ValidateOtpRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.OtpCode) || request.OtpCode.Trim().Length < 6)
+        {
+            return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "กรุณาระบุรหัส OTP 6 หลัก" };
+        }
+
+        var otpInput = request.OtpCode.Trim();
+        var emailInput = request.EmailOrUsername?.Trim().ToLower() ?? string.Empty;
+
+        var query = _dbContext.PasswordResetTokens
+            .Include(t => t.UserAccount)
+                .ThenInclude(u => u.Employee)
+                    .ThenInclude(e => e.Contact)
+            .Where(t => t.OtpCode == otpInput && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow);
+
+        if (!string.IsNullOrWhiteSpace(emailInput))
+        {
+            query = query.Where(t =>
+                t.UserAccount.Username.ToLower() == emailInput ||
+                (t.UserAccount.Employee != null && t.UserAccount.Employee.Contact != null && (
+                    (t.UserAccount.Employee.Contact.PersonalEmail != null && t.UserAccount.Employee.Contact.PersonalEmail.ToLower() == emailInput) ||
+                    (t.UserAccount.Employee.Contact.OrganizationEmail != null && t.UserAccount.Employee.Contact.OrganizationEmail.ToLower() == emailInput)
+                )));
+        }
+
+        var resetToken = await query.OrderByDescending(t => t.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        if (resetToken == null)
+        {
+            return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว (โปรดขอรหัสใหม่)" };
+        }
+
+        return new ValidateOtpResponseDto
+        {
+            IsValid = true,
+            ResetToken = resetToken.Token
+        };
+    }
+
     public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
     {
         var tokenInput = request.Token?.Trim() ?? string.Empty;

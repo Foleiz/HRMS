@@ -103,3 +103,22 @@ public class ValidateResetTokenResponseDto
     public string? Username { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
+/// <summary>
+/// คำขอตรวจสอบความถูกต้องของรหัส OTP
+/// </summary>
+public class ValidateOtpRequestDto
+{
+    public string EmailOrUsername { get; set; } = string.Empty;
+    public string OtpCode { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// ผลลัพธ์การตรวจสอบรหัส OTP
+/// </summary>
+public class ValidateOtpResponseDto
+{
+    public bool IsValid { get; set; }
+    public string? ResetToken { get; set; }
+    public string? ErrorMessage { get; set; }
+}

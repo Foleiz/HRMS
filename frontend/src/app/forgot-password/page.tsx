@@ -5,19 +5,24 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { useToast } from '@/context/ToastContext';
-import { Mail, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Users, RefreshCw, Lock, Eye, EyeOff, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Users, RefreshCw, Lock, Eye, EyeOff, ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const toast = useToast();
 
-  // ขั้นตอน: 1 = กรอกอีเมลขอ OTP, 2 = กรอก OTP + รหัสผ่านใหม่, 3 = สำเร็จ
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // ขั้นตอนของระบบ:
+  // 1 = กรอกอีเมลขอรหัส OTP
+  // 2 = กรอกรหัส OTP 6 หลักเพื่อตรวจสอบความถูกต้อง
+  // 3 = เมื่อผ่าน OTP แล้ว ให้กรอกรหัสผ่านใหม่
+  // 4 = ตั้งรหัสผ่านใหม่สำเร็จ
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // ข้อมูลฟอร์ม
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [maskedEmail, setMaskedEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [verifiedToken, setVerifiedToken] = useState(''); // Token ที่ผ่านการยืนยัน OTP แล้ว
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -41,7 +46,7 @@ export default function ForgotPasswordPage() {
     }, 1000);
   };
 
-  // ขั้นตอนที่ 1: ขอส่งรหัส OTP
+  // ขั้นตอนที่ 1: ขอรับรหัสยืนยัน OTP ทางอีเมล
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -59,7 +64,7 @@ export default function ForgotPasswordPage() {
       setMaskedEmail(res.maskedEmail || emailOrUsername.trim());
       setStep(2);
       startCooldown();
-      toast.success('ระบบได้ส่งรหัสยืนยัน OTP ไปยังอีเมลเรียบร้อยแล้ว');
+      toast.success('ระบบได้ส่งรหัสยืนยัน OTP ไปยังอีเมลองค์กรเรียบร้อยแล้ว');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ไม่สามารถส่งรหัส OTP ได้ โปรดลองอีกครั้ง';
       setError(msg);
@@ -69,8 +74,8 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  // ขั้นตอนที่ 2: ยืนยันรหัส OTP และตั้งรหัสผ่านใหม่ในแท็บเดิม
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // ขั้นตอนที่ 2: ตรวจสอบรหัส OTP 6 หลัก (ต้องผ่านก่อนถึงจะเปิดให้กรอกรหัสผ่านใหม่)
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const cleanOtp = otpCode.trim();
@@ -87,6 +92,34 @@ export default function ForgotPasswordPage() {
       toast.warning(msg);
       return;
     }
+
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await authService.validateOtp({
+        emailOrUsername: emailOrUsername.trim(),
+        otpCode: cleanOtp,
+      });
+
+      if (res.isValid && res.resetToken) {
+        setVerifiedToken(res.resetToken);
+        setStep(3); // ผ่าน OTP แล้ว -> ไปยังขั้นตอนตั้งรหัสผ่านใหม่
+        toast.success('ยืนยันรหัส OTP ถูกต้อง กรุณาตั้งรหัสผ่านใหม่');
+      } else {
+        throw new Error(res.errorMessage || 'รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ขั้นตอนที่ 3: บันทึกรหัสผ่านใหม่ (หลังจากผ่าน OTP แล้ว)
+  const handleSaveNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!newPassword.trim() || !confirmPassword.trim()) {
       const msg = 'กรุณากรอกรหัสผ่านใหม่ให้ครบทั้งสองช่อง';
@@ -113,14 +146,14 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(true);
     try {
       await authService.resetPassword({
-        token: cleanOtp,
-        otpCode: cleanOtp,
+        token: verifiedToken || otpCode.trim(),
+        otpCode: otpCode.trim(),
         emailOrUsername: emailOrUsername.trim(),
         newPassword,
         confirmPassword,
       });
 
-      setStep(3);
+      setStep(4);
       toast.success('ตั้งรหัสผ่านใหม่สำเร็จแล้ว สามารถเข้าสู่ระบบได้ทันที');
 
       // หน่วงเวลา 3 วินาทีแล้วนำทางไปหน้าเข้าสู่ระบบอัตโนมัติ
@@ -128,7 +161,7 @@ export default function ForgotPasswordPage() {
         router.push('/login');
       }, 3000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว';
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถตั้งรหัสผ่านใหม่ได้ โปรดลองอีกครั้ง';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -162,10 +195,10 @@ export default function ForgotPasswordPage() {
 
       {/* ===== การ์ดหลัก ===== */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[460px] rounded-[28px] border border-white/80 bg-gradient-to-b from-[#DCE8FA] via-[#F4F8FE] to-[#FFFFFF] shadow-[0_24px_60px_-20px_rgba(11,32,70,0.35)] px-6 sm:px-9 pt-8 pb-7">
+        <div className="w-full max-w-[450px] rounded-[28px] border border-white/80 bg-gradient-to-b from-[#DCE8FA] via-[#F4F8FE] to-[#FFFFFF] shadow-[0_24px_60px_-20px_rgba(11,32,70,0.35)] px-6 sm:px-9 pt-8 pb-7">
 
-          {/* ==================== STEP 3: สำเร็จแล้ว ==================== */}
-          {step === 3 && (
+          {/* ==================== STEP 4: สำเร็จแล้ว ==================== */}
+          {step === 4 && (
             <div className="text-center py-2 animate-fadeIn">
               <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-md flex items-center justify-center text-emerald-600">
                 <CheckCircle2 className="w-8 h-8" />
@@ -187,16 +220,16 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          {/* ==================== STEP 2: กรอก OTP + รหัสผ่านใหม่ในแท็บเดิม ==================== */}
-          {step === 2 && (
+          {/* ==================== STEP 3: กรอกรหัสผ่านใหม่ (หลังจากผ่าน OTP แล้ว) ==================== */}
+          {step === 3 && (
             <div className="animate-fadeIn">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-white shadow-[0_8px_20px_-6px_rgba(11,32,70,0.25)] flex items-center justify-center text-primary">
-                <ShieldCheck className="w-7 h-7" />
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.25)] flex items-center justify-center text-emerald-600">
+                <Lock className="w-7 h-7" />
               </div>
 
-              <h1 className="mt-4 text-center text-2xl font-bold text-[#0F172A] tracking-tight">ยืนยันรหัส OTP</h1>
+              <h1 className="mt-4 text-center text-2xl font-bold text-[#0F172A] tracking-tight">ตั้งรหัสผ่านใหม่</h1>
               <p className="mt-1 text-center text-xs sm:text-sm leading-relaxed text-[#64748B]">
-                รหัส 6 หลักถูกส่งไปยัง <strong className="text-slate-800 font-semibold">{maskedEmail}</strong>
+                ยืนยันตัวตนสำเร็จ! กรุณากำหนดรหัสผ่านใหม่สำหรับบัญชีของคุณ
               </p>
 
               {error && (
@@ -206,34 +239,7 @@ export default function ForgotPasswordPage() {
                 </div>
               )}
 
-              <form onSubmit={handleResetPassword} noValidate className="mt-5 space-y-3.5">
-                {/* ช่องกรอกรหัส OTP 6 หลัก */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-700" htmlFor="otp-input">
-                      รหัสยืนยัน OTP (6 หลักจากอีเมล)
-                    </label>
-                    <span className="text-[11px] font-medium text-amber-600">อายุรหัส 15 นาที</span>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
-                      <KeyRound className="w-4 h-4" />
-                    </div>
-                    <input
-                      id="otp-input"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="• • • • • •"
-                      className="w-full h-12 pl-10 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-center text-lg font-mono font-bold tracking-[6px] text-primary placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
+              <form onSubmit={handleSaveNewPassword} noValidate className="mt-5 space-y-3.5">
                 {/* ช่องกรอกรหัสผ่านใหม่ */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="new-password">
@@ -249,8 +255,9 @@ export default function ForgotPasswordPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="กรอกรหัสผ่านใหม่"
-                      className="w-full h-11 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
                       required
+                      autoFocus
                     />
                     <button
                       type="button"
@@ -278,7 +285,7 @@ export default function ForgotPasswordPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                      className="w-full h-11 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+                      className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
                       required
                     />
                     <button
@@ -304,7 +311,76 @@ export default function ForgotPasswordPage() {
                       กำลังบันทึกรหัสผ่านใหม่...
                     </>
                   ) : (
-                    'ยืนยันและบันทึกรหัสผ่านใหม่'
+                    'บันทึกรหัสผ่านใหม่'
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ==================== STEP 2: กรอกรหัส OTP อย่างเดียวก่อน ==================== */}
+          {step === 2 && (
+            <div className="animate-fadeIn">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-white shadow-[0_8px_20px_-6px_rgba(11,32,70,0.25)] flex items-center justify-center text-primary">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+
+              <h1 className="mt-4 text-center text-2xl font-bold text-[#0F172A] tracking-tight">ยืนยันรหัส OTP</h1>
+              <p className="mt-1 text-center text-xs sm:text-sm leading-relaxed text-[#64748B]">
+                กรุณากรอกรหัส 6 หลักที่ส่งไปยัง <strong className="text-slate-800 font-semibold">{maskedEmail}</strong>
+              </p>
+
+              {error && (
+                <div className="mt-4 p-3 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#BE123C] text-xs sm:text-sm flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleVerifyOtp} noValidate className="mt-6 space-y-4">
+                {/* ช่องกรอกรหัส OTP 6 หลัก */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700" htmlFor="otp-input">
+                      รหัสยืนยัน OTP (6 หลักจากอีเมล)
+                    </label>
+                    <span className="text-[11px] font-medium text-amber-600">อายุรหัส 15 นาที</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
+                      <KeyRound className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="otp-input"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="• • • • • •"
+                      className="w-full h-14 pl-10 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-center text-2xl font-mono font-bold tracking-[8px] text-primary placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* ปุ่มยืนยันรหัส OTP */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || otpCode.trim().length < 6}
+                  className="w-full h-12 rounded-xl bg-gradient-to-b from-primary-hover to-primary text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังตรวจสอบรหัส OTP...
+                    </>
+                  ) : (
+                    <>
+                      ยืนยันรหัส OTP
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   )}
                 </button>
 

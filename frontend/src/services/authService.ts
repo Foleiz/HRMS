@@ -53,6 +53,17 @@ export const authService = {
   },
 
   /**
+   * ตรวจสอบความถูกต้องของรหัส OTP 6 หลัก
+   */
+  async validateOtp(payload: { emailOrUsername: string; otpCode: string }): Promise<{ isValid: boolean; resetToken?: string; errorMessage?: string }> {
+    const response = await apiClient.post<ApiResponse<{ isValid: boolean; resetToken?: string; errorMessage?: string }>>('/auth/validate-otp', payload);
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.message || 'รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว');
+    }
+    return response.data.data;
+  },
+
+  /**
    * ตรวจสอบความถูกต้องของ Token ก่อนแสดงฟอร์มตั้งรหัสผ่านใหม่
    */
   async validateResetToken(token: string): Promise<{ isValid: boolean; username?: string; maskedEmail?: string; errorMessage?: string }> {
