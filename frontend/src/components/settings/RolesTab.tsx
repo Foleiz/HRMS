@@ -2250,36 +2250,34 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
 
             {/* Popover Footer Shortcuts */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSetAllScopeActions(
-                    activeMod.moduleCode,
-                    activePopover.scopeKey,
-                    true
-                  );
-                }}
-                className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-              >
-                เลือกทั้งหมด
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSetAllScopeActions(
-                    activeMod.moduleCode,
-                    activePopover.scopeKey,
-                    false
-                  );
-                }}
-                className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
-              >
-                ล้างทั้งหมด
-              </button>
-            </div>
+            {(() => {
+              const areAllScopeActionsSelected = ACTIONS_CONFIG.every((a) =>
+                Boolean(activeMod[activePopover.scopeKey]?.[a.key])
+              );
+              return (
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 dark:text-slate-500 text-2xs">การดำเนินการ</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetAllScopeActions(
+                        activeMod.moduleCode,
+                        activePopover.scopeKey,
+                        !areAllScopeActionsSelected
+                      );
+                    }}
+                    className={
+                      areAllScopeActionsSelected
+                        ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                        : 'text-blue-600 hover:text-blue-800 font-semibold cursor-pointer'
+                    }
+                  >
+                    {areAllScopeActionsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </ModalShell>
       )}

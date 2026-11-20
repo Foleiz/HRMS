@@ -324,7 +324,31 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-bold text-slate-800 dark:text-slate-100">สวัสดิการที่ได้รับ</span>
-                <span className="text-xs font-semibold text-primary dark:text-blue-300">เลือก {selectedBenefitIds.length} รายการ</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-semibold text-primary dark:text-blue-300">เลือก {selectedBenefitIds.length} รายการ</span>
+                  {availableBenefits.length > 0 && (() => {
+                    const isAllSelected = availableBenefits.every((b) => selectedBenefitIds.includes(b.id));
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isAllSelected) {
+                            setSelectedBenefitIds([]);
+                          } else {
+                            setSelectedBenefitIds(availableBenefits.map((b) => b.id));
+                          }
+                        }}
+                        className={`text-xs font-medium cursor-pointer transition-colors ${
+                          isAllSelected
+                            ? 'text-slate-400 hover:text-rose-500 hover:underline'
+                            : 'text-primary hover:underline'
+                        }`}
+                      >
+                        {isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                      </button>
+                    );
+                  })()}
+                </div>
               </div>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
