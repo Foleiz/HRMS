@@ -44,12 +44,12 @@ export const authService = {
   /**
    * ส่งคำขอรีเซ็ตรหัสผ่านไปยังอีเมล (Self-Service Forgot Password)
    */
-  async forgotPassword(emailOrUsername: string): Promise<boolean> {
-    const response = await apiClient.post<ApiResponse<boolean>>('/auth/forgot-password', { emailOrUsername });
-    if (!response.data.success) {
+  async forgotPassword(emailOrUsername: string): Promise<{ success: boolean; maskedEmail: string; emailOrUsername: string }> {
+    const response = await apiClient.post<ApiResponse<{ success: boolean; maskedEmail: string; emailOrUsername: string }>>('/auth/forgot-password', { emailOrUsername });
+    if (!response.data.success || !response.data.data) {
       throw new Error(response.data.message || 'ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้');
     }
-    return response.data.data ?? true;
+    return response.data.data;
   },
 
   /**
@@ -66,9 +66,9 @@ export const authService = {
   },
 
   /**
-   * ตั้งรหัสผ่านใหม่ด้วย Token
+   * ตั้งรหัสผ่านใหม่ด้วย Token หรือรหัส OTP
    */
-  async resetPassword(payload: { token: string; newPassword: string; confirmPassword: string }): Promise<boolean> {
+  async resetPassword(payload: { token?: string; otpCode?: string; emailOrUsername?: string; newPassword: string; confirmPassword: string }): Promise<boolean> {
     const response = await apiClient.post<ApiResponse<boolean>>('/auth/reset-password', payload);
     if (!response.data.success) {
       throw new Error(response.data.message || 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ');
