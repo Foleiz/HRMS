@@ -386,11 +386,12 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                   {mode === 'SETUP_STEP1' && 'ตั้งรหัส PIN 6 หลักใหม่'}
                   {mode === 'SETUP_STEP2' && 'ยืนยันรหัส PIN 6 หลักอีกครั้ง'}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {mode === 'VERIFY' && 'ยืนยันรหัสผ่านความปลอดภัยเพื่อเข้าถึงข้อมูลเงินเดือนของคุณ'}
-                  {mode === 'SETUP_STEP1' && 'กำหนดรหัสผ่านความปลอดภัย 6 หลักสำหรับการเข้าดูเงินเดือนในอนาคต'}
-                  {mode === 'SETUP_STEP2' && 'กรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
-                </p>
+                {mode !== 'VERIFY' && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {mode === 'SETUP_STEP1' && 'กำหนดรหัสผ่านความปลอดภัย 6 หลักสำหรับการเข้าดูเงินเดือนในอนาคต'}
+                    {mode === 'SETUP_STEP2' && 'กรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
+                  </p>
+                )}
               </div>
 
               {/* Error Message */}
