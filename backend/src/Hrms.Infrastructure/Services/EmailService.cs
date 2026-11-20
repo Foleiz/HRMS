@@ -32,7 +32,7 @@ public class EmailService : IEmailService
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(senderName, senderEmail));
         message.To.Add(new MailboxAddress(recipientName, toEmail));
-        message.Subject = $"รหัสยืนยัน OTP: {otpCode} - คำขอตั้งรหัสผ่านใหม่ (ระบบ HRMS)";
+        message.Subject = $"รหัสยืนยัน OTP: {otpCode} - สำหรับตั้งรหัสผ่านใหม่ (ระบบ HRMS)";
 
         var bodyBuilder = new BodyBuilder
         {
@@ -49,14 +49,10 @@ public class EmailService : IEmailService
     .header p {{ margin: 6px 0 0; font-size: 14px; opacity: 0.9; }}
     .content {{ padding: 32px 28px; line-height: 1.6; font-size: 15px; }}
     .greeting {{ font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 12px; }}
-    .otp-card {{ text-align: center; margin: 26px 0; padding: 22px; background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 14px; }}
-    .otp-label {{ font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }}
-    .otp-code {{ display: inline-block; font-family: 'Consolas', 'Courier New', monospace; font-size: 36px; font-weight: 800; color: #1e3a8a; letter-spacing: 8px; padding: 8px 20px; background: #ffffff; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }}
-    .otp-hint {{ font-size: 12px; color: #64748b; margin-top: 10px; }}
-    .divider {{ text-align: center; margin: 24px 0 16px; border-top: 1px solid #e2e8f0; position: relative; }}
-    .divider span {{ background: #ffffff; padding: 0 12px; color: #94a3b8; font-size: 13px; position: relative; top: -10px; }}
-    .btn-wrapper {{ text-align: center; margin: 16px 0 24px; }}
-    .btn {{ display: inline-block; background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(37,99,235,0.25); }}
+    .otp-card {{ text-align: center; margin: 26px 0; padding: 24px; background: #f8fafc; border: 2px dashed #93c5fd; border-radius: 14px; }}
+    .otp-label {{ font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }}
+    .otp-code {{ display: inline-block; font-family: 'Consolas', 'Courier New', monospace; font-size: 38px; font-weight: 800; color: #1e3a8a; letter-spacing: 10px; padding: 10px 24px; background: #ffffff; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }}
+    .otp-hint {{ font-size: 12px; color: #64748b; margin-top: 12px; }}
     .note {{ background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 6px; font-size: 13px; color: #78350f; margin-top: 24px; }}
     .footer {{ background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; }}
   </style>
@@ -65,11 +61,11 @@ public class EmailService : IEmailService
   <div class=""container"">
     <div class=""header"">
       <h1>ระบบบริหารงานบุคคล (HRMS)</h1>
-      <p>คำขอตั้งรหัสผ่านใหม่ (Self-Service Password Reset)</p>
+      <p>รหัสยืนยันความปลอดภัย (OTP Verification)</p>
     </div>
     <div class=""content"">
       <div class=""greeting"">เรียนคุณ {recipientName},</div>
-      <p>ระบบได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชีผู้ใช้งานของคุณ คุณสามารถนำรหัส <strong>OTP 6 หลัก</strong> ด้านล่างนี้ไปกรอกในหน้าเว็บเดิมเพื่อตั้งรหัสผ่านใหม่ได้ทันที:</p>
+      <p>ระบบได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชีผู้ใช้งานของคุณ โปรดนำรหัส <strong>OTP 6 หลัก</strong> ด้านล่างนี้ไปกรอกที่หน้าเว็บไซต์เพื่อยืนยันตัวตนและตั้งรหัสผ่านใหม่:</p>
 
       <div class=""otp-card"">
         <div class=""otp-label"">รหัสยืนยันตัวตนของคุณ (OTP)</div>
@@ -77,18 +73,10 @@ public class EmailService : IEmailService
         <div class=""otp-hint"">รหัสนี้มีอายุการใช้งาน <strong>15 นาที</strong> และใช้งานได้เพียงครั้งเดียว</div>
       </div>
 
-      <div class=""divider"">
-        <span>หรือ</span>
-      </div>
-
-      <div class=""btn-wrapper"">
-        <a href=""{resetUrl}"" class=""btn"" target=""_blank"">คลิกที่นี่เพื่อเปิดหน้าตั้งรหัสผ่านโดยตรง</a>
-      </div>
-
       <div class=""note"">
         <strong>⚠️ คำแนะนำด้านความปลอดภัย:</strong>
         <ul style=""margin: 6px 0 0; padding-left: 18px;"">
-          <li>ห้ามเปิดเผยรหัส OTP หรือลิงก์นี้แก่ผู้อื่นโดยเด็ดขาด</li>
+          <li>ห้ามเปิดเผยรหัส OTP นี้แก่ผู้อื่นโดยเด็ดขาด เจ้าหน้าที่ไม่มีนโยบายสอบถามรหัส OTP ของคุณ</li>
           <li>หากคุณไม่ได้เป็นผู้ขอตั้งรหัสผ่านใหม่ โปรดละเว้นอีเมลฉบับนี้ บัญชีของคุณจะยังคงปลอดภัย</li>
         </ul>
       </div>
@@ -99,7 +87,7 @@ public class EmailService : IEmailService
   </div>
 </body>
 </html>",
-            TextBody = $"เรียนคุณ {recipientName},\n\nระบบได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชี HRMS ของคุณ\n\nรหัส OTP สำหรับตั้งรหัสผ่านใหม่ของคุณคือ: {otpCode}\n(รหัสมีอายุการใช้งาน 15 นาที)\n\nหรือคลิกที่ลิงก์นี้เพื่อตั้งรหัสผ่านโดยตรง:\n{resetUrl}\n\nหากคุณไม่ได้เป็นผู้ส่งคำขอ โปรดละเว้นอีเมลฉบับนี้"
+            TextBody = $"เรียนคุณ {recipientName},\n\nระบบได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชี HRMS ของคุณ\n\nรหัส OTP สำหรับยืนยันตัวตนของคุณคือ: {otpCode}\n(รหัสมีอายุการใช้งาน 15 นาที สำหรับนำไปกรอกที่หน้าเว็บไซต์)\n\nหากคุณไม่ได้เป็นผู้ส่งคำขอ โปรดละเว้นอีเมลฉบับนี้"
         };
 
         message.Body = bodyBuilder.ToMessageBody();
