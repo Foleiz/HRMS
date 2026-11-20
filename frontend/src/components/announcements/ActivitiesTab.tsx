@@ -198,6 +198,8 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const [formTargetDeptIds, setFormTargetDeptIds] = useState<number[]>([]);
   const [formTargetTeamIds, setFormTargetTeamIds] = useState<number[]>([]);
   const [formTargetEmployeeIds, setFormTargetEmployeeIds] = useState<number[]>([]);
+  const [activeTargetTab, setActiveTargetTab] = useState<TargetType>('ALL');
+  const [tempTargetIds, setTempTargetIds] = useState<number[]>([]);
   const [empSearchFilter, setEmpSearchFilter] = useState('');
   const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
   const targetDropdownRef = useRef<HTMLDivElement>(null);
@@ -365,10 +367,12 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     setFormPriority('NORMAL');
     setFormStatus('PUBLISHED');
     setFormTargetType('ALL');
+    setActiveTargetTab('ALL');
     setFormTargetDivisionIds([]);
     setFormTargetDeptIds([]);
     setFormTargetTeamIds([]);
     setFormTargetEmployeeIds([]);
+    setTempTargetIds([]);
     setEmpSearchFilter('');
     setIsTargetDropdownOpen(false);
     setIsModalOpen(true);
@@ -402,13 +406,17 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     const targets = act.targets || [];
     if (targets.length === 0 || targets.some((t) => t.targetType === 'ALL')) {
       setFormTargetType('ALL');
+      setActiveTargetTab('ALL');
       setFormTargetDivisionIds([]);
       setFormTargetDeptIds([]);
       setFormTargetTeamIds([]);
       setFormTargetEmployeeIds([]);
+      setTempTargetIds([]);
     } else {
       const firstType = targets[0]?.targetType as TargetType;
       setFormTargetType(firstType);
+      setActiveTargetTab(firstType);
+      setTempTargetIds([]);
 
       if (firstType === 'DIVISION') {
         setFormTargetDivisionIds(targets.filter((t) => t.targetType === 'DIVISION' && t.targetEntityId).map((t) => Number(t.targetEntityId)));
@@ -442,15 +450,57 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const handleSelectTargetTab = (tabId: TargetType) => {
     if (tabId === 'ALL') {
       setFormTargetType('ALL');
+      setActiveTargetTab('ALL');
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+      setTempTargetIds([]);
       setIsTargetDropdownOpen(false);
       return;
     }
-    if (formTargetType === tabId) {
-      setIsTargetDropdownOpen((prev) => !prev);
-    } else {
-      setFormTargetType(tabId);
-      setIsTargetDropdownOpen(true);
+    if (isTargetDropdownOpen && activeTargetTab === tabId) {
+      setIsTargetDropdownOpen(false);
+      return;
     }
+    setActiveTargetTab(tabId);
+    if (formTargetType === tabId) {
+      if (tabId === 'DIVISION') setTempTargetIds([...formTargetDivisionIds]);
+      else if (tabId === 'DEPARTMENT') setTempTargetIds([...formTargetDeptIds]);
+      else if (tabId === 'TEAM') setTempTargetIds([...formTargetTeamIds]);
+      else if (tabId === 'EMPLOYEE') setTempTargetIds([...formTargetEmployeeIds]);
+    } else {
+      setTempTargetIds([]);
+    }
+    setEmpSearchFilter('');
+    setIsTargetDropdownOpen(true);
+  };
+
+  // Save selection from dropdown
+  const handleSaveTargetDropdown = () => {
+    setFormTargetType(activeTargetTab);
+    if (activeTargetTab === 'DIVISION') {
+      setFormTargetDivisionIds(tempTargetIds);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'DEPARTMENT') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds(tempTargetIds);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'TEAM') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds(tempTargetIds);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'EMPLOYEE') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds(tempTargetIds);
+    }
+    setIsTargetDropdownOpen(false);
   };
 
   // Target audience summary for dropdown button
@@ -1249,7 +1299,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
               <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">
                 {/* Dark Backdrop Overlay when Target Dropdown is open */}
-                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                {activeTargetTab !== 'ALL' && isTargetDropdownOpen && (
                   <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 transition-opacity animate-in fade-in duration-150 cursor-pointer"
                     onClick={(e) => {
@@ -1282,7 +1332,9 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                     { id: 'TEAM', label: 'ทีม', icon: Users },
                     { id: 'EMPLOYEE', label: 'รายบุคคล', icon: UserCheck },
                   ].map((tab) => {
-                    const isSelected = formTargetType === tab.id;
+                    const isSelected = isTargetDropdownOpen
+                      ? activeTargetTab === tab.id
+                      : formTargetType === tab.id;
                     const Icon = tab.icon;
                     let badgeCount = 0;
                     if (tab.id === 'DIVISION') badgeCount = formTargetDivisionIds.length;
@@ -1301,7 +1353,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                         }`}
                       >
-                        {badgeCount > 0 && !isSelected && (
+                        {badgeCount > 0 && !isSelected && tab.id === formTargetType && (
                           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
                         )}
                         <Icon className="w-4 h-4 mb-0.5" />
@@ -1312,274 +1364,290 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                 </div>
 
                 {/* Dropdown Popover opening upwards above the tabs */}
-                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                {activeTargetTab !== 'ALL' && isTargetDropdownOpen && (
                   <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
                     {/* DIVISION Dropdown Content */}
-                    {formTargetType === 'DIVISION' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกฝ่ายที่ต้องการให้เข้าร่วม:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'DIVISION' && (() => {
+                      const isAllDivisionsSelected = divisions.length > 0 && divisions.every((d) => tempTargetIds.includes(d.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกฝ่ายที่ต้องการให้เข้าร่วม:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetDivisionIds(divisions.map((d) => d.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllDivisionsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(divisions.map((d) => d.id));
+                                }
+                              }}
+                              className={
+                                isAllDivisionsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetDivisionIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllDivisionsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {divisions.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลฝ่ายในระบบ
-                            </p>
-                          ) : (
-                            divisions.map((div) => {
-                              const checked = formTargetDivisionIds.includes(div.id);
-                              return (
-                                <label
-                                  key={div.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetDivisionIds([...formTargetDivisionIds, div.id]);
-                                      else setFormTargetDivisionIds(formTargetDivisionIds.filter((id) => id !== div.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{div.divisionName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {divisions.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลฝ่ายในระบบ
+                              </p>
+                            ) : (
+                              divisions.map((div) => {
+                                const checked = tempTargetIds.includes(div.id);
+                                return (
+                                  <label
+                                    key={div.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, div.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== div.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{div.divisionName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* DEPARTMENT Dropdown Content */}
-                    {formTargetType === 'DEPARTMENT' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกแผนกที่ต้องการให้เข้าร่วม:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'DEPARTMENT' && (() => {
+                      const isAllDepartmentsSelected = departments.length > 0 && departments.every((d) => tempTargetIds.includes(d.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกแผนกที่ต้องการให้เข้าร่วม:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetDeptIds(departments.map((d) => d.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllDepartmentsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(departments.map((d) => d.id));
+                                }
+                              }}
+                              className={
+                                isAllDepartmentsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetDeptIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllDepartmentsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {departments.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลแผนกในระบบ
-                            </p>
-                          ) : (
-                            departments.map((dept) => {
-                              const checked = formTargetDeptIds.includes(dept.id);
-                              return (
-                                <label
-                                  key={dept.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
-                                      else setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{dept.departmentName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {departments.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลแผนกในระบบ
+                              </p>
+                            ) : (
+                              departments.map((dept) => {
+                                const checked = tempTargetIds.includes(dept.id);
+                                return (
+                                  <label
+                                    key={dept.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, dept.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== dept.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{dept.departmentName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* TEAM Dropdown Content */}
-                    {formTargetType === 'TEAM' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกทีมที่ต้องการให้เข้าร่วม:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'TEAM' && (() => {
+                      const isAllTeamsSelected = teams.length > 0 && teams.every((t) => tempTargetIds.includes(t.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกทีมที่ต้องการให้เข้าร่วม:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetTeamIds(teams.map((t) => t.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllTeamsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(teams.map((t) => t.id));
+                                }
+                              }}
+                              className={
+                                isAllTeamsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetTeamIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllTeamsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {teams.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลทีมในระบบ
-                            </p>
-                          ) : (
-                            teams.map((tm) => {
-                              const checked = formTargetTeamIds.includes(tm.id);
-                              return (
-                                <label
-                                  key={tm.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetTeamIds([...formTargetTeamIds, tm.id]);
-                                      else setFormTargetTeamIds(formTargetTeamIds.filter((id) => id !== tm.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{tm.teamName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {teams.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลทีมในระบบ
+                              </p>
+                            ) : (
+                              teams.map((tm) => {
+                                const checked = tempTargetIds.includes(tm.id);
+                                return (
+                                  <label
+                                    key={tm.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, tm.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== tm.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{tm.teamName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* EMPLOYEE Dropdown Content */}
-                    {formTargetType === 'EMPLOYEE' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            ระบุพนักงานที่ต้องการให้เข้าร่วม:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'EMPLOYEE' && (() => {
+                      const isAllEmployeesSelected = employees.length > 0 && employees.every((e) => tempTargetIds.includes(e.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              ระบุพนักงานที่ต้องการให้เข้าร่วม:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetEmployeeIds(employees.map((e) => e.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllEmployeesSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(employees.map((e) => e.id));
+                                }
+                              }}
+                              className={
+                                isAllEmployeesSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetEmployeeIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllEmployeesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
 
-                        {/* Employee Search Bar */}
-                        <div className="relative">
-                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                          <input
-                            type="text"
-                            placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
-                            value={empSearchFilter}
-                            onChange={(e) => setEmpSearchFilter(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
+                          {/* Employee Search Bar */}
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
+                              value={empSearchFilter}
+                              onChange={(e) => setEmpSearchFilter(e.target.value)}
+                              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {filteredEmployeesForSelection.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              {employees.length === 0
-                                ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
-                                : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
-                            </p>
-                          ) : (
-                            filteredEmployeesForSelection.map((emp) => {
-                              const checked = formTargetEmployeeIds.includes(emp.id);
-                              return (
-                                <label
-                                  key={emp.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetEmployeeIds([...formTargetEmployeeIds, emp.id]);
-                                      else setFormTargetEmployeeIds(formTargetEmployeeIds.filter((id) => id !== emp.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <div className="truncate text-2xs min-w-0">
-                                    <span className="font-bold">{emp.fullName}</span>
-                                    <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
-                                  </div>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {filteredEmployeesForSelection.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                {employees.length === 0
+                                  ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
+                                  : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
+                              </p>
+                            ) : (
+                              filteredEmployeesForSelection.map((emp) => {
+                                const checked = tempTargetIds.includes(emp.id);
+                                return (
+                                  <label
+                                    key={emp.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, emp.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== emp.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <div className="truncate text-2xs min-w-0">
+                                      <span className="font-bold">{emp.fullName}</span>
+                                      <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
+                                    </div>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Dropdown Footer: Selected count & Save button */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-2xs">
                       <span className="text-slate-500 dark:text-slate-400">
-                        เลือกแล้ว <strong className="text-primary font-bold">{targetSummary.count}</strong> {targetSummary.unit}
+                        เลือกแล้ว <strong className="text-primary font-bold">{tempTargetIds.length}</strong>{' '}
+                        {activeTargetTab === 'DIVISION' && 'ฝ่าย'}
+                        {activeTargetTab === 'DEPARTMENT' && 'แผนก'}
+                        {activeTargetTab === 'TEAM' && 'ทีม'}
+                        {activeTargetTab === 'EMPLOYEE' && 'ท่าน'}
                       </span>
                       <button
                         type="button"
-                        onClick={() => setIsTargetDropdownOpen(false)}
+                        onClick={handleSaveTargetDropdown}
                         className="px-4 py-1.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors cursor-pointer shadow-2xs text-xs"
                       >
                         บันทึก
