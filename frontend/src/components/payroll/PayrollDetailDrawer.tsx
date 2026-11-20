@@ -561,9 +561,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
               </div>
 
               {/* เงินเดือนสุทธิ */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center justify-between bg-white dark:bg-slate-800 shadow-2xs">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ</span>
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
+              <div className="rounded-2xl p-4 sm:px-5 sm:py-4.5 flex items-center justify-between bg-[#14203F] shadow-md">
+                <span className="text-xs sm:text-sm font-medium text-[#7EC6F3]">เงินเดือนสุทธิ</span>
+                <span className="text-base sm:text-lg font-bold text-white font-mono tabular-nums tracking-tight">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                     : '-'}
