@@ -15,6 +15,10 @@ import {
   Building2,
   Building,
   UserCheck,
+  BarChart2,
+  Edit2,
+  Trash2,
+  PinOff,
 } from 'lucide-react';
 import { CountBadge } from '@/components/ui/CountBadge';
 import { ModalHeader } from '@/components/ui/ModalHeader';
@@ -26,7 +30,7 @@ import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { RowActions, RowActionButton } from '@/components/ui/RowActions';
+import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
 import { announcementService } from '@/services/announcementService';
 import {
   Announcement,
@@ -663,6 +667,51 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
     }
   };
 
+  // Action Dropdown Items for General News Row
+  const getNewsActionItems = (a: Announcement): ActionDropdownItem[] => {
+    const items: ActionDropdownItem[] = [
+      {
+        label: 'ดูรายละเอียด',
+        icon: <Eye className="w-4 h-4" />,
+        onClick: () => handleOpenReading(a),
+      },
+      {
+        label: 'สถิติการเปิดอ่าน',
+        icon: <BarChart2 className="w-4 h-4" />,
+        onClick: () => handleOpenStats(a),
+      },
+    ];
+
+    if (canEdit) {
+      items.push({
+        label: a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด',
+        icon: a.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />,
+        onClick: () => handleTogglePin(a),
+      });
+
+      items.push({
+        label: a.status === 'PUBLISHED' ? 'เก็บเป็นฉบับร่าง' : 'เผยแพร่ประกาศ',
+        icon: a.status === 'PUBLISHED' ? <EyeOff className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />,
+        onClick: () => handleTogglePublish(a),
+      });
+
+      items.push({
+        label: 'แก้ไขประกาศ',
+        icon: <Edit2 className="w-4 h-4" />,
+        onClick: () => handleOpenEdit(a),
+      });
+
+      items.push({
+        label: 'ลบประกาศ',
+        icon: <Trash2 className="w-4 h-4" />,
+        danger: true,
+        onClick: () => handleDelete(a),
+      });
+    }
+
+    return items;
+  };
+
   // KPIs
   const publishedCount = announcements.filter((a) => a.status === 'PUBLISHED').length;
   const pinnedCount = announcements.filter((a) => a.isPinned).length;
@@ -904,22 +953,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
                         {/* Actions */}
                         <td className="py-3 px-4 text-center">
-                          {canEdit ? (
-                            <RowActions>
-                              <RowActionButton
-                                action="edit"
-                                title="แก้ไขประกาศ"
-                                onClick={() => handleOpenEdit(a)}
-                              />
-                              <RowActionButton
-                                action="delete"
-                                title="ลบ/จัดเก็บประกาศ"
-                                onClick={() => handleDelete(a)}
-                              />
-                            </RowActions>
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600">-</span>
-                          )}
+                          <ActionDropdown items={getNewsActionItems(a)} />
                         </td>
                       </tr>
                     );
