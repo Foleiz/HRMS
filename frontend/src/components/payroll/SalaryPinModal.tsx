@@ -361,7 +361,7 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>บันทึกและปลดล็อก</span>
+                      <span>บันทึก</span>
                     </>
                   )}
                 </button>
