@@ -7,7 +7,6 @@ import {
   EyeOff,
   CheckCircle2,
   AlertCircle,
-  Lock,
 } from 'lucide-react';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { ModalHeader } from '@/components/ui/ModalHeader';
@@ -151,10 +150,6 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
                   {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                <Lock className="w-3 h-3 text-slate-400" />
-                <span>ยืนยันด้วยรหัสผ่านบัญชีผู้ใช้เข้าสู่ระบบของคุณ</span>
-              </p>
             </div>
           )}
 
