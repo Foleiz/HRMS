@@ -121,6 +121,14 @@ public class AddPayrollAdjustmentRequest
     public bool NewItemIsSocialSecurity { get; set; }
 }
 
+/// <summary>แก้ไขรายการรายได้/รายหักแบบระบุเองที่ HR เพิ่มไว้</summary>
+public class UpdatePayrollAdjustmentRequest
+{
+    public decimal Amount { get; set; }
+    public string? ItemName { get; set; }
+    public string? Note { get; set; }
+}
+
 /// <summary>ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้</summary>
 public class AddBonusPayoutRequest
 {

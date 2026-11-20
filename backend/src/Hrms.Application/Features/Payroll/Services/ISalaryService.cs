@@ -51,6 +51,7 @@ public interface ISalaryService
 
     // Manual adjustments & bonus payout (รายการที่ HR เพิ่มเองรายบุคคล / โบนัสประจำปี)
     Task<List<PayrollDetailItemDto>> AddPayrollAdjustmentAsync(long payrollId, AddPayrollAdjustmentRequest request, CancellationToken cancellationToken = default);
+    Task<List<PayrollDetailItemDto>> UpdatePayrollAdjustmentAsync(long payrollId, long detailId, UpdatePayrollAdjustmentRequest request, CancellationToken cancellationToken = default);
     Task<List<PayrollDetailItemDto>> DeletePayrollAdjustmentAsync(long payrollId, long detailId, CancellationToken cancellationToken = default);
     Task<BonusPayoutResultDto> AddApprovedBonusesToPeriodAsync(long periodId, AddBonusPayoutRequest request, CancellationToken cancellationToken = default);
 

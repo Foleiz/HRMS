@@ -488,6 +488,22 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
+    /// แก้ไขรายการที่ HR เพิ่มเอง แล้วคำนวณใหม่
+    /// </summary>
+    [HttpPut("payrolls/{id:long}/adjustments/{detailId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> UpdatePayrollAdjustment(
+        long id,
+        long detailId,
+        [FromBody] UpdatePayrollAdjustmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.UpdatePayrollAdjustmentAsync(id, detailId, request, cancellationToken);
+        return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "แก้ไขรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
+    }
+
+    /// <summary>
     /// ลบรายการที่ HR เพิ่มเอง แล้วคำนวณใหม่
     /// </summary>
     [HttpDelete("payrolls/{id:long}/adjustments/{detailId:long}")]

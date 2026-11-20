@@ -211,6 +211,16 @@ export const salaryService = {
     return res.data.data;
   },
 
+  /** แก้ไขรายการที่ HR เพิ่มเอง (ระบบคำนวณใหม่ทั้งรอบ) */
+  async updatePayrollAdjustment(
+    payrollId: number,
+    detailId: number,
+    payload: { amount: number; itemName?: string; note?: string }
+  ): Promise<PayrollDetailItem[]> {
+    const res = await apiClient.put<ApiResponse<PayrollDetailItem[]>>(`/salary/payrolls/${payrollId}/adjustments/${detailId}`, payload);
+    return res.data.data;
+  },
+
   /** ลบรายการที่ HR เพิ่มเอง (ระบบคำนวณใหม่ทั้งรอบ) */
   async deletePayrollAdjustment(payrollId: number, detailId: number): Promise<PayrollDetailItem[]> {
     const res = await apiClient.delete<ApiResponse<PayrollDetailItem[]>>(`/salary/payrolls/${payrollId}/adjustments/${detailId}`);

@@ -40,8 +40,13 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const [newTaxable, setNewTaxable] = useState(true);
   const [newSso, setNewSso] = useState(false);
   const [addingSection, setAddingSection] = useState<'EARNING' | 'DEDUCTION' | null>(null);
+  const [editingItem, setEditingItem] = useState<PayrollDetailItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editNote, setEditNote] = useState('');
 
   const openAddForm = (type: 'EARNING' | 'DEDUCTION') => {
+    setEditingItem(null);
     setAddingSection(type);
     setNewType(type);
     setNewName('');
@@ -56,6 +61,52 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
     setNewName('');
     setNewAmount('');
     setNewNote('');
+  };
+
+  const openEditForm = (item: PayrollDetailItem) => {
+    setAddingSection(null);
+    setEditingItem(item);
+    setEditName(item.itemName);
+    setEditAmount(String(Math.abs(item.amount)));
+    setEditNote(item.note || '');
+    setError(null);
+  };
+
+  const closeEditForm = () => {
+    setEditingItem(null);
+    setError(null);
+    setEditName('');
+    setEditAmount('');
+    setEditNote('');
+  };
+
+  const handleUpdate = async () => {
+    if (!record || !editingItem) return;
+    const amount = Number(editAmount);
+    if (!editName.trim()) {
+      setError('กรุณาระบุชื่อหัวข้อรายการ');
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError('กรุณาระบุจำนวนเงินมากกว่า 0');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await salaryService.updatePayrollAdjustment(record.id, editingItem.id, {
+        amount,
+        itemName: editName.trim(),
+        note: editNote.trim() || undefined,
+      });
+      setDetails(updated);
+      closeEditForm();
+      onChanged?.();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'แก้ไขรายการไม่สำเร็จ');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAdd = async () => {
@@ -108,6 +159,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
   useEffect(() => {
     closeAddForm();
+    closeEditForm();
     if (isOpen && record) {
       setLoading(true);
       salaryService
@@ -172,17 +224,25 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   {earnings.length > 0 ? (
                     earnings.map((item) => (
                       <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
-                        <div className="font-medium text-slate-800 dark:text-slate-200">
-                          {item.itemName}
-                          {item.isManual && <ManualBadge source={item.source} />}
+                        <div>
+                          <div className="font-medium text-slate-800 dark:text-slate-200">
+                            {item.itemName}
+                            {item.isManual && <ManualBadge source={item.source} />}
+                          </div>
+                          {canEdit && item.isManual && (
+                            <button
+                              type="button"
+                              onClick={() => openEditForm(item)}
+                              className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline cursor-pointer flex items-center gap-1 mt-0.5"
+                            >
+                              แตะเพื่อแก้ไข
+                            </button>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
                             ฿{item.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                           </div>
-                          {canEdit && item.isManual && (
-                            <DeleteButton disabled={saving} onClick={() => handleDelete(item.id)} />
-                          )}
                         </div>
                       </div>
                     ))
@@ -193,8 +253,76 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   )}
                 </div>
 
+                {/* ฟอร์มแก้ไขรายการได้ (เมื่อกด "แตะเพื่อแก้ไข") */}
+                {canEdit && editingItem && editingItem.itemType === 'EARNING' && (
+                  <div className="mt-2.5 border border-dashed border-blue-400 dark:border-blue-600/60 rounded-xl p-4 space-y-3 bg-blue-50/20 dark:bg-blue-950/15 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1 border-b border-blue-200/50 dark:border-blue-800/50">
+                      <div className="flex items-center gap-1.5">
+                        <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400">แก้ไขรายการได้</h5>
+                        <span className="text-[11px] text-slate-500 font-normal">({editingItem.itemName})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={closeEditForm}
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                    <Input
+                      type="text"
+                      placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      disabled={saving}
+                      maxLength={100}
+                      autoFocus
+                    />
+                    <div className="grid grid-cols-[9rem_1fr] gap-2">
+                      <NumberInput value={editAmount} onChange={setEditAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
+                      <Input
+                        type="text"
+                        placeholder="หมายเหตุ (แสดงบนสลิป)"
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        disabled={saving}
+                        maxLength={200}
+                      />
+                    </div>
+                    {error && <p className="text-[11px] text-rose-600">{error}</p>}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={async () => {
+                          if (!editingItem) return;
+                          await handleDelete(editingItem.id);
+                          closeEditForm();
+                        }}
+                        className="py-2 px-3 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        ลบรายการ
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={closeEditForm}
+                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          ยกเลิก
+                        </button>
+                        <Button onClick={handleUpdate} loading={saving} disabled={!editName || !editAmount} size="sm">
+                          {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ปุ่มเพิ่มรายการได้ หรือ ฟอร์มเพิ่มรายการได้ */}
-                {canEdit && (
+                {canEdit && (!editingItem || editingItem.itemType !== 'EARNING') && (
                   addingSection === 'EARNING' ? (
                     <div className="mt-2.5 border border-dashed border-emerald-300 dark:border-emerald-700/60 rounded-xl p-4 space-y-3 bg-emerald-50/20 dark:bg-emerald-950/10 animate-in fade-in duration-150">
                       <div className="flex items-center justify-between pb-1 border-b border-emerald-200/50 dark:border-emerald-800/50">
@@ -270,17 +398,25 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       const absAmount = Math.abs(item.amount);
                       return (
                         <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {item.itemName}
-                            {item.isManual && <ManualBadge source={item.source} />}
+                          <div>
+                            <div className="font-medium text-slate-800 dark:text-slate-200">
+                              {item.itemName}
+                              {item.isManual && <ManualBadge source={item.source} />}
+                            </div>
+                            {canEdit && item.isManual && (
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(item)}
+                                className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline cursor-pointer flex items-center gap-1 mt-0.5"
+                              >
+                                แตะเพื่อแก้ไข
+                              </button>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="font-semibold text-rose-600 dark:text-rose-400 font-mono tabular-nums">
                               -฿{absAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             </div>
-                            {canEdit && item.isManual && (
-                              <DeleteButton disabled={saving} onClick={() => handleDelete(item.id)} />
-                            )}
                           </div>
                         </div>
                       );
@@ -292,8 +428,76 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   )}
                 </div>
 
+                {/* ฟอร์มแก้ไขรายการหัก (เมื่อกด "แตะเพื่อแก้ไข") */}
+                {canEdit && editingItem && editingItem.itemType === 'DEDUCTION' && (
+                  <div className="mt-2.5 border border-dashed border-blue-400 dark:border-blue-600/60 rounded-xl p-4 space-y-3 bg-blue-50/20 dark:bg-blue-950/15 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1 border-b border-blue-200/50 dark:border-blue-800/50">
+                      <div className="flex items-center gap-1.5">
+                        <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400">แก้ไขรายการหัก</h5>
+                        <span className="text-[11px] text-slate-500 font-normal">({editingItem.itemName})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={closeEditForm}
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                    <Input
+                      type="text"
+                      placeholder="ชื่อหัวข้อ เช่น ค่าปรับขาดงาน, ค่าอุปกรณ์"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      disabled={saving}
+                      maxLength={100}
+                      autoFocus
+                    />
+                    <div className="grid grid-cols-[9rem_1fr] gap-2">
+                      <NumberInput value={editAmount} onChange={setEditAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
+                      <Input
+                        type="text"
+                        placeholder="หมายเหตุ (แสดงบนสลิป)"
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        disabled={saving}
+                        maxLength={200}
+                      />
+                    </div>
+                    {error && <p className="text-[11px] text-rose-600">{error}</p>}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={async () => {
+                          if (!editingItem) return;
+                          await handleDelete(editingItem.id);
+                          closeEditForm();
+                        }}
+                        className="py-2 px-3 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        ลบรายการ
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={closeEditForm}
+                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          ยกเลิก
+                        </button>
+                        <Button onClick={handleUpdate} loading={saving} disabled={!editName || !editAmount} size="sm">
+                          {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ปุ่มเพิ่มรายการหัก หรือ ฟอร์มเพิ่มรายการหัก */}
-                {canEdit && (
+                {canEdit && (!editingItem || editingItem.itemType !== 'DEDUCTION') && (
                   addingSection === 'DEDUCTION' ? (
                     <div className="mt-2.5 border border-dashed border-rose-300 dark:border-rose-700/60 rounded-xl p-4 space-y-3 bg-rose-50/20 dark:bg-rose-950/10 animate-in fade-in duration-150">
                       <div className="flex items-center justify-between pb-1 border-b border-rose-200/50 dark:border-rose-800/50">
@@ -381,15 +585,4 @@ const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => (
   <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
     {source === 'BONUS' ? 'โบนัส' : source === 'COMMISSION' ? 'ค่าคอมฯ' : 'ระบุเอง'}
   </span>
-);
-
-const DeleteButton: React.FC<{ onClick: () => void; disabled?: boolean }> = ({ onClick, disabled }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    title="ลบรายการนี้"
-    className="w-6 h-6 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50 cursor-pointer disabled:opacity-40"
-  >
-    <Trash2 className="w-3.5 h-3.5" />
-  </button>
 );

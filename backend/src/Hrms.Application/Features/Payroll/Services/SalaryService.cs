@@ -1929,6 +1929,85 @@ public class SalaryService : ISalaryService
         return await GetPayrollDetailsAsync(payrollId, cancellationToken);
     }
 
+    public async Task<List<PayrollDetailItemDto>> UpdatePayrollAdjustmentAsync(long payrollId, long detailId, UpdatePayrollAdjustmentRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Amount <= 0)
+            throw new BusinessRuleException("จำนวนเงินต้องมากกว่า 0");
+        if (request.Amount > 10_000_000m)
+            throw new BusinessRuleException("จำนวนเงินสูงเกินกว่าที่ระบบอนุญาต กรุณาตรวจสอบอีกครั้ง");
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.Period)
+            .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลเงินเดือนพนักงาน");
+
+        EnsurePeriodEditable(payroll.Period);
+
+        var detail = await _context.PayrollDetails
+            .Include(d => d.PayrollItem)
+            .FirstOrDefaultAsync(d => d.Id == detailId && d.PayrollId == payrollId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบรายการที่ต้องการแก้ไข");
+
+        if (!IsManualDetail(detail))
+            throw new BusinessRuleException("แก้ไขได้เฉพาะรายการที่ HR เพิ่มเองเท่านั้น");
+
+        if (!string.IsNullOrWhiteSpace(request.ItemName))
+        {
+            var newName = request.ItemName.Trim();
+            if (detail.PayrollItem != null && detail.PayrollItem.CalculationType == "MANUAL" && detail.PayrollItem.ItemName != newName)
+            {
+                var existingItem = await _context.PayrollItems.FirstOrDefaultAsync(
+                    i => i.ItemName == newName && i.ItemType == detail.PayrollItem.ItemType && i.CalculationType == "MANUAL" && i.Status == "ACTIVE",
+                    cancellationToken);
+
+                if (existingItem != null)
+                {
+                    detail.PayrollItemId = existingItem.Id;
+                    detail.PayrollItem = existingItem;
+                }
+                else
+                {
+                    var countUsing = await _context.PayrollDetails.CountAsync(d => d.PayrollItemId == detail.PayrollItemId, cancellationToken);
+                    if (countUsing <= 1)
+                    {
+                        detail.PayrollItem.ItemName = newName;
+                    }
+                    else
+                    {
+                        var newItem = new PayrollItem
+                        {
+                            ItemCode = await GenerateCustomItemCodeAsync(detail.PayrollItem.ItemType, cancellationToken),
+                            ItemName = newName,
+                            ItemType = detail.PayrollItem.ItemType,
+                            CalculationType = "MANUAL",
+                            IsTaxable = detail.PayrollItem.IsTaxable,
+                            IsSocialSecurityCalculated = detail.PayrollItem.IsSocialSecurityCalculated,
+                            Status = "ACTIVE",
+                        };
+                        _context.PayrollItems.Add(newItem);
+                        await _context.SaveChangesAsync(cancellationToken);
+                        detail.PayrollItemId = newItem.Id;
+                        detail.PayrollItem = newItem;
+                    }
+                }
+            }
+        }
+
+        detail.Amount = Math.Round(request.Amount, 2, MidpointRounding.AwayFromZero);
+        detail.CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            manual = true,
+            source = "MANUAL",
+            note = request.Note?.Trim(),
+            subtext = string.IsNullOrWhiteSpace(request.Note) ? "รายการที่ HR ระบุเอง" : request.Note.Trim()
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        await CalculatePayrollForPeriodAsync(payroll.PeriodId, cancellationToken);
+        return await GetPayrollDetailsAsync(payrollId, cancellationToken);
+    }
+
     public async Task<List<PayrollDetailItemDto>> DeletePayrollAdjustmentAsync(long payrollId, long detailId, CancellationToken cancellationToken = default)
     {
         var payroll = await _context.Payrolls
