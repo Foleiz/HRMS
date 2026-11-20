@@ -90,8 +90,8 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="กรอกรหัสผ่านใหม่..."
-                className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
+                className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               />
               <button
                 type="button"
@@ -101,6 +101,14 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {newPassword.length > 0 && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
+                <ShieldCheck className={`w-3.5 h-3.5 ${newPassword.length >= 8 ? 'text-emerald-500' : 'text-amber-500'}`} />
+                <span className={newPassword.length >= 8 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-amber-600 dark:text-amber-400 font-medium'}>
+                  {newPassword.length >= 8 ? 'ความยาวผ่านเกณฑ์' : `ต้องมีอย่างน้อย 8 ตัวอักษร (ตอนนี้ ${newPassword.length})`}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">

@@ -297,7 +297,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="เช่น 123456"
+                    placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
                     className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <button

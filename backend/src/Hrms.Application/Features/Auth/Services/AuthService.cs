@@ -492,9 +492,9 @@ public class AuthService : IAuthService
             throw new ValidationException("กรุณาระบุรหัสยืนยัน OTP หรือโทเค็นสำหรับตั้งรหัสผ่านใหม่");
         }
 
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < PasswordPolicy.MinLength)
         {
-            throw new ValidationException("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+            throw new ValidationException(PasswordPolicy.TooShortMessage);
         }
 
         if (request.NewPassword != request.ConfirmPassword)

@@ -128,8 +128,8 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      const msg = 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+    if (newPassword.length < 8) {
+      const msg = 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร';
       setError(msg);
       toast.warning(msg);
       return;
@@ -243,7 +243,7 @@ export default function ForgotPasswordPage() {
                 {/* ช่องกรอกรหัสผ่านใหม่ */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor="new-password">
-                    รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)
+                    รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
@@ -254,7 +254,7 @@ export default function ForgotPasswordPage() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="กรอกรหัสผ่านใหม่"
+                      placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
                       className="w-full h-12 pl-10 pr-10 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                       required
                       autoFocus
@@ -268,6 +268,14 @@ export default function ForgotPasswordPage() {
                       {showNewPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                   </div>
+                  {newPassword.length > 0 && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
+                      <ShieldCheck className={`w-3.5 h-3.5 ${newPassword.length >= 8 ? 'text-emerald-500' : 'text-amber-500'}`} />
+                      <span className={newPassword.length >= 8 ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
+                        {newPassword.length >= 8 ? 'ความยาวผ่านเกณฑ์' : `ต้องมีอย่างน้อย 8 ตัวอักษร (ตอนนี้ ${newPassword.length})`}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* ช่องยืนยันรหัสผ่านใหม่ */}
