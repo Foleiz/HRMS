@@ -31,6 +31,7 @@ import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
+import { HoverList } from '@/components/ui/HoverList';
 import { announcementService } from '@/services/announcementService';
 import {
   Announcement,
@@ -381,34 +382,75 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
       );
     }
 
-    const firstType = targets[0]?.targetType;
-    let label = '';
-    let icon = Users;
-    let colorClass = 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-
-    if (firstType === 'DIVISION') {
-      icon = Building2;
-      colorClass = 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800';
-      label = `ฝ่าย (${targets.length})`;
-    } else if (firstType === 'DEPARTMENT') {
-      icon = Building;
-      colorClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
-      label = `แผนก (${targets.length})`;
-    } else if (firstType === 'TEAM') {
-      icon = Users;
-      colorClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800';
-      label = `ทีม (${targets.length})`;
-    } else if (firstType === 'EMPLOYEE' || (firstType as string) === 'INDIVIDUAL') {
-      icon = UserCheck;
-      colorClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800';
-      label = `รายบุคคล (${targets.length})`;
+    const tType = targets[0]?.targetType;
+    if (tType === 'DIVISION') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = (divisions || []).find((div) => div.id === t.targetEntityId);
+        return d ? d.divisionName : `ฝ่ายรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อฝ่ายที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 cursor-pointer">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>{targets.length} ฝ่ายที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
     }
 
-    const Icon = icon;
+    if (tType === 'DEPARTMENT') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = (departments || []).find((dept) => dept.id === t.targetEntityId);
+        return d ? d.departmentName : `แผนกรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อแผนกที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 cursor-pointer">
+            <Building className="w-3.5 h-3.5" />
+            <span>{targets.length} แผนกที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'TEAM') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const tm = (teams || []).find((item) => item.id === t.targetEntityId);
+        return tm ? tm.teamName : `ทีมรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อทีมที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 cursor-pointer">
+            <Users className="w-3.5 h-3.5" />
+            <span>{targets.length} ทีมที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'EMPLOYEE' || (tType as string) === 'INDIVIDUAL') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const emp = (employees || []).find((item) => item.id === t.targetEntityId);
+        return emp ? `${emp.employeeCode} - ${emp.fullName}` : `พนักงานรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อพนักงานที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{targets.length} พนักงานที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
-        <Icon className="w-3.5 h-3.5" />
-        <span>{label}</span>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+        <Globe className="w-3.5 h-3.5" />
+        <span>ทุกคนในองค์กร</span>
       </span>
     );
   };
