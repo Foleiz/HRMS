@@ -281,9 +281,10 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           latestPayrollPeriodName = latestPeriod.periodName || '';
           const st = (latestPeriod.status || '').toUpperCase();
           if (st === 'PAID' || st === 'CLOSED') latestStatusLabel = 'จ่ายแล้ว';
-          else if (st === 'APPROVED') latestStatusLabel = 'อนุมัติแล้ว';
-          else if (st === 'FINANCE_VERIFIED' || st === 'PENDING_APPROVAL') latestStatusLabel = 'รอ CEO อนุมัติ';
-          else if (st === 'DRAFT' || st === 'REVIEW') latestStatusLabel = 'รอปิดงวด';
+          else if (st === 'APPROVED' || st === 'PROCESSING' || st === 'PROCESSING_BANK') latestStatusLabel = 'ได้รับการอนุมัติแล้ว';
+          else if (st === 'FINANCE_VERIFIED' || st === 'PENDING_APPROVAL') latestStatusLabel = 'ผู้อนุมัติกำลังตรวจสอบ';
+          else if (st === 'SUBMITTED_TO_FINANCE') latestStatusLabel = 'ฝ่ายการเงินกำลังตรวจสอบ';
+          else if (st === 'DRAFT' || st === 'REVIEW') latestStatusLabel = 'ฝ่ายบุคคลกำลังตรวจสอบ';
           else latestStatusLabel = latestPeriod.statusText || latestPeriod.status;
         }
 

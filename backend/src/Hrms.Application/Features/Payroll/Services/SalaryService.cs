@@ -1196,14 +1196,14 @@ public class SalaryService : ISalaryService
 
             var statusText = p.Status switch
             {
-                "DRAFT" => "ร่าง",
-                "REVIEW" => "รอตรวจสอบ",
-                "SUBMITTED_TO_FINANCE" => "ส่งการเงินตรวจสอบ",
-                "FINANCE_VERIFIED" => "การเงินตรวจสอบแล้ว",
-                "PENDING_APPROVAL" => "รออนุมัติ",
-                "APPROVED" => "อนุมัติแล้ว",
-                "PROCESSING" => "กำลังดำเนินการจ่าย",
-                "PROCESSING_BANK" => "ส่งโอนธนาคารแล้ว",
+                "DRAFT" => "ฝ่ายบุคคลกำลังตรวจสอบ",
+                "REVIEW" => "ฝ่ายบุคคลกำลังตรวจสอบ",
+                "SUBMITTED_TO_FINANCE" => "ฝ่ายการเงินกำลังตรวจสอบ",
+                "FINANCE_VERIFIED" => "ผู้อนุมัติกำลังตรวจสอบ",
+                "PENDING_APPROVAL" => "ผู้อนุมัติกำลังตรวจสอบ",
+                "APPROVED" => "ได้รับการอนุมัติแล้ว",
+                "PROCESSING" => "ได้รับการอนุมัติแล้ว",
+                "PROCESSING_BANK" => "ได้รับการอนุมัติแล้ว",
                 "PAID" => "โอนเงินสำเร็จแล้ว",
                 "CLOSED" => "ปิดรอบแล้ว",
                 _ => p.Status
@@ -4655,14 +4655,14 @@ public class SalaryService : ISalaryService
     {
         var statusText = period.Status switch
         {
-            "DRAFT" => "ร่าง",
-            "REVIEW" => "รอฝ่ายบุคคลส่งตรวจ",
-            "SUBMITTED_TO_FINANCE" => "ส่งการเงินตรวจสอบ",
-            "FINANCE_VERIFIED" => "การเงินตรวจสอบแล้ว",
-            "PENDING_APPROVAL" => "รออนุมัติ",
-            "APPROVED" => "อนุมัติแล้ว",
-            "PROCESSING" => "กำลังดำเนินการจ่าย",
-            "PROCESSING_BANK" => "ส่งโอนธนาคารแล้ว",
+            "DRAFT" => "ฝ่ายบุคคลกำลังตรวจสอบ",
+            "REVIEW" => "ฝ่ายบุคคลกำลังตรวจสอบ",
+            "SUBMITTED_TO_FINANCE" => "ฝ่ายการเงินกำลังตรวจสอบ",
+            "FINANCE_VERIFIED" => "ผู้อนุมัติกำลังตรวจสอบ",
+            "PENDING_APPROVAL" => "ผู้อนุมัติกำลังตรวจสอบ",
+            "APPROVED" => "ได้รับการอนุมัติแล้ว",
+            "PROCESSING" => "ได้รับการอนุมัติแล้ว",
+            "PROCESSING_BANK" => "ได้รับการอนุมัติแล้ว",
             "PAID" => "โอนเงินสำเร็จแล้ว",
             "CLOSED" => "ปิดรอบแล้ว",
             _ => period.Status

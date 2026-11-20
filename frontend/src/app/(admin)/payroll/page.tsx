@@ -1075,7 +1075,7 @@ export default function PayrollPage() {
       const updated = await salaryService.submitToFinance(selectedPeriod.id);
       setSelectedPeriod(updated);
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
-      showToast('ส่งเรื่องให้ฝ่ายการเงิน/บัญชีตรวจสอบเรียบร้อยแล้ว (สถานะ: ส่งการเงินตรวจสอบ)');
+      showToast('ส่งเรื่องให้ฝ่ายการเงิน/บัญชีตรวจสอบเรียบร้อยแล้ว (สถานะ: ฝ่ายการเงินกำลังตรวจสอบ)');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการส่งให้ฝ่ายการเงิน');
     }
@@ -1964,7 +1964,7 @@ export default function PayrollPage() {
         return;
       }
       nextStatus = 'PENDING_APPROVAL';
-      actionToast = 'ส่งคำขออนุมัติรอบเงินเดือนไปยัง CEO เรียบร้อยแล้ว (สถานะ: รออนุมัติ)';
+      actionToast = 'ส่งคำขออนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: ผู้อนุมัติกำลังตรวจสอบ)';
     } else if (selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED') {
       const totalNet = selectedPeriod.totalNetSalary != null && selectedPeriod.totalNetSalary > 0
         ? `฿${Number(selectedPeriod.totalNetSalary).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -1992,7 +1992,7 @@ export default function PayrollPage() {
       if (!confirmed) return;
 
       nextStatus = 'APPROVED';
-      actionToast = 'CEO อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: อนุมัติแล้ว)';
+      actionToast = 'อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: ได้รับการอนุมัติแล้ว)';
     } else if (selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING') {
       if (selectedPeriod.paymentMethod === 'DIRECT_TRANSFER' || !selectedPeriod.paymentMethod) {
         if (canAccessBankView) {
@@ -2043,7 +2043,7 @@ export default function PayrollPage() {
     if (!selectedPeriod) return;
     try {
       const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, 'REVIEW');
-      showToast('ส่งคืนรอบเงินเดือนให้ HR แก้ไขเรียบร้อยแล้ว (สถานะ: รอตรวจสอบ)');
+      showToast('ส่งคืนรอบเงินเดือนให้ HR แก้ไขเรียบร้อยแล้ว (สถานะ: ฝ่ายบุคคลกำลังตรวจสอบ)');
       setSelectedPeriod(updated);
       setPeriods((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       setIsRejectModalOpen(false);
@@ -3883,29 +3883,29 @@ export default function PayrollPage() {
           {
             num: 1,
             subTab: 'HR',
-            title: 'คำนวณ',
-            sub: 'ฝ่ายบุคคล (HR)',
+            title: 'ฝ่ายบุคคลกำลังตรวจสอบ',
+            sub: 'คำนวณเงินเดือน (HR)',
             canAccess: Boolean(canAccessHrView || isAdmin),
           },
           {
             num: 2,
             subTab: 'FINANCE',
-            title: 'ตรวจสอบ',
+            title: 'ฝ่ายการเงินกำลังตรวจสอบ',
             sub: 'ฝ่ายการเงิน',
             canAccess: Boolean(canAccessFinanceView || isAdmin),
           },
           {
             num: 3,
             subTab: 'APPROVER',
-            title: 'อนุมัติ',
-            sub: 'ผู้บริหาร (CEO)',
+            title: 'ผู้อนุมัติกำลังตรวจสอบ',
+            sub: 'พิจารณาอนุมัติรอบ',
             canAccess: Boolean(canAccessApproverView || isAdmin),
           },
           {
             num: 4,
             subTab: 'BANK',
-            title: 'ชำระเงิน',
-            sub: 'โอนเงินธนาคาร',
+            title: 'ได้รับการอนุมัติแล้ว',
+            sub: 'ชำระเงิน / โอนเงินธนาคาร',
             canAccess: Boolean(canAccessBankView || isAdmin),
           },
         ];
@@ -4013,33 +4013,25 @@ export default function PayrollPage() {
                           ? 'bg-amber-50 text-amber-700 border border-amber-200'
                           : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
                           ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : selectedPeriod.status === 'PROCESSING_BANK'
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                          : selectedPeriod.status === 'APPROVED'
+                          : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : selectedPeriod.status === 'PAID'
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-slate-200 text-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      {selectedPeriod.status === 'PENDING_APPROVAL'
-                        ? 'รอ CEO อนุมัติ'
-                        : selectedPeriod.status === 'FINANCE_VERIFIED'
-                        ? 'การเงินตรวจแล้ว (รออนุมัติ)'
+                      {selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
+                        ? 'ผู้อนุมัติกำลังตรวจสอบ'
                         : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
-                        ? 'ส่งการเงินตรวจทานแล้ว'
-                        : selectedPeriod.status === 'PROCESSING_BANK'
-                        ? 'ส่งโอนธนาคารแล้ว (รอการเงินตรวจสลิป)'
-                        : selectedPeriod.status === 'APPROVED'
-                        ? 'CEO อนุมัติแล้ว (รอโอนเงิน)'
+                        ? 'ฝ่ายการเงินกำลังตรวจสอบ'
+                        : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
+                        ? 'ได้รับการอนุมัติแล้ว'
                         : selectedPeriod.status === 'PAID'
                         ? 'จ่ายเงินแล้ว'
                         : selectedPeriod.status === 'CLOSED'
                         ? 'ปิดรอบแล้ว'
-                        : selectedPeriod.status === 'DRAFT'
-                        ? 'ร่าง (รอคำนวณ)'
-                        : selectedPeriod.status === 'REVIEW'
-                        ? 'รอฝ่ายบุคคลส่งตรวจ'
+                        : selectedPeriod.status === 'DRAFT' || selectedPeriod.status === 'REVIEW'
+                        ? 'ฝ่ายบุคคลกำลังตรวจสอบ'
                         : selectedPeriod.statusText}
                     </span>
                   ) : (
@@ -4053,7 +4045,7 @@ export default function PayrollPage() {
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600 whitespace-nowrap shrink-0">
                       {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
                       {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
-                      {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
+                      {processSubTab === 'APPROVER' && 'ผู้อนุมัติ (Approver)'}
                       {processSubTab === 'BANK' && 'โอนเงินธนาคาร (Bank Transfer)'}
                     </span>
                   )}
@@ -4276,7 +4268,7 @@ export default function PayrollPage() {
                               <span>
                                 {selectedPeriod?.status === 'CLOSED'
                                   ? 'ปิดรอบเงินเดือนสมบูรณ์แล้ว'
-                                  : 'CEO อนุมัติรอบนี้เรียบร้อยแล้ว'}
+                                  : 'ได้รับการอนุมัติเรียบร้อยแล้ว'}
                               </span>
                             </span>
                           ) : (
@@ -5242,7 +5234,7 @@ export default function PayrollPage() {
                       {selectedPeriod?.status === 'APPROVED' && (
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5">
                           <CheckCircle className="w-3.5 h-3.5" />
-                          <span>CEO อนุมัติแล้ว</span>
+                          <span>ได้รับการอนุมัติแล้ว</span>
                         </span>
                       )}
                       {selectedPeriod && (
@@ -6391,10 +6383,14 @@ export default function PayrollPage() {
                                     : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
                                 }`}
                               >
-                                {p.status === 'REVIEW'
-                                  ? 'รอฝ่ายบุคคลส่งตรวจ'
-                                  : p.status === 'DRAFT'
-                                  ? 'ร่าง (รอคำนวณ)'
+                                {p.status === 'REVIEW' || p.status === 'DRAFT'
+                                  ? 'ฝ่ายบุคคลกำลังตรวจสอบ'
+                                  : p.status === 'SUBMITTED_TO_FINANCE'
+                                  ? 'ฝ่ายการเงินกำลังตรวจสอบ'
+                                  : p.status === 'FINANCE_VERIFIED' || p.status === 'PENDING_APPROVAL'
+                                  ? 'ผู้อนุมัติกำลังตรวจสอบ'
+                                  : p.status === 'APPROVED' || p.status === 'PROCESSING' || p.status === 'PROCESSING_BANK'
+                                  ? 'ได้รับการอนุมัติแล้ว'
                                   : (p.statusText || p.status)}
                               </span>
                             </td>
