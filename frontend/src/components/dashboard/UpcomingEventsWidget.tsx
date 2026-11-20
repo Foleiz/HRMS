@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { Calendar } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement } from '@/types/announcement';
@@ -368,14 +367,6 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* ปุ่มดูกิจกรรมทั้งหมด */}
-      <Link
-        href="/my-news"
-        className="mt-2 w-full py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-center block shrink-0"
-      >
-        ดูกิจกรรมทั้งหมด
-      </Link>
 
       {/* Modal รายละเอียดกิจกรรมแบบเต็ม */}
       <EventDetailModal

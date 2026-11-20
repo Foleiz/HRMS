@@ -74,7 +74,7 @@ export const NewsWidget: React.FC = () => {
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col justify-between flex-1 h-full min-h-0">
       {/* Header: Soft Blue */}
       <div className="bg-[#6D8EB8] text-white px-4 py-3 flex items-center justify-between shrink-0">
-        <h3 className="text-sm font-bold tracking-wide">ข่าวสารและประกาศ</h3>
+        <h3 className="text-sm font-bold tracking-wide">ประกาศข่าวสารทั่วไป</h3>
         <span className="text-[11px] font-normal text-white/90">ข้อมูลทางการ</span>
       </div>
 
