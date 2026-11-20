@@ -264,9 +264,6 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                                     </div>
                                   );
                                 })}
-                                <div className="text-[10px] text-blue-300 pt-0.5 font-medium text-center">
-                                  คลิกเพื่อแสดงกิจกรรมวันที่ {day} ด้านล่าง
-                                </div>
                               </div>
                               <div className={`w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700 ${arrowAlignClass}`} />
                             </div>
