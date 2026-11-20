@@ -489,7 +489,7 @@ public class MySalaryService : IMySalaryService
         }
         else
         {
-            throw new BusinessRuleException("กรุณากรอกรหัส PIN เดิม หรือรหัสผ่านบัญชีผู้ใช้เพื่อยืนยันตัวตน");
+            throw new BusinessRuleException("กรุณากรอกรหัสผ่านบัญชีผู้ใช้เพื่อยืนยันตัวตน");
         }
 
         var pin = request.NewPin?.Trim() ?? string.Empty;

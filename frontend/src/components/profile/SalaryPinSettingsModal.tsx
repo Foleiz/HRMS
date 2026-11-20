@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   Eye,
   EyeOff,
   CheckCircle2,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { ModalHeader } from '@/components/ui/ModalHeader';
@@ -30,17 +31,30 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
   const toast = useToast();
 
   // Fields
-  const [currentPin, setCurrentPin] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
   // Visibility toggles
-  const [showCurrentPin, setShowCurrentPin] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPin, setShowNewPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Reset states on open
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentPassword('');
+      setNewPin('');
+      setConfirmPin('');
+      setErrorMsg('');
+      setShowCurrentPassword(false);
+      setShowNewPin(false);
+      setShowConfirmPin(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,8 +70,8 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
     setErrorMsg('');
 
     // Validation
-    if (hasPin && currentPin.length !== 6) {
-      setErrorMsg('กรุณากรอกรหัส PIN เดิมให้ครบ 6 หลัก');
+    if (hasPin && !currentPassword.trim()) {
+      setErrorMsg('กรุณากรอกรหัสผ่านผู้ใช้งานเพื่อยืนยันตัวตน');
       return;
     }
     if (newPin.length !== 6) {
@@ -76,7 +90,7 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
         toast.success('ตั้งค่ารหัส PIN ดูเงินเดือนสำเร็จ');
       } else {
         await mySalaryService.resetPin({
-          currentPin,
+          currentPassword: currentPassword.trim(),
           newPin,
           confirmPin,
         });
@@ -86,8 +100,8 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      const error = err as Error;
-      const msg = error.message || 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = error?.response?.data?.message || error?.message || 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -110,32 +124,37 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Current PIN if already has PIN */}
+          {/* Current Password if already has PIN */}
           {hasPin && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                รหัส PIN เดิม (6 หลัก) <span className="text-rose-500">*</span>
+                รหัสผ่านผู้ใช้งาน (Password) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
-                  type={showCurrentPin ? 'text' : 'password'}
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={currentPin}
-                  onChange={(e) => handlePinInput(e.target.value, setCurrentPin)}
-                  placeholder="กรอกรหัส PIN เดิม 6 หลัก"
-                  className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 tracking-wider focus:outline-none focus:ring-1 focus:ring-primary"
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value);
+                    setErrorMsg('');
+                  }}
+                  placeholder="กรอกรหัสผ่านเข้าสู่ระบบเพื่อยืนยันตัวตน"
+                  className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                   autoFocus
                 />
                 <button
                   type="button"
-                  onClick={() => setShowCurrentPin(!showCurrentPin)}
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
-                  {showCurrentPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                <Lock className="w-3 h-3 text-slate-400" />
+                <span>ยืนยันด้วยรหัสผ่านบัญชีผู้ใช้เข้าสู่ระบบของคุณ</span>
+              </p>
             </div>
           )}
 
