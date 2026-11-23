@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { useToast } from '@/context/ToastContext';
-import { KeyRound, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Users, ArrowRight } from 'lucide-react';
+import { KeyRound, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Users, ArrowRight, ShieldCheck } from 'lucide-react';
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -62,8 +62,8 @@ function ResetPasswordContent() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      const msg = 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+    if (newPassword.length < 8) {
+      const msg = 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร';
       setSubmitError(msg);
       toast.warning(msg);
       return;
@@ -185,7 +185,7 @@ function ResetPasswordContent() {
       <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="reset-new-password">
-            รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)
+            รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#94A3B8]">
@@ -196,8 +196,8 @@ function ResetPasswordContent() {
               type={showPassword ? 'text' : 'password'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="กรอกรหัสผ่านใหม่"
-              className="w-full h-12 pl-11 pr-12 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
+              placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
+              className="w-full h-12 pl-11 pr-12 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               required
             />
             <button
@@ -209,6 +209,14 @@ function ResetPasswordContent() {
               {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </button>
           </div>
+          {newPassword.length > 0 && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
+              <ShieldCheck className={`w-3.5 h-3.5 ${newPassword.length >= 8 ? 'text-emerald-500' : 'text-amber-500'}`} />
+              <span className={newPassword.length >= 8 ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
+                {newPassword.length >= 8 ? 'ความยาวผ่านเกณฑ์' : `ต้องมีอย่างน้อย 8 ตัวอักษร (ตอนนี้ ${newPassword.length})`}
+              </span>
+            </div>
+          )}
         </div>
 
         <div>

@@ -287,11 +287,11 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.EmailOrUsername))
         {
-            throw new ValidationException("กรุณากรอกอีเมลหรือชื่อผู้ใช้งาน");
+            throw new ValidationException("กรุณากรอกอีเมลองค์กรหรือชื่อผู้ใช้งาน");
         }
 
         var input = request.EmailOrUsername.Trim().ToLower();
@@ -316,19 +316,19 @@ public class AuthService : IAuthService
         string? targetEmail = null;
         if (user.Employee?.Contact != null)
         {
-            if (!string.IsNullOrWhiteSpace(user.Employee.Contact.PersonalEmail) && user.Employee.Contact.PersonalEmail.ToLower() == input)
-            {
-                targetEmail = user.Employee.Contact.PersonalEmail;
-            }
-            else if (!string.IsNullOrWhiteSpace(user.Employee.Contact.OrganizationEmail) && user.Employee.Contact.OrganizationEmail.ToLower() == input)
+            if (!string.IsNullOrWhiteSpace(user.Employee.Contact.OrganizationEmail) && user.Employee.Contact.OrganizationEmail.ToLower() == input)
             {
                 targetEmail = user.Employee.Contact.OrganizationEmail;
             }
+            else if (!string.IsNullOrWhiteSpace(user.Employee.Contact.PersonalEmail) && user.Employee.Contact.PersonalEmail.ToLower() == input)
+            {
+                targetEmail = user.Employee.Contact.PersonalEmail;
+            }
             else
             {
-                targetEmail = !string.IsNullOrWhiteSpace(user.Employee.Contact.PersonalEmail)
-                    ? user.Employee.Contact.PersonalEmail
-                    : user.Employee.Contact.OrganizationEmail;
+                targetEmail = !string.IsNullOrWhiteSpace(user.Employee.Contact.OrganizationEmail)
+                    ? user.Employee.Contact.OrganizationEmail
+                    : user.Employee.Contact.PersonalEmail;
             }
         }
 
@@ -349,10 +349,14 @@ public class AuthService : IAuthService
         // สร้าง Token แบบสุ่มความปลอดภัยสูง (Cryptographic 32-byte hex)
         var rawToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLower();
 
+        // สร้างรหัสยืนยัน OTP 6 หลัก (100000 - 999999)
+        var otpCode = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
+
         var resetToken = new PasswordResetToken
         {
             UserAccountId = user.Id,
             Token = rawToken,
+            OtpCode = otpCode,
             ExpiresAt = DateTime.UtcNow.AddMinutes(15),
             IsUsed = false,
             CreatedAt = DateTime.UtcNow
@@ -368,10 +372,22 @@ public class AuthService : IAuthService
 
         var recipientName = user.Employee?.FullName ?? user.Username;
 
-        // ส่งอีเมลไปยังปลายทาง
-        await _emailService.SendPasswordResetEmailAsync(targetEmail, recipientName, resetUrl, cancellationToken);
+        // ส่งอีเมลไปยังปลายทางพร้อม OTP
+        await _emailService.SendPasswordResetEmailAsync(targetEmail, recipientName, resetUrl, otpCode, cancellationToken);
 
-        return true;
+        string maskedEmail = targetEmail;
+        var parts = targetEmail.Split('@');
+        if (parts.Length == 2 && parts[0].Length > 2)
+        {
+            maskedEmail = $"{parts[0][..2]}***@{parts[1]}";
+        }
+
+        return new ForgotPasswordResponseDto
+        {
+            Success = true,
+            MaskedEmail = maskedEmail,
+            EmailOrUsername = input
+        };
     }
 
     public async Task<ValidateResetTokenResponseDto> ValidateResetTokenAsync(string token, CancellationToken cancellationToken = default)
@@ -426,16 +442,59 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<ValidateOtpResponseDto> ValidateOtpAsync(ValidateOtpRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Token))
+        if (string.IsNullOrWhiteSpace(request.OtpCode) || request.OtpCode.Trim().Length < 6)
         {
-            throw new ValidationException("ไม่พบรหัสโทเค็นสำหรับตั้งรหัสผ่านใหม่");
+            return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "กรุณาระบุรหัส OTP 6 หลัก" };
         }
 
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+        var otpInput = request.OtpCode.Trim();
+        var emailInput = request.EmailOrUsername?.Trim().ToLower() ?? string.Empty;
+
+        var query = _dbContext.PasswordResetTokens
+            .Include(t => t.UserAccount)
+                .ThenInclude(u => u.Employee)
+                    .ThenInclude(e => e.Contact)
+            .Where(t => t.OtpCode == otpInput && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow);
+
+        if (!string.IsNullOrWhiteSpace(emailInput))
         {
-            throw new ValidationException("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+            query = query.Where(t =>
+                t.UserAccount.Username.ToLower() == emailInput ||
+                (t.UserAccount.Employee != null && t.UserAccount.Employee.Contact != null && (
+                    (t.UserAccount.Employee.Contact.PersonalEmail != null && t.UserAccount.Employee.Contact.PersonalEmail.ToLower() == emailInput) ||
+                    (t.UserAccount.Employee.Contact.OrganizationEmail != null && t.UserAccount.Employee.Contact.OrganizationEmail.ToLower() == emailInput)
+                )));
+        }
+
+        var resetToken = await query.OrderByDescending(t => t.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        if (resetToken == null)
+        {
+            return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว (โปรดขอรหัสใหม่)" };
+        }
+
+        return new ValidateOtpResponseDto
+        {
+            IsValid = true,
+            ResetToken = resetToken.Token
+        };
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var tokenInput = request.Token?.Trim() ?? string.Empty;
+        var otpInput = request.OtpCode?.Trim() ?? string.Empty;
+        var emailInput = request.EmailOrUsername?.Trim().ToLower() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(tokenInput) && string.IsNullOrWhiteSpace(otpInput))
+        {
+            throw new ValidationException("กรุณาระบุรหัสยืนยัน OTP หรือโทเค็นสำหรับตั้งรหัสผ่านใหม่");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < PasswordPolicy.MinLength)
+        {
+            throw new ValidationException(PasswordPolicy.TooShortMessage);
         }
 
         if (request.NewPassword != request.ConfirmPassword)
@@ -443,13 +502,42 @@ public class AuthService : IAuthService
             throw new ValidationException("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
         }
 
-        var resetToken = await _dbContext.PasswordResetTokens
-            .Include(t => t.UserAccount)
-            .FirstOrDefaultAsync(t => t.Token == request.Token.Trim(), cancellationToken);
+        PasswordResetToken? resetToken = null;
+
+        // 1. ตรวจสอบจาก Token (32-byte hex) หากส่งมา
+        if (!string.IsNullOrWhiteSpace(tokenInput) && tokenInput.Length > 10)
+        {
+            resetToken = await _dbContext.PasswordResetTokens
+                .Include(t => t.UserAccount)
+                .FirstOrDefaultAsync(t => t.Token == tokenInput, cancellationToken);
+        }
+
+        // 2. ตรวจสอบจาก OtpCode (หรือ Token ที่เป็นเลข 6 หลัก)
+        var codeToMatch = !string.IsNullOrWhiteSpace(otpInput) ? otpInput : (tokenInput.Length == 6 ? tokenInput : null);
+        if (resetToken == null && !string.IsNullOrWhiteSpace(codeToMatch))
+        {
+            var query = _dbContext.PasswordResetTokens
+                .Include(t => t.UserAccount)
+                    .ThenInclude(u => u.Employee)
+                        .ThenInclude(e => e.Contact)
+                .Where(t => t.OtpCode == codeToMatch && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow);
+
+            if (!string.IsNullOrWhiteSpace(emailInput))
+            {
+                query = query.Where(t => 
+                    t.UserAccount.Username.ToLower() == emailInput ||
+                    (t.UserAccount.Employee != null && t.UserAccount.Employee.Contact != null && (
+                        (t.UserAccount.Employee.Contact.PersonalEmail != null && t.UserAccount.Employee.Contact.PersonalEmail.ToLower() == emailInput) ||
+                        (t.UserAccount.Employee.Contact.OrganizationEmail != null && t.UserAccount.Employee.Contact.OrganizationEmail.ToLower() == emailInput)
+                    )));
+            }
+
+            resetToken = await query.OrderByDescending(t => t.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        }
 
         if (resetToken == null || resetToken.IsUsed || resetToken.ExpiresAt < DateTime.UtcNow)
         {
-            throw new ValidationException("ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หมดอายุ หรือถูกใช้งานไปแล้ว");
+            throw new ValidationException("รหัส OTP หรือลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หมดอายุ หรือถูกใช้งานไปแล้ว");
         }
 
         var user = resetToken.UserAccount;
@@ -465,12 +553,12 @@ public class AuthService : IAuthService
 
         var auditLog = new AuditLog
         {
-            Action = "RESET_PASSWORD",
+            Action = "UPDATE",
             EntityType = "USER_ACCOUNT",
             EntityId = user.Id,
             FieldName = "รีเซ็ตรหัสผ่านผ่านอีเมลสำเร็จ",
             OldValue = null,
-            NewValue = JsonSerializer.Serialize(new { username = user.Username, resetAt = DateTime.UtcNow }),
+            NewValue = JsonSerializer.Serialize(new { username = user.Username, eventType = "RESET_PASSWORD", resetAt = DateTime.UtcNow }),
             UserId = user.Id,
             IpAddress = _currentUserService.IpAddress,
             UserAgent = _currentUserService.UserAgent,

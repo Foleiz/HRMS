@@ -63,7 +63,7 @@ public class ChangePasswordRequestDto
 }
 
 /// <summary>
-/// คำขอส่งลิงก์รีเซ็ตรหัสผ่าน (Forgot Password Request)
+/// คำขอส่งลิงก์/รหัส OTP รีเซ็ตรหัสผ่าน (Forgot Password Request)
 /// </summary>
 public class ForgotPasswordRequestDto
 {
@@ -72,11 +72,23 @@ public class ForgotPasswordRequestDto
 }
 
 /// <summary>
-/// คำขอตั้งรหัสผ่านใหม่ด้วย Token (Reset Password Request)
+/// ผลลัพธ์การขอรีเซ็ตรหัสผ่าน
+/// </summary>
+public class ForgotPasswordResponseDto
+{
+    public bool Success { get; set; }
+    public string MaskedEmail { get; set; } = string.Empty;
+    public string EmailOrUsername { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// คำขอตั้งรหัสผ่านใหม่ด้วย Token หรือ OTP Code (Reset Password Request)
 /// </summary>
 public class ResetPasswordRequestDto
 {
     public string Token { get; set; } = string.Empty;
+    public string? EmailOrUsername { get; set; }
+    public string? OtpCode { get; set; }
     public string NewPassword { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
 }
@@ -89,5 +101,24 @@ public class ValidateResetTokenResponseDto
     public bool IsValid { get; set; }
     public string? MaskedEmail { get; set; }
     public string? Username { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// คำขอตรวจสอบความถูกต้องของรหัส OTP
+/// </summary>
+public class ValidateOtpRequestDto
+{
+    public string EmailOrUsername { get; set; } = string.Empty;
+    public string OtpCode { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// ผลลัพธ์การตรวจสอบรหัส OTP
+/// </summary>
+public class ValidateOtpResponseDto
+{
+    public bool IsValid { get; set; }
+    public string? ResetToken { get; set; }
     public string? ErrorMessage { get; set; }
 }

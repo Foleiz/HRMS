@@ -50,6 +50,11 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
   const now = new Date();
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+  // วันที่ถูกเลือกเพื่อแสดงรายการด้านล่าง
+  const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
+  // สถานะการขยายรายการกิจกรรมของแต่ละเดือน
+  const [expandedMonths, setExpandedMonths] = React.useState<Record<number, boolean>>({});
+
   // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่นำแบบร่าง / DRAFT มาแสดงบนปฏิทิน)
   const publishedActivities = React.useMemo(
     () => activities.filter((act) => act.status !== 'DRAFT'),
@@ -150,6 +155,11 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
             return startD <= monthEnd && endD >= monthStart;
           });
 
+          // ตรวจสอบว่าวันที่ที่ถูกเลือกอยู่ในเดือนนี้หรือไม่
+          const isSelectedInThisMonth = Boolean(selectedDate && selectedDate.startsWith(`${year}-${String(m + 1).padStart(2, '0')}-`));
+          const selectedDayNum = isSelectedInThisMonth && selectedDate ? Number(selectedDate.substring(8, 10)) : null;
+          const selectedDayActs = isSelectedInThisMonth && selectedDate ? (byDate.get(selectedDate) ?? []) : [];
+
           return (
             <div
               key={m}
@@ -185,7 +195,8 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                       const key = `${year}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                       const acts = byDate.get(key);
                       const isToday = key === todayKey;
-                      const baseClass = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-colors relative';
+                      const isSelected = selectedDate === key;
+                      const baseClass = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-all relative';
                       const colIndex = idx % 7;
                       const tooltipAlignClass =
                         colIndex >= 4
@@ -210,10 +221,16 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                             <button
                               type="button"
                               aria-label={acts.map((a) => a.title).join(', ')}
-                              onClick={() => onSelectActivity?.(firstAct)}
-                              className={`${baseClass} w-full font-bold ${style.cell} transition-transform duration-150 group-hover/act:scale-110 group-hover/act:shadow-md group-hover/act:ring-2 group-hover/act:ring-white dark:group-hover/act:ring-slate-900 group-hover/act:z-10 ${
-                                onSelectActivity ? 'cursor-pointer' : 'cursor-default'
-                              } ${isToday ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
+                              onClick={() => {
+                                setSelectedDate((prev) => (prev === key ? null : key));
+                              }}
+                              className={`${baseClass} w-full font-bold ${style.cell} transition-all duration-150 group-hover/act:scale-110 group-hover/act:shadow-md cursor-pointer ${
+                                isSelected
+                                  ? 'ring-2 ring-primary dark:ring-blue-400 ring-offset-2 dark:ring-offset-slate-800 z-20 scale-105 shadow-md'
+                                  : isToday
+                                  ? 'ring-2 ring-primary/80 dark:ring-blue-400/80'
+                                  : ''
+                              }`}
                             >
                               <span>{day}</span>
                               {hasMultiple && (
@@ -247,11 +264,6 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                                     </div>
                                   );
                                 })}
-                                {onSelectActivity && (
-                                  <div className="text-[10px] text-primary-light pt-0.5 font-medium text-center">
-                                    คลิกเพื่อดูรายละเอียด
-                                  </div>
-                                )}
                               </div>
                               <div className={`w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700 ${arrowAlignClass}`} />
                             </div>
@@ -263,13 +275,17 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                         <button
                           key={idx}
                           type="button"
-                          title={onSelectDate ? 'คลิกเพื่อสร้างกิจกรรมในวันนี้' : undefined}
-                          onClick={() => onSelectDate?.(key)}
-                          className={`${baseClass} text-slate-700 dark:text-slate-300 ${
-                            onSelectDate
-                              ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:text-primary'
-                              : 'cursor-default'
-                          } ${isToday ? 'ring-2 ring-primary dark:ring-blue-400 font-bold' : ''}`}
+                          title={`คลิกเพื่อดูรายการวันที่ ${day}`}
+                          onClick={() => {
+                            setSelectedDate((prev) => (prev === key ? null : key));
+                          }}
+                          className={`${baseClass} text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:text-primary ${
+                            isSelected
+                              ? 'ring-2 ring-primary dark:ring-blue-400 ring-offset-2 dark:ring-offset-slate-800 z-20 scale-105 font-bold bg-slate-100 dark:bg-slate-700 shadow-xs'
+                              : isToday
+                              ? 'ring-2 ring-primary/80 dark:ring-blue-400/80 font-bold'
+                              : ''
+                          }`}
                         >
                           {day}
                         </button>
@@ -278,40 +294,113 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                   </div>
                 </div>
 
-                {/* รายการกิจกรรมประจำเดือนย่อ */}
-                {monthActivities.length > 0 && (
-                  <ul className="border-t border-slate-100 dark:border-slate-700/60 pt-2 mt-2 space-y-1 text-[11px]">
-                    {monthActivities.slice(0, 3).map((a) => {
-                      const startD = a.publishedAt || a.createdAt;
-                      const dateNum = startD ? Number(startD.substring(8, 10)) : 1;
-                      const style = getActivityStyle(a);
+                {/* รายการกิจกรรมด้านล่างปฏิทิน */}
+                {isSelectedInThisMonth ? (
+                  <div className="border-t border-slate-100 dark:border-slate-700/60 pt-2 mt-2 space-y-1.5 text-[11px]">
+                    {/* แถบหัวข้อวันที่ที่เลือก พร้อมปุ่มคืนค่า */}
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300 px-0.5 pb-1 border-b border-slate-100 dark:border-slate-700/60">
+                      <span className="flex items-center gap-1.5 text-primary dark:text-blue-400 truncate">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        วันที่ {selectedDayNum} {monthName} ({selectedDayActs.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDate(null)}
+                        className="text-[10px] text-slate-400 hover:text-primary dark:hover:text-blue-300 underline shrink-0 cursor-pointer"
+                        title="แสดงทุกกิจกรรมในเดือน"
+                      >
+                        แสดงทั้งหมด
+                      </button>
+                    </div>
 
-                      return (
-                        <li
-                          key={a.id}
-                          onClick={() => onSelectActivity?.(a)}
-                          className={`flex items-center gap-2 min-w-0 px-1.5 py-0.5 rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60 ${
-                            onSelectActivity ? 'cursor-pointer' : ''
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
-                          <span className="font-mono text-slate-400 dark:text-slate-500 font-bold shrink-0">
-                            {dateNum}
-                          </span>
-                          <span className="truncate font-medium text-slate-700 dark:text-slate-300">
-                            {a.title}
-                          </span>
-                          {a.isPinned && <Pin className="w-2.5 h-2.5 text-amber-500 shrink-0 ml-auto" />}
-                        </li>
-                      );
-                    })}
-                    {monthActivities.length > 3 && (
-                      <li className="text-[10px] text-slate-400 text-center pt-0.5">
-                        +{monthActivities.length - 3} กิจกรรมเพิ่มเติม
-                      </li>
+                    {/* แสดงรายการทั้งหมดของวันที่เลือก */}
+                    {selectedDayActs.length > 0 ? (
+                      <ul className="space-y-1 max-h-[160px] overflow-y-auto pr-0.5">
+                        {selectedDayActs.map((a) => {
+                          const style = getActivityStyle(a);
+                          const { timeRange } = parseActivityMeta(a.content);
+                          return (
+                            <li
+                              key={a.id}
+                              onClick={() => onSelectActivity?.(a)}
+                              className={`flex items-center justify-between gap-1.5 min-w-0 px-2 py-1.5 rounded-lg transition-colors bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-750 dark:hover:bg-slate-700 ${
+                                onSelectActivity ? 'cursor-pointer' : ''
+                              }`}
+                              title="คลิกเพื่อดูรายละเอียดประกาศกิจกรรม"
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
+                                <span className="truncate font-semibold text-slate-800 dark:text-slate-200">
+                                  {a.title}
+                                </span>
+                                {timeRange && (
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-400 shrink-0 font-normal">
+                                    ({timeRange})
+                                  </span>
+                                )}
+                              </div>
+                              {a.isPinned && <Pin className="w-2.5 h-2.5 text-amber-500 shrink-0 ml-1" />}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <div className="text-center py-2 text-slate-400 text-[11px] space-y-1">
+                        <p>ไม่มีกิจกรรมในวันที่ {selectedDayNum}</p>
+                        {onSelectDate && (
+                          <button
+                            type="button"
+                            onClick={() => onSelectDate(selectedDate!)}
+                            className="text-[10px] text-primary dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+                          >
+                            + เพิ่มประกาศกิจกรรมในวันนี้
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </ul>
-                )}
+                  </div>
+                ) : monthActivities.length > 0 ? (
+                  <div className="border-t border-slate-100 dark:border-slate-700/60 pt-2 mt-2 space-y-1 text-[11px]">
+                    <ul className="space-y-1">
+                      {(expandedMonths[m] ? monthActivities : monthActivities.slice(0, 3)).map((a) => {
+                        const startD = a.publishedAt || a.createdAt;
+                        const dateNum = startD ? Number(startD.substring(8, 10)) : 1;
+                        const style = getActivityStyle(a);
+
+                        return (
+                          <li
+                            key={a.id}
+                            onClick={() => onSelectActivity?.(a)}
+                            className={`flex items-center gap-2 min-w-0 px-1.5 py-0.5 rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60 ${
+                              onSelectActivity ? 'cursor-pointer' : ''
+                            }`}
+                            title="คลิกเพื่อดูรายละเอียดประกาศกิจกรรม"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
+                            <span className="font-mono text-slate-400 dark:text-slate-500 font-bold shrink-0">
+                              {dateNum}
+                            </span>
+                            <span className="truncate font-medium text-slate-700 dark:text-slate-300">
+                              {a.title}
+                            </span>
+                            {a.isPinned && <Pin className="w-2.5 h-2.5 text-amber-500 shrink-0 ml-auto" />}
+                          </li>
+                        );
+                      })}
+                      {monthActivities.length > 3 && (
+                        <li className="text-center pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMonths((prev) => ({ ...prev, [m]: !prev[m] }))}
+                            className="text-[10px] text-primary dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+                          >
+                            {expandedMonths[m] ? 'ย่อรายการ' : `+${monthActivities.length - 3} กิจกรรมเพิ่มเติม`}
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             </div>
           );

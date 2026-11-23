@@ -1826,7 +1826,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             }`}
                           >
                             {isGuideCat
-                              ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} ไกด์เปิดใช้`
+                              ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} เปิดใช้`
                               : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
                           </span>
 
@@ -1851,9 +1851,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             {GUIDE_FLOW_CONFIGS.map((flow) => {
                               const isFlowActive = isGuideFlowActive(flow);
                               const activeStepsCount = getGuideFlowActiveStepsCount(flow);
-                              const warningCount = getGuideFlowWarningCount(flow);
                               const isFlowExpanded = expandedGuideFlows[flow.id] ?? (flow.id === 'hr-onboarding');
-                              const FlowIcon = flow.icon;
                               const cleanFlowTitle = flow.title.replace(/^ไกด์:\s*/, '');
 
                               return (
@@ -1861,63 +1859,46 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                   {/* Flow Header Row */}
                                   <div
                                     onClick={() => toggleGuideFlowExpand(flow.id)}
-                                    className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                                    className={`px-4 py-3 flex items-start justify-between gap-3 cursor-pointer select-none transition-colors ${
                                       isFlowActive
                                         ? 'bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-700/40'
                                         : 'bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/60'
                                     }`}
                                   >
-                                    {/* Left: Caret + Icon + Title + Badges + Subtitle */}
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                      {/* Chevron Expand Indicator */}
-                                      <div className="text-slate-400 dark:text-slate-500 shrink-0">
-                                        <ChevronDown
-                                          className={`w-4 h-4 transition-transform duration-200 ${
-                                            isFlowExpanded ? 'rotate-0' : '-rotate-90'
-                                          }`}
-                                        />
-                                      </div>
-
-                                      {/* Flow Icon Container */}
-                                      <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400">
-                                        <FlowIcon className="w-4.5 h-4.5" />
-                                      </div>
-
-                                      {/* Title, Badges and Subtitle */}
+                                    {/* Left: Status Dot + Title & Subtitle */}
+                                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                      <span
+                                        className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                                          isFlowActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                                        }`}
+                                      />
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
-                                            {cleanFlowTitle}
-                                          </span>
-                                          <span
-                                            className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                                              isFlowActive
-                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/50'
-                                                : activeStepsCount > 0
-                                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60'
-                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700'
-                                            }`}
-                                          >
-                                            {activeStepsCount}/{flow.steps.length} ขั้นตอน
-                                          </span>
-                                          {warningCount > 0 && (
-                                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 flex items-center gap-1">
-                                              <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                                              <span>{warningCount} ต้องแก้ไข</span>
-                                            </span>
-                                          )}
-                                        </div>
+                                        <span className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
+                                          {cleanFlowTitle}
+                                        </span>
                                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
                                           {flow.subtitle}
                                         </p>
                                       </div>
                                     </div>
 
-                                    {/* Right: Master Toggle Switch */}
+                                    {/* Right: Badges + Master Toggle Switch */}
                                     <div
-                                      className="shrink-0"
+                                      className="flex items-center gap-2.5 shrink-0"
                                       onClick={(e) => e.stopPropagation()}
                                     >
+                                      <span
+                                        className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                                          isFlowActive
+                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
+                                            : activeStepsCount > 0
+                                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40'
+                                            : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                        }`}
+                                      >
+                                        {activeStepsCount}/{flow.steps.length} ขั้นตอน
+                                      </span>
+
                                       <ToggleSwitch
                                         checked={isFlowActive}
                                         onChange={() => handleToggleGuideFlow(flow)}
@@ -1926,96 +1907,72 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     </div>
                                   </div>
 
-                                  {/* Expanded Sub-steps (Stepper Timeline View) */}
+                                  {/* Expanded Sub-steps */}
                                   {isFlowExpanded && (
-                                    <div className="pt-1 pb-4 px-4 sm:px-6 bg-slate-50/40 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/80">
-                                      <div className="relative pl-7 sm:pl-9 pr-2 py-2 space-y-4">
-                                        {flow.steps.map((step, idx) => {
-                                          const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
-                                          const isStepActive = targetMod ? isModuleActive(targetMod) : false;
-                                          const isWarning = isStepActive && checkStepWarning(step, targetMod);
-                                          const isLast = idx === flow.steps.length - 1;
+                                    <div className="border-t border-slate-100/80 dark:border-slate-700/60 divide-y divide-slate-100/70 dark:divide-slate-700/40 bg-white dark:bg-slate-800">
+                                      {flow.steps.map((step) => {
+                                        const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
+                                        const isStepActive = targetMod ? isModuleActive(targetMod) : false;
+                                        const isWarning = isStepActive && checkStepWarning(step, targetMod);
 
-                                          return (
+                                        return (
+                                          <div
+                                            key={`${flow.id}-${step.step}-${step.targetModuleCode}`}
+                                            className="px-4 py-2.5 pl-8 sm:pl-10 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors"
+                                          >
+                                            {/* Step Number Circle + Title + Route */}
                                             <div
-                                              key={`${flow.id}-${step.step}-${step.targetModuleCode}`}
-                                              className="relative flex items-center justify-between gap-3 group"
+                                              onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
+                                              className="flex items-center gap-2.5 min-w-0 cursor-pointer select-none flex-1"
                                             >
-                                              {/* Vertical Connecting Line to next step */}
-                                              {!isLast && (
-                                                <div
-                                                  className="absolute left-[11px] top-6 bottom-[-16px] w-[2px] bg-slate-200 dark:bg-slate-700"
-                                                  aria-hidden="true"
-                                                />
-                                              )}
-
-                                              {/* Step Number Circle + Title + Route */}
                                               <div
-                                                onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
-                                                className="flex items-center gap-3 min-w-0 z-10 cursor-pointer select-none flex-1"
+                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 transition-colors ${
+                                                  isWarning
+                                                    ? 'bg-amber-600'
+                                                    : isStepActive
+                                                    ? 'bg-slate-900 dark:bg-slate-700'
+                                                    : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+                                                }`}
                                               >
-                                                <div
-                                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 transition-all ${
-                                                    isWarning
-                                                      ? 'bg-[#C2410C] ring-2 ring-orange-200 dark:ring-orange-950/60'
-                                                      : isStepActive
-                                                      ? 'bg-[#0B2046] dark:bg-blue-600'
-                                                      : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                                                  }`}
-                                                  title={
-                                                    isWarning
-                                                      ? 'ขั้นตอนนี้ต้องการสิทธิ์ สร้าง/แก้ไข (Create/Edit) ในโมดูลเป้าหมายเพื่อทำรายการได้ครบถ้วน'
-                                                      : undefined
-                                                  }
-                                                >
-                                                  {step.step}
-                                                </div>
-
-                                                <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
-                                                  <span
-                                                    className={`text-xs sm:text-sm font-semibold transition-colors ${
-                                                      isStepActive
-                                                        ? 'text-slate-800 dark:text-slate-200'
-                                                        : 'text-slate-400 dark:text-slate-500'
-                                                    }`}
-                                                  >
-                                                    {step.label.replace(/^\d+\.\s*/, '')}
-                                                  </span>
-                                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">
-                                                    {step.route}
-                                                  </span>
-                                                </div>
+                                                {step.step}
                                               </div>
 
-                                              {/* Toggle Switch */}
-                                              <div
-                                                className="shrink-0 z-10"
-                                                onClick={(e) => e.stopPropagation()}
-                                              >
-                                                <ToggleSwitch
-                                                  size="sm"
-                                                  checked={isStepActive}
-                                                  onChange={() => handleToggleFlowStep(step, flow)}
-                                                  disabled={!canEditRole}
-                                                />
+                                              <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
+                                                <span
+                                                  className={`text-sm font-semibold transition-colors ${
+                                                    isStepActive
+                                                      ? 'text-slate-800 dark:text-slate-200'
+                                                      : 'text-slate-400 dark:text-slate-500'
+                                                  }`}
+                                                >
+                                                  {step.label.replace(/^\d+\.\s*/, '')}
+                                                </span>
+                                                <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                                                  {step.route}
+                                                </span>
                                               </div>
                                             </div>
-                                          );
-                                        })}
-                                      </div>
 
-                                      {/* Alert Box when there are steps needing attention */}
-                                      {warningCount > 0 && (
-                                        <div className="mt-3 ml-7 sm:ml-9 p-3 rounded-xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
-                                          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                                          <div className="space-y-0.5">
-                                            <p className="font-semibold">มี {warningCount} ขั้นตอนที่ต้องแก้ไขสิทธิ์เพิ่มเติม</p>
-                                            <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
-                                              ขั้นตอนที่มีสัญลักษณ์สีส้มต้องการสิทธิ์ สร้าง/แก้ไข (Create/Edit) หรือการเปิดสิทธิ์ในโมดูลที่เกี่ยวข้อง เพื่อให้พนักงานที่มีบทบาทนี้สามารถทำรายการตามขั้นตอนได้ครบถ้วน
-                                            </p>
+                                            {/* Right: Warning Pill (if any) + Toggle Switch */}
+                                            <div
+                                              className="flex items-center gap-2.5 shrink-0"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              {isWarning && (
+                                                <span className="text-xs font-medium px-3 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60 shrink-0">
+                                                  ต้องเปิดสิทธิ์ สร้าง/แก้ไข
+                                                </span>
+                                              )}
+
+                                              <ToggleSwitch
+                                                checked={isStepActive}
+                                                onChange={() => handleToggleFlowStep(step, flow)}
+                                                disabled={!canEditRole}
+                                              />
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -2265,36 +2222,34 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
 
             {/* Popover Footer Shortcuts */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSetAllScopeActions(
-                    activeMod.moduleCode,
-                    activePopover.scopeKey,
-                    true
-                  );
-                }}
-                className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-              >
-                เลือกทั้งหมด
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSetAllScopeActions(
-                    activeMod.moduleCode,
-                    activePopover.scopeKey,
-                    false
-                  );
-                }}
-                className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer"
-              >
-                ล้างทั้งหมด
-              </button>
-            </div>
+            {(() => {
+              const areAllScopeActionsSelected = ACTIONS_CONFIG.every((a) =>
+                Boolean(activeMod[activePopover.scopeKey]?.[a.key])
+              );
+              return (
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 dark:text-slate-500 text-2xs">การดำเนินการ</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetAllScopeActions(
+                        activeMod.moduleCode,
+                        activePopover.scopeKey,
+                        !areAllScopeActionsSelected
+                      );
+                    }}
+                    className={
+                      areAllScopeActionsSelected
+                        ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                        : 'text-blue-600 hover:text-blue-800 font-semibold cursor-pointer'
+                    }
+                  >
+                    {areAllScopeActionsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </ModalShell>
       )}

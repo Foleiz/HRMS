@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { Calendar } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement } from '@/types/announcement';
@@ -177,16 +176,16 @@ export const UpcomingEventsWidget: React.FC = () => {
     };
   }, []);
 
-  // กรองเฉพาะกิจกรรมที่จัดขึ้นใน 7 วันข้างหน้า (นับจากวันนี้)
+  // กรองเฉพาะกิจกรรมที่จัดขึ้นใน 14 วันข้างหน้า (นับจากวันนี้)
   const groupedEvents = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const next7Days = new Date(today);
-    next7Days.setDate(next7Days.getDate() + 7);
-    next7Days.setHours(23, 59, 59, 999);
+    const next14Days = new Date(today);
+    next14Days.setDate(next14Days.getDate() + 14);
+    next14Days.setHours(23, 59, 59, 999);
 
-    // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และอยู่ในช่วง 7 วันข้างหน้า
+    // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และอยู่ในช่วง 14 วันข้างหน้า
     const validActivities = activities.filter((act) => {
       if (act.status === 'DRAFT') return false;
       const startStr = act.publishedAt || act.createdAt;
@@ -194,10 +193,10 @@ export const UpcomingEventsWidget: React.FC = () => {
       const startDate = new Date(startStr);
       const endDate = act.expireAt ? new Date(act.expireAt) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-      return startDate <= next7Days && endDate >= today;
+      return startDate <= next14Days && endDate >= today;
     });
 
-    // แมปกิจกรรมลงในแต่ละวันของช่วง 7 วันข้างหน้า
+    // แมปกิจกรรมลงในแต่ละวันของช่วง 14 วันข้างหน้า
     const dayMap = new Map<string, EventItem[]>();
 
     for (const act of validActivities) {
@@ -214,7 +213,7 @@ export const UpcomingEventsWidget: React.FC = () => {
 
       let count = 0;
       while (cur <= endLimit && count < 31) {
-        if (cur >= today && cur <= next7Days) {
+        if (cur >= today && cur <= next14Days) {
           const dateStr = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
           const list = dayMap.get(dateStr) || [];
 
@@ -295,11 +294,11 @@ export const UpcomingEventsWidget: React.FC = () => {
           <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
             <Calendar className="w-9 h-9 text-slate-400 dark:text-slate-500 mb-2 stroke-[1.5]" />
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              ไม่มีกิจกรรมใน 7 วันข้างหน้า
+              ไม่มีกิจกรรมที่กำลังจะมาถึงเร็วๆ นี้
             </p>
           </div>
         ) : (
-          <div className="overflow-y-auto max-h-[172px] pl-1.5 pr-1 pt-1">
+          <div className="overflow-y-auto flex-1 min-h-0 max-h-[235px] pl-1.5 pr-1 pt-1">
             {groupedEvents.map((group, groupIdx) => {
               const isLastGroup = groupIdx === groupedEvents.length - 1;
               const isHighlight = group.isToday || groupIdx === 0;
@@ -368,14 +367,6 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* ปุ่มดูกิจกรรมทั้งหมด */}
-      <Link
-        href="/my-news"
-        className="mt-2 w-full py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-center block shrink-0"
-      >
-        ดูกิจกรรมทั้งหมด
-      </Link>
 
       {/* Modal รายละเอียดกิจกรรมแบบเต็ม */}
       <EventDetailModal

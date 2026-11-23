@@ -9,7 +9,6 @@ import {
   Delete,
   RotateCcw,
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -239,26 +238,10 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
             /* VIEW: RESET PIN FORM                                      */
             /* ========================================================= */
             <form onSubmit={handleResetSubmit} className="space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setErrorMsg('');
-                    setMode('VERIFY');
-                  }}
-                  className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-                  title="ย้อนกลับ"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 truncate">
-                    เปลี่ยนรหัส PIN 6 หลัก
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    ยืนยันตัวตนด้วยรหัสผ่านบัญชีผู้ใช้ปัจจุบัน
-                  </p>
-                </div>
+              <div className="pb-3 border-b border-slate-100 dark:border-slate-800 text-center">
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                  เปลี่ยนรหัส PIN 6 หลัก
+                </h3>
               </div>
 
               {errorMsg && (
@@ -295,10 +278,6 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-slate-400" />
-                    <span>ยืนยันด้วยรหัสผ่านบัญชีผู้ใช้เข้าสู่ระบบของคุณ</span>
-                  </p>
                 </div>
 
                 {/* 2. รหัส PIN 6 หลักใหม่ */}
@@ -382,7 +361,7 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>บันทึกและปลดล็อก</span>
+                      <span>บันทึก</span>
                     </>
                   )}
                 </button>
@@ -407,11 +386,12 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
                   {mode === 'SETUP_STEP1' && 'ตั้งรหัส PIN 6 หลักใหม่'}
                   {mode === 'SETUP_STEP2' && 'ยืนยันรหัส PIN 6 หลักอีกครั้ง'}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {mode === 'VERIFY' && 'ยืนยันรหัสผ่านความปลอดภัยเพื่อเข้าถึงข้อมูลเงินเดือนของคุณ'}
-                  {mode === 'SETUP_STEP1' && 'กำหนดรหัสผ่านความปลอดภัย 6 หลักสำหรับการเข้าดูเงินเดือนในอนาคต'}
-                  {mode === 'SETUP_STEP2' && 'กรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
-                </p>
+                {mode !== 'VERIFY' && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {mode === 'SETUP_STEP1' && 'กำหนดรหัสผ่านความปลอดภัย 6 หลักสำหรับการเข้าดูเงินเดือนในอนาคต'}
+                    {mode === 'SETUP_STEP2' && 'กรอกรหัส PIN 6 หลักเดิมอีกครั้งเพื่อยืนยัน'}
+                  </p>
+                )}
               </div>
 
               {/* Error Message */}

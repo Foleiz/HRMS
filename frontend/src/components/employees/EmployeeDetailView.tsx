@@ -29,6 +29,7 @@ import {
   Pencil,
   User,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { authService } from '@/services/authService';
@@ -1356,6 +1357,14 @@ export default function EmployeeDetailView({
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {newPassword.length > 0 && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[11px]">
+                    <ShieldCheck className={`w-3.5 h-3.5 ${newPassword.length >= 8 ? 'text-emerald-500' : 'text-amber-500'}`} />
+                    <span className={newPassword.length >= 8 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-amber-600 dark:text-amber-400 font-medium'}>
+                      {newPassword.length >= 8 ? 'ความยาวผ่านเกณฑ์' : `ต้องมีอย่างน้อย 8 ตัวอักษร (ตอนนี้ ${newPassword.length})`}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Confirm New Password */}

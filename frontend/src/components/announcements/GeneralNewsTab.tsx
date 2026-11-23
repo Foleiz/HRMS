@@ -15,6 +15,10 @@ import {
   Building2,
   Building,
   UserCheck,
+  BarChart2,
+  Edit2,
+  Trash2,
+  PinOff,
 } from 'lucide-react';
 import { CountBadge } from '@/components/ui/CountBadge';
 import { ModalHeader } from '@/components/ui/ModalHeader';
@@ -26,7 +30,8 @@ import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { RowActions, RowActionButton } from '@/components/ui/RowActions';
+import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
+import { HoverList } from '@/components/ui/HoverList';
 import { announcementService } from '@/services/announcementService';
 import {
   Announcement,
@@ -173,6 +178,8 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
   const [formTargetDeptIds, setFormTargetDeptIds] = useState<number[]>([]);
   const [formTargetTeamIds, setFormTargetTeamIds] = useState<number[]>([]);
   const [formTargetEmployeeIds, setFormTargetEmployeeIds] = useState<number[]>([]);
+  const [activeTargetTab, setActiveTargetTab] = useState<TargetType>('ALL');
+  const [tempTargetIds, setTempTargetIds] = useState<number[]>([]);
   const [empSearchFilter, setEmpSearchFilter] = useState('');
   const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
   const targetDropdownRef = useRef<HTMLDivElement>(null);
@@ -212,15 +219,57 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
   const handleSelectTargetTab = (tabId: TargetType) => {
     if (tabId === 'ALL') {
       setFormTargetType('ALL');
+      setActiveTargetTab('ALL');
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+      setTempTargetIds([]);
       setIsTargetDropdownOpen(false);
       return;
     }
-    if (formTargetType === tabId) {
-      setIsTargetDropdownOpen((prev) => !prev);
-    } else {
-      setFormTargetType(tabId);
-      setIsTargetDropdownOpen(true);
+    if (isTargetDropdownOpen && activeTargetTab === tabId) {
+      setIsTargetDropdownOpen(false);
+      return;
     }
+    setActiveTargetTab(tabId);
+    if (formTargetType === tabId) {
+      if (tabId === 'DIVISION') setTempTargetIds([...formTargetDivisionIds]);
+      else if (tabId === 'DEPARTMENT') setTempTargetIds([...formTargetDeptIds]);
+      else if (tabId === 'TEAM') setTempTargetIds([...formTargetTeamIds]);
+      else if (tabId === 'EMPLOYEE') setTempTargetIds([...formTargetEmployeeIds]);
+    } else {
+      setTempTargetIds([]);
+    }
+    setEmpSearchFilter('');
+    setIsTargetDropdownOpen(true);
+  };
+
+  // Save selection from dropdown
+  const handleSaveTargetDropdown = () => {
+    setFormTargetType(activeTargetTab);
+    if (activeTargetTab === 'DIVISION') {
+      setFormTargetDivisionIds(tempTargetIds);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'DEPARTMENT') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds(tempTargetIds);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'TEAM') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds(tempTargetIds);
+      setFormTargetEmployeeIds([]);
+    } else if (activeTargetTab === 'EMPLOYEE') {
+      setFormTargetDivisionIds([]);
+      setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds(tempTargetIds);
+    }
+    setIsTargetDropdownOpen(false);
   };
 
   // Target audience summary
@@ -333,34 +382,75 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
       );
     }
 
-    const firstType = targets[0]?.targetType;
-    let label = '';
-    let icon = Users;
-    let colorClass = 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-
-    if (firstType === 'DIVISION') {
-      icon = Building2;
-      colorClass = 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800';
-      label = `ฝ่าย (${targets.length})`;
-    } else if (firstType === 'DEPARTMENT') {
-      icon = Building;
-      colorClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
-      label = `แผนก (${targets.length})`;
-    } else if (firstType === 'TEAM') {
-      icon = Users;
-      colorClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800';
-      label = `ทีม (${targets.length})`;
-    } else if (firstType === 'EMPLOYEE' || (firstType as string) === 'INDIVIDUAL') {
-      icon = UserCheck;
-      colorClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800';
-      label = `รายบุคคล (${targets.length})`;
+    const tType = targets[0]?.targetType;
+    if (tType === 'DIVISION') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = (divisions || []).find((div) => div.id === t.targetEntityId);
+        return d ? d.divisionName : `ฝ่ายรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อฝ่ายที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 cursor-pointer">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>{targets.length} ฝ่ายที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
     }
 
-    const Icon = icon;
+    if (tType === 'DEPARTMENT') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = (departments || []).find((dept) => dept.id === t.targetEntityId);
+        return d ? d.departmentName : `แผนกรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อแผนกที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 cursor-pointer">
+            <Building className="w-3.5 h-3.5" />
+            <span>{targets.length} แผนกที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'TEAM') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const tm = (teams || []).find((item) => item.id === t.targetEntityId);
+        return tm ? tm.teamName : `ทีมรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อทีมที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 cursor-pointer">
+            <Users className="w-3.5 h-3.5" />
+            <span>{targets.length} ทีมที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'EMPLOYEE' || (tType as string) === 'INDIVIDUAL') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const emp = (employees || []).find((item) => item.id === t.targetEntityId);
+        return emp ? `${emp.employeeCode} - ${emp.fullName}` : `พนักงานรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อพนักงานที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{targets.length} พนักงานที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
-        <Icon className="w-3.5 h-3.5" />
-        <span>{label}</span>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+        <Globe className="w-3.5 h-3.5" />
+        <span>ทุกคนในองค์กร</span>
       </span>
     );
   };
@@ -409,10 +499,12 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
     setFormPublishedAt(getTodayDateString());
     setFormExpireAt('');
     setFormTargetType('ALL');
+    setActiveTargetTab('ALL');
     setFormTargetDivisionIds([]);
     setFormTargetDeptIds([]);
     setFormTargetTeamIds([]);
     setFormTargetEmployeeIds([]);
+    setTempTargetIds([]);
     setEmpSearchFilter('');
     setIsTargetDropdownOpen(false);
     setIsFormOpen(true);
@@ -433,13 +525,17 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
     const targets = a.targets || [];
     if (targets.length === 0 || targets.some((t) => t.targetType === 'ALL')) {
       setFormTargetType('ALL');
+      setActiveTargetTab('ALL');
       setFormTargetDivisionIds([]);
       setFormTargetDeptIds([]);
       setFormTargetTeamIds([]);
       setFormTargetEmployeeIds([]);
+      setTempTargetIds([]);
     } else {
       const firstType = targets[0]?.targetType as TargetType;
       setFormTargetType(firstType);
+      setActiveTargetTab(firstType);
+      setTempTargetIds([]);
 
       if (firstType === 'DIVISION') {
         setFormTargetDivisionIds(targets.filter((t) => t.targetType === 'DIVISION' && t.targetEntityId).map((t) => Number(t.targetEntityId)));
@@ -613,6 +709,51 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
     }
   };
 
+  // Action Dropdown Items for General News Row
+  const getNewsActionItems = (a: Announcement): ActionDropdownItem[] => {
+    const items: ActionDropdownItem[] = [
+      {
+        label: 'ดูรายละเอียด',
+        icon: <Eye className="w-4 h-4" />,
+        onClick: () => handleOpenReading(a),
+      },
+      {
+        label: 'สถิติการเปิดอ่าน',
+        icon: <BarChart2 className="w-4 h-4" />,
+        onClick: () => handleOpenStats(a),
+      },
+    ];
+
+    if (canEdit) {
+      items.push({
+        label: a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด',
+        icon: a.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />,
+        onClick: () => handleTogglePin(a),
+      });
+
+      items.push({
+        label: a.status === 'PUBLISHED' ? 'เก็บเป็นฉบับร่าง' : 'เผยแพร่ประกาศ',
+        icon: a.status === 'PUBLISHED' ? <EyeOff className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />,
+        onClick: () => handleTogglePublish(a),
+      });
+
+      items.push({
+        label: 'แก้ไขประกาศ',
+        icon: <Edit2 className="w-4 h-4" />,
+        onClick: () => handleOpenEdit(a),
+      });
+
+      items.push({
+        label: 'ลบประกาศ',
+        icon: <Trash2 className="w-4 h-4" />,
+        danger: true,
+        onClick: () => handleDelete(a),
+      });
+    }
+
+    return items;
+  };
+
   // KPIs
   const publishedCount = announcements.filter((a) => a.status === 'PUBLISHED').length;
   const pinnedCount = announcements.filter((a) => a.isPinned).length;
@@ -724,14 +865,14 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
             <RefreshIndicator active={listPhase.refreshing} />
             <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <tr className="bg-slate-50/80 dark:bg-slate-750/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
                   <th className="py-3 px-4">หัวข้อประกาศ</th>
+                  <th className="py-3 px-4">วันที่เผยแพร่</th>
                   <th className="py-3 px-4">หมวดหมู่</th>
                   <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
                   <th className="py-3 px-4">ยอดเปิดอ่าน</th>
                   <th className="py-3 px-4">สถานะ</th>
-                  <th className="py-3 px-4">วันที่เผยแพร่</th>
                   <th className="py-3 px-4 text-center">จัดการ</th>
                 </tr>
               </thead>
@@ -740,11 +881,11 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                   <TableLoading colSpan={8} text="กำลังโหลดข้อมูลประกาศ..." />
                 ) : announcements.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-14 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-1.5">
                         <Megaphone className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
                         <span className="font-semibold text-slate-600 dark:text-slate-400">ไม่พบข้อมูลข่าวประกาศ</span>
-                        <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
+                        <span className="text-[11px] text-slate-400">สามารถกดปุ่ม "+ สร้างประกาศใหม่" เพื่อเริ่มประชาสัมพันธ์</span>
                       </div>
                     </td>
                   </tr>
@@ -753,9 +894,10 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                     const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
                     const readPct =
                       a.totalTargetCount > 0 ? Math.round((a.readCount / a.totalTargetCount) * 100) : 0;
+                    const startDateStr = a.publishedAt || a.createdAt;
 
                     return (
-                      <tr key={a.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-750/50 transition-colors">
+                      <tr key={a.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-750/50 transition-colors">
                         {/* Pin Toggle */}
                         <td className="py-3 px-4 text-center">
                           <button
@@ -773,29 +915,45 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                           </button>
                         </td>
 
-                        {/* Title */}
-                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 max-w-xs">
+                        {/* Title & Content Description */}
+                        <td className="py-3 px-4 max-w-xs">
                           <div className="flex items-center gap-2">
                             {a.isPinned && (
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="ปักหมุดบนสุด" />
                             )}
                             <button
                               type="button"
                               onClick={() => handleOpenReading(a)}
                               className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
-                              title="คลิกเพื่อดูตัวอย่างประกาศฉบับเต็ม"
+                              title="คลิกเพื่อดูรายละเอียดประกาศฉบับเต็ม"
                             >
                               {a.title}
                             </button>
                           </div>
-                          <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
-                            {a.content}
-                          </span>
+                          {a.content && (
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5 max-w-xs">
+                              {a.content}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Published Date */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-750 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                              {formatDate(startDateStr)}
+                            </span>
+                            {a.expireAt && (
+                              <span className="text-slate-400 text-2xs">
+                                ถึง {formatDate(a.expireAt)}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Category */}
                         <td className="py-3 px-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${cat.color}`}>
                             {cat.label}
                           </span>
                         </td>
@@ -820,56 +978,31 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
                         {/* Status */}
                         <td className="py-3 px-4">
-                          <button
-                            type="button"
-                            onClick={() => canEdit && handleTogglePublish(a)}
-                            disabled={!canEdit}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
                               a.status === 'PUBLISHED'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                                 : a.status === 'DRAFT'
-                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                 : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                             }`}
-                            title={canEdit ? 'คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง' : undefined}
                           >
-                            {a.status === 'PUBLISHED' ? (
-                              <>
-                                <Eye className="w-3 h-3" />
-                                <span>เผยแพร่แล้ว</span>
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="w-3 h-3" />
-                                <span>ฉบับร่าง</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
-
-                        {/* Published At */}
-                        <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
-                          {formatDateTime(a.publishedAt || a.createdAt)}
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                a.status === 'PUBLISHED'
+                                  ? 'bg-emerald-500'
+                                  : a.status === 'DRAFT'
+                                  ? 'bg-slate-400'
+                                  : 'bg-rose-500'
+                              }`}
+                            />
+                            <span>{a.status === 'PUBLISHED' ? 'เผยแพร่แล้ว' : a.status === 'DRAFT' ? 'ฉบับร่าง' : 'ยกเลิก'}</span>
+                          </span>
                         </td>
 
                         {/* Actions */}
                         <td className="py-3 px-4 text-center">
-                          {canEdit ? (
-                            <RowActions>
-                              <RowActionButton
-                                action="edit"
-                                title="แก้ไขประกาศ"
-                                onClick={() => handleOpenEdit(a)}
-                              />
-                              <RowActionButton
-                                action="delete"
-                                title="ลบ/จัดเก็บประกาศ"
-                                onClick={() => handleDelete(a)}
-                              />
-                            </RowActions>
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600">-</span>
-                          )}
+                          <ActionDropdown items={getNewsActionItems(a)} />
                         </td>
                       </tr>
                     );
@@ -1133,7 +1266,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
               <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">
                 {/* Dark Backdrop Overlay when Target Dropdown is open */}
-                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                {activeTargetTab !== 'ALL' && isTargetDropdownOpen && (
                   <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 transition-opacity animate-in fade-in duration-150 cursor-pointer"
                     onClick={(e) => {
@@ -1166,7 +1299,9 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                     { id: 'TEAM', label: 'ทีม', icon: Users },
                     { id: 'EMPLOYEE', label: 'รายบุคคล', icon: UserCheck },
                   ].map((tab) => {
-                    const isSelected = formTargetType === tab.id;
+                    const isSelected = isTargetDropdownOpen
+                      ? activeTargetTab === tab.id
+                      : formTargetType === tab.id;
                     const Icon = tab.icon;
                     let badgeCount = 0;
                     if (tab.id === 'DIVISION') badgeCount = formTargetDivisionIds.length;
@@ -1185,7 +1320,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                         }`}
                       >
-                        {badgeCount > 0 && !isSelected && (
+                        {badgeCount > 0 && !isSelected && tab.id === formTargetType && (
                           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
                         )}
                         <Icon className="w-4 h-4 mb-0.5" />
@@ -1196,274 +1331,290 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                 </div>
 
                 {/* Dropdown Popover opening upwards above the tabs */}
-                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                {activeTargetTab !== 'ALL' && isTargetDropdownOpen && (
                   <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
                     {/* DIVISION Dropdown Content */}
-                    {formTargetType === 'DIVISION' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกฝ่ายที่ต้องการให้มองเห็น:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'DIVISION' && (() => {
+                      const isAllDivisionsSelected = divisions.length > 0 && divisions.every((d) => tempTargetIds.includes(d.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกฝ่ายที่ต้องการให้มองเห็น:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetDivisionIds(divisions.map((d) => d.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllDivisionsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(divisions.map((d) => d.id));
+                                }
+                              }}
+                              className={
+                                isAllDivisionsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetDivisionIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllDivisionsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {divisions.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลฝ่ายในระบบ
-                            </p>
-                          ) : (
-                            divisions.map((div) => {
-                              const checked = formTargetDivisionIds.includes(div.id);
-                              return (
-                                <label
-                                  key={div.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetDivisionIds([...formTargetDivisionIds, div.id]);
-                                      else setFormTargetDivisionIds(formTargetDivisionIds.filter((id) => id !== div.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{div.divisionName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {divisions.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลฝ่ายในระบบ
+                              </p>
+                            ) : (
+                              divisions.map((div) => {
+                                const checked = tempTargetIds.includes(div.id);
+                                return (
+                                  <label
+                                    key={div.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, div.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== div.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{div.divisionName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* DEPARTMENT Dropdown Content */}
-                    {formTargetType === 'DEPARTMENT' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกแผนกที่ต้องการให้มองเห็น:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'DEPARTMENT' && (() => {
+                      const isAllDepartmentsSelected = departments.length > 0 && departments.every((d) => tempTargetIds.includes(d.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกแผนกที่ต้องการให้มองเห็น:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetDeptIds(departments.map((d) => d.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllDepartmentsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(departments.map((d) => d.id));
+                                }
+                              }}
+                              className={
+                                isAllDepartmentsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetDeptIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllDepartmentsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {departments.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลแผนกในระบบ
-                            </p>
-                          ) : (
-                            departments.map((dept) => {
-                              const checked = formTargetDeptIds.includes(dept.id);
-                              return (
-                                <label
-                                  key={dept.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
-                                      else setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{dept.departmentName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {departments.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลแผนกในระบบ
+                              </p>
+                            ) : (
+                              departments.map((dept) => {
+                                const checked = tempTargetIds.includes(dept.id);
+                                return (
+                                  <label
+                                    key={dept.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, dept.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== dept.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{dept.departmentName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* TEAM Dropdown Content */}
-                    {formTargetType === 'TEAM' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            เลือกทีมที่ต้องการให้มองเห็น:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'TEAM' && (() => {
+                      const isAllTeamsSelected = teams.length > 0 && teams.every((t) => tempTargetIds.includes(t.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              เลือกทีมที่ต้องการให้มองเห็น:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetTeamIds(teams.map((t) => t.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllTeamsSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(teams.map((t) => t.id));
+                                }
+                              }}
+                              className={
+                                isAllTeamsSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetTeamIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllTeamsSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {teams.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              ยังไม่มีข้อมูลทีมในระบบ
-                            </p>
-                          ) : (
-                            teams.map((tm) => {
-                              const checked = formTargetTeamIds.includes(tm.id);
-                              return (
-                                <label
-                                  key={tm.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetTeamIds([...formTargetTeamIds, tm.id]);
-                                      else setFormTargetTeamIds(formTargetTeamIds.filter((id) => id !== tm.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <span className="truncate">{tm.teamName}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {teams.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                ยังไม่มีข้อมูลทีมในระบบ
+                              </p>
+                            ) : (
+                              teams.map((tm) => {
+                                const checked = tempTargetIds.includes(tm.id);
+                                return (
+                                  <label
+                                    key={tm.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, tm.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== tm.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <span className="truncate">{tm.teamName}</span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* EMPLOYEE Dropdown Content */}
-                    {formTargetType === 'EMPLOYEE' && (
-                      <>
-                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            ระบุพนักงานที่ต้องการให้มองเห็น:
-                          </span>
-                          <div className="flex items-center gap-2">
+                    {activeTargetTab === 'EMPLOYEE' && (() => {
+                      const isAllEmployeesSelected = employees.length > 0 && employees.every((e) => tempTargetIds.includes(e.id));
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              ระบุพนักงานที่ต้องการให้มองเห็น:
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setFormTargetEmployeeIds(employees.map((e) => e.id))}
-                              className="text-primary hover:underline cursor-pointer font-medium"
+                              onClick={() => {
+                                if (isAllEmployeesSelected) {
+                                  setTempTargetIds([]);
+                                } else {
+                                  setTempTargetIds(employees.map((e) => e.id));
+                                }
+                              }}
+                              className={
+                                isAllEmployeesSelected
+                                  ? 'text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium'
+                                  : 'text-primary hover:underline cursor-pointer font-medium'
+                              }
                             >
-                              เลือกทั้งหมด
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <button
-                              type="button"
-                              onClick={() => setFormTargetEmployeeIds([])}
-                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                            >
-                              ยกเลิกทั้งหมด
+                              {isAllEmployeesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                             </button>
                           </div>
-                        </div>
 
-                        {/* Employee Search Bar */}
-                        <div className="relative">
-                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                          <input
-                            type="text"
-                            placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
-                            value={empSearchFilter}
-                            onChange={(e) => setEmpSearchFilter(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
+                          {/* Employee Search Bar */}
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
+                              value={empSearchFilter}
+                              onChange={(e) => setEmpSearchFilter(e.target.value)}
+                              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                          {filteredEmployeesForSelection.length === 0 ? (
-                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                              {employees.length === 0
-                                ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
-                                : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
-                            </p>
-                          ) : (
-                            filteredEmployeesForSelection.map((emp) => {
-                              const checked = formTargetEmployeeIds.includes(emp.id);
-                              return (
-                                <label
-                                  key={emp.id}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                    checked
-                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
-                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setFormTargetEmployeeIds([...formTargetEmployeeIds, emp.id]);
-                                      else setFormTargetEmployeeIds(formTargetEmployeeIds.filter((id) => id !== emp.id));
-                                    }}
-                                    className="accent-primary"
-                                  />
-                                  <div className="truncate text-2xs min-w-0">
-                                    <span className="font-bold">{emp.fullName}</span>
-                                    <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
-                                  </div>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </>
-                    )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                            {filteredEmployeesForSelection.length === 0 ? (
+                              <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                                {employees.length === 0
+                                  ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
+                                  : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
+                              </p>
+                            ) : (
+                              filteredEmployeesForSelection.map((emp) => {
+                                const checked = tempTargetIds.includes(emp.id);
+                                return (
+                                  <label
+                                    key={emp.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setTempTargetIds([...tempTargetIds, emp.id]);
+                                        else setTempTargetIds(tempTargetIds.filter((id) => id !== emp.id));
+                                      }}
+                                      className="accent-primary"
+                                    />
+                                    <div className="truncate text-2xs min-w-0">
+                                      <span className="font-bold">{emp.fullName}</span>
+                                      <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
+                                    </div>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Dropdown Footer: Selected count & Save button */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-2xs">
                       <span className="text-slate-500 dark:text-slate-400">
-                        เลือกแล้ว <strong className="text-primary font-bold">{targetSummaryInfo.count}</strong> {targetSummaryInfo.unit}
+                        เลือกแล้ว <strong className="text-primary font-bold">{tempTargetIds.length}</strong>{' '}
+                        {activeTargetTab === 'DIVISION' && 'ฝ่าย'}
+                        {activeTargetTab === 'DEPARTMENT' && 'แผนก'}
+                        {activeTargetTab === 'TEAM' && 'ทีม'}
+                        {activeTargetTab === 'EMPLOYEE' && 'ท่าน'}
                       </span>
                       <button
                         type="button"
-                        onClick={() => setIsTargetDropdownOpen(false)}
+                        onClick={handleSaveTargetDropdown}
                         className="px-4 py-1.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors cursor-pointer shadow-2xs text-xs"
                       >
                         บันทึก

@@ -18,7 +18,6 @@ import {
   Download,
   Loader2,
   TrendingUp,
-  ArrowLeft,
   PieChart as PieChartIcon,
 } from 'lucide-react';
 import { getThaiInitial } from '@/components/ui/AvatarName';
@@ -293,19 +292,6 @@ function MySalaryContent() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           {/* ซ้าย: ปุ่มย้อนกลับ + รูป/ตัวย่อ + ข้อมูลพนักงาน */}
           <div className="flex items-center gap-3.5 min-w-0">
-            <button
-              type="button"
-              onClick={() => {
-                router.push('/my-salary');
-                setSelectedPayrollId(null);
-                setDetailData(null);
-              }}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
-              title="ย้อนกลับไปหน้ารวมสลิปเงินเดือน"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-
             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300 font-bold text-sm flex items-center justify-center shrink-0 border border-primary/20">
               {getThaiInitial(detailData?.employeeName)}
             </div>

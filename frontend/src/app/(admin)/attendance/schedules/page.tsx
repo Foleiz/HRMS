@@ -2439,26 +2439,35 @@ function SchedulesContent() {
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       เลือกพนักงาน ({batchSelectedEmpIds.length} คนที่เลือก)
                     </label>
-                    <div className="flex items-center gap-2 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const matchingIds = filteredBatchEmployees.map((e) => e.id);
-                          setBatchSelectedEmpIds(Array.from(new Set([...batchSelectedEmpIds, ...matchingIds])));
-                        }}
-                        className="text-blue-600 hover:underline font-medium"
-                      >
-                        เลือกทั้งหมด
-                      </button>
-                      <span>|</span>
-                      <button
-                        type="button"
-                        onClick={() => setBatchSelectedEmpIds([])}
-                        className="text-slate-500 dark:text-slate-400 hover:underline dark:text-slate-400"
-                      >
-                        ล้างการเลือก
-                      </button>
-                    </div>
+                    {(() => {
+                      const matchingIds = filteredBatchEmployees.map((e) => e.id);
+                      const isAllMatchingSelected =
+                        matchingIds.length > 0 &&
+                        matchingIds.every((id) => batchSelectedEmpIds.includes(id));
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isAllMatchingSelected) {
+                              setBatchSelectedEmpIds(
+                                batchSelectedEmpIds.filter((id) => !matchingIds.includes(id))
+                              );
+                            } else {
+                              setBatchSelectedEmpIds(
+                                Array.from(new Set([...batchSelectedEmpIds, ...matchingIds]))
+                              );
+                            }
+                          }}
+                          className={`text-xs font-medium cursor-pointer transition-colors ${
+                            isAllMatchingSelected
+                              ? 'text-slate-400 hover:text-rose-500 hover:underline'
+                              : 'text-primary hover:underline'
+                          }`}
+                        >
+                          {isAllMatchingSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                        </button>
+                      );
+                    })()}
                   </div>
 
                   {/* Search and Employee Type Filter Bar */}

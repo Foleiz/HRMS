@@ -99,7 +99,7 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ForgotPasswordResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request, CancellationToken cancellationToken)
     {
@@ -109,8 +109,25 @@ public class AuthController : ControllerBase
             request.ClientOrigin = $"{uri.Scheme}://{uri.Authority}";
         }
 
-        var success = await _authService.ForgotPasswordAsync(request, cancellationToken);
-        return Ok(ApiResponse<bool>.Ok(success, "ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว"));
+        var result = await _authService.ForgotPasswordAsync(request, cancellationToken);
+        return Ok(ApiResponse<ForgotPasswordResponseDto>.Ok(result, "ระบบได้ส่งรหัสยืนยัน OTP ไปยังอีเมลองค์กรของคุณเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>
+    /// ตรวจสอบความถูกต้องของรหัส OTP 6 หลัก
+    /// </summary>
+    [HttpPost("validate-otp")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<ValidateOtpResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ValidateOtp([FromBody] ValidateOtpRequestDto request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.ValidateOtpAsync(request, cancellationToken);
+        if (!result.IsValid)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorMessage ?? "รหัส OTP ไม่ถูกต้อง"));
+        }
+        return Ok(ApiResponse<ValidateOtpResponseDto>.Ok(result, "รหัส OTP ถูกต้อง"));
     }
 
     /// <summary>
