@@ -1163,11 +1163,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     return guideMod ? isModuleActive(guideMod) : false;
   };
 
-  // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์อยู่ใน Flow
+  // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์พร้อมใช้งานครบถ้วนตามเงื่อนไขใน Flow
   const getGuideFlowActiveStepsCount = (flow: GuideFlowConfig) => {
     return flow.steps.filter((s) => {
       const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
-      return m ? isModuleActive(m) : false;
+      if (!m || !isModuleActive(m)) return false;
+      // หากสเต็ปนั้นมีเงื่อนไขเตือน (เช่น ต้องการสิทธิ์เขียน Create/Edit แต่ยังไม่มี) ไม่นับว่าสิทธิ์พร้อมใช้งาน
+      if (checkStepWarning(s, m)) return false;
+      return true;
     }).length;
   };
 
@@ -2050,25 +2053,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                                   </button>
                                                 </>
                                               ) : (
-                                                <>
-                                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
-                                                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                                    <span>สิทธิ์พร้อมใช้งาน</span>
-                                                  </span>
-                                                  <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                      e.preventDefault();
-                                                      e.stopPropagation();
-                                                      handleJumpToModule(step.targetModuleCode);
-                                                    }}
-                                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-300 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-                                                    title={`ดูการตั้งค่าโมดูล ${step.targetModuleCode}`}
-                                                  >
-                                                    <span>ดูการตั้งค่า</span>
-                                                    <ArrowUpRight className="w-3 h-3" />
-                                                  </button>
-                                                </>
+                                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+                                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                  <span>สิทธิ์พร้อมใช้งาน</span>
+                                                </span>
                                               )}
                                             </div>
                                           </div>
