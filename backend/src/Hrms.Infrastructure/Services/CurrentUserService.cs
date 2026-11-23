@@ -90,10 +90,18 @@ public class CurrentUserService : ICurrentUserService
         if (perms.Any(p => string.Equals(p, permission, StringComparison.OrdinalIgnoreCase)))
             return true;
 
-        // สิทธิ์ *_EDIT จากตาราง Matrix 3 ปุ่ม (ดู/สร้าง/แก้ไข) ครอบคลุม *_APPROVE ของโมดูลเดียวกัน
+        // สิทธิ์ *_EDIT จากตาราง Matrix ครอบคลุม *_APPROVE ของโมดูลเดียวกัน
         if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
         {
             var editEquivalent = $"{permission[..^8]}_EDIT";
+            if (perms.Any(p => string.Equals(p, editEquivalent, StringComparison.OrdinalIgnoreCase)))
+                return true;
+        }
+
+        // สิทธิ์ *_DELETE ถ้าไม่มีใน role ให้ fallback ไปที่ *_EDIT ของโมดูลเดียวกัน
+        if (permission.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase))
+        {
+            var editEquivalent = $"{permission[..^7]}_EDIT";
             if (perms.Any(p => string.Equals(p, editEquivalent, StringComparison.OrdinalIgnoreCase)))
                 return true;
         }
@@ -128,6 +136,10 @@ public class CurrentUserService : ICurrentUserService
         if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add($"{permission[..^8]}_EDIT");
+        }
+        if (permission.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add($"{permission[..^7]}_EDIT");
         }
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))
         {

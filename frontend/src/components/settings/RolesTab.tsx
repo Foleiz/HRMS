@@ -544,7 +544,7 @@ function isModuleFullSelected(m: ModulePermissionScope): boolean {
   const scopes = isEss
     ? (['self'] as const)
     : (['self', 'team', 'department', 'division', 'organization'] as const);
-  return scopes.every((s) => Boolean(m[s]?.view && m[s]?.create && m[s]?.edit));
+  return scopes.every((s) => Boolean(m[s]?.view && m[s]?.create && m[s]?.edit && m[s]?.delete));
 }
 
 const SCOPES_CONFIG: {
@@ -559,13 +559,14 @@ const SCOPES_CONFIG: {
 ];
 
 const ACTIONS_CONFIG: {
-  key: 'view' | 'create' | 'edit';
+  key: 'view' | 'create' | 'edit' | 'delete';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { key: 'view', label: 'ดูข้อมูล', icon: Eye },
   { key: 'create', label: 'สร้าง', icon: Plus },
   { key: 'edit', label: 'แก้ไข', icon: Edit2 },
+  { key: 'delete', label: 'ลบ', icon: Trash2 },
 ];
 
 export const RolesTab: React.FC<RolesTabProps> = ({
@@ -640,7 +641,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   /* ── Normalize legacy data ── */
   const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] => {
     let normalized = mods.map((m) => {
-      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      const def = () => ({ view: false, create: false, edit: false, delete: false, approve: false });
       const self = m.self ? { ...m.self } : def();
       const team = m.team ? { ...m.team } : def();
       const department = m.department ? { ...m.department } : def();
@@ -648,11 +649,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       const organization = m.organization ? { ...m.organization } : def();
 
       const hasAny =
-        self.view || self.create || self.edit || self.approve ||
-        team.view || team.create || team.edit || team.approve ||
-        department.view || department.create || department.edit || department.approve ||
-        division.view || division.create || division.edit || division.approve ||
-        organization.view || organization.create || organization.edit || organization.approve;
+        self.view || self.create || self.edit || self.delete || self.approve ||
+        team.view || team.create || team.edit || team.delete || team.approve ||
+        department.view || department.create || department.edit || department.delete || department.approve ||
+        division.view || division.create || division.edit || division.delete || division.approve ||
+        organization.view || organization.create || organization.edit || organization.delete || organization.approve;
 
       if (!hasAny) {
         const scStr = (m.dataScope || 'SELF').toUpperCase();
@@ -687,7 +688,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     GUIDE_FLOW_CONFIGS.forEach((flow) => {
       const exists = normalized.some((m) => m.moduleCode === flow.moduleCode);
       if (!exists) {
-        const def = () => ({ view: false, create: false, edit: false, approve: false });
+        const def = () => ({ view: false, create: false, edit: false, delete: false, approve: false });
         normalized.push({
           moduleCode: flow.moduleCode,
           moduleName: flow.title,
@@ -836,11 +837,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     GUIDE_FLOW_CONFIGS.forEach((flow) => {
       const isScopeActive = (m: ModulePermissionScope) =>
         m.canView ||
-        m.self?.view || m.self?.create || m.self?.edit || m.self?.approve ||
-        m.team?.view || m.team?.create || m.team?.edit || m.team?.approve ||
-        m.department?.view || m.department?.create || m.department?.edit || m.department?.approve ||
-        m.division?.view || m.division?.create || m.division?.edit || m.division?.approve ||
-        m.organization?.view || m.organization?.create || m.organization?.edit || m.organization?.approve;
+        m.self?.view || m.self?.create || m.self?.edit || m.self?.delete || m.self?.approve ||
+        m.team?.view || m.team?.create || m.team?.edit || m.team?.delete || m.team?.approve ||
+        m.department?.view || m.department?.create || m.department?.edit || m.department?.delete || m.department?.approve ||
+        m.division?.view || m.division?.create || m.division?.edit || m.division?.delete || m.division?.approve ||
+        m.organization?.view || m.organization?.create || m.organization?.edit || m.organization?.delete || m.organization?.approve;
 
       const allStepsActive = flow.steps.length > 0 && flow.steps.every((s) => {
         const m = normalized.find((mod) => mod.moduleCode === s.targetModuleCode);
@@ -949,7 +950,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       );
     }
     const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
-    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit);
+    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.delete);
   };
 
   const getScopeActiveCount = (
@@ -958,7 +959,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   ): number => {
     const sc = mod[scopeKey];
     if (!sc) return 0;
-    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0);
+    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.delete ? 1 : 0);
   };
 
   /* ── Toggle Handlers ── */
@@ -1264,12 +1265,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const handleToggleScopeAction = (
     moduleCode: string,
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization',
-    actionKey: 'view' | 'create' | 'edit'
+    actionKey: 'view' | 'create' | 'edit' | 'delete'
   ) => {
     setLocalModules((prev) =>
       prev.map((m) => {
         if (m.moduleCode !== moduleCode) return m;
-        const currentScope = m[scopeKey] || { view: false, create: false, edit: false, approve: false };
+        const currentScope = m[scopeKey] || { view: false, create: false, edit: false, delete: false, approve: false };
         const updatedScope = {
           ...currentScope,
           [actionKey]: !currentScope[actionKey],
@@ -1294,7 +1295,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         if (m.moduleCode !== moduleCode) return m;
         return {
           ...m,
-          [scopeKey]: { view: enable, create: enable, edit: enable, approve: false },
+          [scopeKey]: { view: enable, create: enable, edit: enable, delete: enable, approve: false },
         };
       })
     );
@@ -1362,12 +1363,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setLocalModules((prev) =>
       prev.map((m) => {
         if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
-          return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
+          return { ...m, canView: true, self: { view: true, create: false, edit: false, delete: false, approve: false } };
         }
         const isEss = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
         if (isEss) {
-          const full = { view: true, create: true, edit: true, approve: false };
-          const empty = { view: false, create: false, edit: false, approve: false };
+          const full = { view: true, create: true, edit: true, delete: true, approve: false };
+          const empty = { view: false, create: false, edit: false, delete: false, approve: false };
           return {
             ...m,
             self: { ...full },
@@ -1377,7 +1378,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             organization: { ...empty },
           };
         }
-        const full = { view: true, create: true, edit: true, approve: false };
+        const full = { view: true, create: true, edit: true, delete: true, approve: false };
         return {
           ...m,
           self: { ...full },
@@ -1395,7 +1396,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const handleDeselectAll = () => {
     setLocalModules((prev) =>
       prev.map((m) => {
-        const empty = { view: false, create: false, edit: false, approve: false };
+        const empty = { view: false, create: false, edit: false, delete: false, approve: false };
         return {
           ...m,
           canView: false,
@@ -1429,7 +1430,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     if (!selectedRoleMatrix) return;
     const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
     const hasAnyPermission = localModules.some((m) =>
-      m.canView || scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.approve)
+      m.canView || scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.delete || m[s]?.approve)
     );
     if (
       (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
@@ -2208,13 +2209,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </button>
             </div>
 
-            {/* 3 Action Checkbox Options (View, Create, Edit) */}
+            {/* 4 Action Checkbox Options (View, Create, Edit, Delete) */}
             <div className="space-y-1.5">
               {ACTIONS_CONFIG.map((action) => {
                 const isChecked = Boolean(
                   activeMod[activePopover.scopeKey]?.[action.key]
                 );
                 const Icon = action.icon;
+                const isDelete = action.key === 'delete';
 
                 return (
                   <div
@@ -2227,13 +2229,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                         action.key
                       );
                     }}
-                    className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${ isChecked ? 'bg-blue-50/70 border-blue-200 text-blue-950 font-semibold shadow-2xs'
-                        : 'bg-slate-50/50 border-slate-200/70 text-slate-600 dark:text-slate-400 hover:bg-slate-100/70'
+                    className={`flex items-center justify-between p-2 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked
+                        ? isDelete
+                          ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-950 dark:text-rose-200 font-semibold shadow-2xs'
+                          : 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50 text-blue-950 dark:text-blue-200 font-semibold shadow-2xs'
+                        : 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-200/70 dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-slate-700/50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <Icon
-                        className={`w-3.5 h-3.5 ${ isChecked ? 'text-blue-600' : 'text-slate-400'
+                        className={`w-3.5 h-3.5 ${
+                          isChecked
+                            ? isDelete
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-blue-600 dark:text-blue-400'
+                            : 'text-slate-400 dark:text-slate-500'
                         }`}
                       />
                       <span>{action.label}</span>
@@ -2242,7 +2253,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => {}}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 pointer-events-none cursor-pointer"
+                      className={`w-4 h-4 rounded border-slate-300 dark:border-slate-600 ${
+                        isDelete
+                          ? 'text-rose-600 focus:ring-rose-500/20'
+                          : 'text-primary focus:ring-primary/20'
+                      } pointer-events-none cursor-pointer`}
                     />
                   </div>
                 );

@@ -33,36 +33,29 @@ export default function HomePage() {
 
   // คำนวณแดชบอร์ดที่ผู้ใช้ได้รับสิทธิ์จริงจากระบบสิทธิ์ (Dashboard Permission Matrix)
   const allowedDashboards = React.useMemo<DashboardRole[]>(() => {
-    if (!user) return ['EMPLOYEE'];
-    const roles = user.roles || [];
-    if (roles.includes('ADMIN') || roles.includes('SYSTEM_SUPER')) {
-      return ['ADMIN', 'CEO', 'DIV_MGR', 'DEPT_MGR', 'EMPLOYEE'];
-    }
+    if (!user) return [];
 
     const list: DashboardRole[] = [];
-    if (hasPermission('DASHBOARD_ADMIN_VIEW') || roles.includes('ADMIN') || roles.includes('HR_ADMIN')) {
+    if (hasPermission('DASHBOARD_ADMIN_VIEW')) {
       list.push('ADMIN');
     }
-    if (hasPermission('DASHBOARD_CEO_VIEW') || roles.includes('CEO') || roles.includes('EXECUTIVE')) {
+    if (hasPermission('DASHBOARD_CEO_VIEW')) {
       list.push('CEO');
     }
-    if (hasPermission('DASHBOARD_DIV_VIEW') || roles.includes('DIV_MGR') || roles.includes('LINE_MANAGER')) {
+    if (hasPermission('DASHBOARD_DIV_VIEW')) {
       list.push('DIV_MGR');
     }
-    if (hasPermission('DASHBOARD_DEPT_VIEW') || roles.includes('DEPT_MGR')) {
+    if (hasPermission('DASHBOARD_DEPT_VIEW')) {
       list.push('DEPT_MGR');
     }
     if (
       hasPermission('DASHBOARD_EMP_VIEW') ||
-      hasPermission('DASHBOARD_EMPLOYEE_VIEW') ||
-      roles.includes('EMPLOYEE') ||
-      roles.includes('STAFF') ||
-      list.length === 0
+      hasPermission('DASHBOARD_EMPLOYEE_VIEW')
     ) {
       list.push('EMPLOYEE');
     }
 
-    return list.length > 0 ? list : ['EMPLOYEE'];
+    return list;
   }, [user, hasPermission]);
 
   const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
@@ -105,6 +98,25 @@ export default function HomePage() {
               message="ขออภัย บัญชีของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงเมนูหรือโมดูลใดๆ ในระบบ กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอสิทธิ์การใช้งาน"
               backText="ออกจากระบบ (Logout)"
               onBackAction={logout}
+            />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (user && allowedDashboards.length === 0) {
+    return (
+      <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans text-slate-800 dark:text-slate-200">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <Navbar />
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-2xl w-full mx-auto flex items-center justify-center">
+            <AccessDenied
+              title="คุณยังไม่ได้รับสิทธิ์การใช้งานแดชบอร์ด"
+              message="ขออภัย บทบาทของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงแดชบอร์ด กรุณาติดต่อผู้ดูแลระบบเพื่อขอเปิดสิทธิ์การใช้งาน"
+              backText="ไปยังหน้าตั้งค่าระบบ"
+              backHref="/settings"
             />
           </main>
         </div>

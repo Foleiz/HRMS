@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
-import { Button, Input, NumberInput, ModalShell } from '@/components/ui';
+import { Button, Input, NumberInput, ModalShell, ModalHeader } from '@/components/ui';
 import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
@@ -191,7 +191,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
       onBackdropClick={onClose}
       className="z-50 bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700/60 animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700/60 animate-in slide-in-from-right duration-300 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between">
           <div>
@@ -253,139 +253,18 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   )}
                 </div>
 
-                {/* ฟอร์มแก้ไขรายการได้ (เมื่อกด "แตะเพื่อแก้ไข") */}
-                {canEdit && editingItem && editingItem.itemType === 'EARNING' && (
-                  <div className="mt-2.5 border border-dashed border-blue-400 dark:border-blue-600/60 rounded-xl p-4 space-y-3 bg-blue-50/20 dark:bg-blue-950/15 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between pb-1 border-b border-blue-200/50 dark:border-blue-800/50">
-                      <div className="flex items-center gap-1.5">
-                        <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400">แก้ไขรายการได้</h5>
-                        <span className="text-[11px] text-slate-500 font-normal">({editingItem.itemName})</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={closeEditForm}
-                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                      >
-                        ยกเลิก
-                      </button>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      disabled={saving}
-                      maxLength={100}
-                      autoFocus
-                    />
-                    <div className="grid grid-cols-[9rem_1fr] gap-2">
-                      <NumberInput value={editAmount} onChange={setEditAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
-                      <Input
-                        type="text"
-                        placeholder="หมายเหตุ (แสดงบนสลิป)"
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        disabled={saving}
-                        maxLength={200}
-                      />
-                    </div>
-                    {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={async () => {
-                          if (!editingItem) return;
-                          await handleDelete(editingItem.id);
-                          closeEditForm();
-                        }}
-                        className="py-2 px-3 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        ลบรายการ
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={closeEditForm}
-                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          ยกเลิก
-                        </button>
-                        <Button onClick={handleUpdate} loading={saving} disabled={!editName || !editAmount} size="sm">
-                          {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ปุ่มเพิ่มรายการได้ หรือ ฟอร์มเพิ่มรายการได้ */}
-                {canEdit && (!editingItem || editingItem.itemType !== 'EARNING') && (
-                  addingSection === 'EARNING' ? (
-                    <div className="mt-2.5 border border-dashed border-emerald-300 dark:border-emerald-700/60 rounded-xl p-4 space-y-3 bg-emerald-50/20 dark:bg-emerald-950/10 animate-in fade-in duration-150">
-                      <div className="flex items-center justify-between pb-1 border-b border-emerald-200/50 dark:border-emerald-800/50">
-                        <h5 className="text-xs font-bold text-emerald-700 dark:text-emerald-400">เพิ่มรายการได้</h5>
-                        <button
-                          type="button"
-                          onClick={closeAddForm}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                        >
-                          ยกเลิก
-                        </button>
-                      </div>
-                      <Input
-                        type="text"
-                        placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        disabled={saving}
-                        maxLength={100}
-                        autoFocus
-                      />
-                      <div className="grid grid-cols-[9rem_1fr] gap-2">
-                        <NumberInput value={newAmount} onChange={setNewAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
-                        <Input
-                          type="text"
-                          placeholder="หมายเหตุ (แสดงบนสลิป)"
-                          value={newNote}
-                          onChange={(e) => setNewNote(e.target.value)}
-                          disabled={saving}
-                          maxLength={200}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <OptionCheckCard checked={newTaxable} onChange={setNewTaxable} {...TAX_OPTION_TEXT} />
-                        <OptionCheckCard checked={newSso} onChange={setNewSso} {...SSO_OPTION_TEXT} />
-                      </div>
-                      {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={closeAddForm}
-                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          ยกเลิก
-                        </button>
-                        <Button fullWidth onClick={handleAdd} loading={saving} disabled={!newName || !newAmount} icon={<Plus className="w-3.5 h-3.5" />}>
-                          {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      fullWidth
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openAddForm('EARNING')}
-                      icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
-                      className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-emerald-300 dark:border-emerald-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
-                    >
-                      เพิ่มรายการได้
-                    </Button>
-                  )
+                {/* ปุ่มเพิ่มรายการได้ */}
+                {canEdit && (
+                  <Button
+                    fullWidth
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => openAddForm('EARNING')}
+                    icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
+                    className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-emerald-300 dark:border-emerald-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                  >
+                    เพิ่มรายการได้
+                  </Button>
                 )}
               </div>
 
@@ -428,161 +307,241 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   )}
                 </div>
 
-                {/* ฟอร์มแก้ไขรายการหัก (เมื่อกด "แตะเพื่อแก้ไข") */}
-                {canEdit && editingItem && editingItem.itemType === 'DEDUCTION' && (
-                  <div className="mt-2.5 border border-dashed border-blue-400 dark:border-blue-600/60 rounded-xl p-4 space-y-3 bg-blue-50/20 dark:bg-blue-950/15 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between pb-1 border-b border-blue-200/50 dark:border-blue-800/50">
-                      <div className="flex items-center gap-1.5">
-                        <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400">แก้ไขรายการหัก</h5>
-                        <span className="text-[11px] text-slate-500 font-normal">({editingItem.itemName})</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={closeEditForm}
-                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                      >
-                        ยกเลิก
-                      </button>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="ชื่อหัวข้อ เช่น ค่าปรับขาดงาน, ค่าอุปกรณ์"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      disabled={saving}
-                      maxLength={100}
-                      autoFocus
-                    />
-                    <div className="grid grid-cols-[9rem_1fr] gap-2">
-                      <NumberInput value={editAmount} onChange={setEditAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
-                      <Input
-                        type="text"
-                        placeholder="หมายเหตุ (แสดงบนสลิป)"
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        disabled={saving}
-                        maxLength={200}
-                      />
-                    </div>
-                    {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={async () => {
-                          if (!editingItem) return;
-                          await handleDelete(editingItem.id);
-                          closeEditForm();
-                        }}
-                        className="py-2 px-3 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        ลบรายการ
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={closeEditForm}
-                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          ยกเลิก
-                        </button>
-                        <Button onClick={handleUpdate} loading={saving} disabled={!editName || !editAmount} size="sm">
-                          {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ปุ่มเพิ่มรายการหัก หรือ ฟอร์มเพิ่มรายการหัก */}
-                {canEdit && (!editingItem || editingItem.itemType !== 'DEDUCTION') && (
-                  addingSection === 'DEDUCTION' ? (
-                    <div className="mt-2.5 border border-dashed border-rose-300 dark:border-rose-700/60 rounded-xl p-4 space-y-3 bg-rose-50/20 dark:bg-rose-950/10 animate-in fade-in duration-150">
-                      <div className="flex items-center justify-between pb-1 border-b border-rose-200/50 dark:border-rose-800/50">
-                        <h5 className="text-xs font-bold text-rose-700 dark:text-rose-400">เพิ่มรายการหัก</h5>
-                        <button
-                          type="button"
-                          onClick={closeAddForm}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                        >
-                          ยกเลิก
-                        </button>
-                      </div>
-                      <Input
-                        type="text"
-                        placeholder="ชื่อหัวข้อ เช่น ค่าปรับขาดงาน, ค่าอุปกรณ์"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        disabled={saving}
-                        maxLength={100}
-                        autoFocus
-                      />
-                      <div className="grid grid-cols-[9rem_1fr] gap-2">
-                        <NumberInput value={newAmount} onChange={setNewAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
-                        <Input
-                          type="text"
-                          placeholder="หมายเหตุ (แสดงบนสลิป)"
-                          value={newNote}
-                          onChange={(e) => setNewNote(e.target.value)}
-                          disabled={saving}
-                          maxLength={200}
-                        />
-                      </div>
-                      {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={closeAddForm}
-                          className="py-2 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          ยกเลิก
-                        </button>
-                        <Button fullWidth onClick={handleAdd} loading={saving} disabled={!newName || !newAmount} icon={<Plus className="w-3.5 h-3.5" />}>
-                          {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      fullWidth
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openAddForm('DEDUCTION')}
-                      icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
-                      className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-rose-300 dark:border-rose-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
-                    >
-                      เพิ่มรายการหัก
-                    </Button>
-                  )
+                {/* ปุ่มเพิ่มรายการหัก */}
+                {canEdit && (
+                  <Button
+                    fullWidth
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => openAddForm('DEDUCTION')}
+                    icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
+                    className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-rose-300 dark:border-rose-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                  >
+                    เพิ่มรายการหัก
+                  </Button>
                 )}
               </div>
 
               {/* เงินเดือนสุทธิ */}
-              <div className="rounded-2xl p-4 sm:px-5 sm:py-4.5 flex items-center justify-between bg-[#14203F] shadow-md">
-                <span className="text-xs sm:text-sm font-medium text-[#7EC6F3]">เงินเดือนสุทธิ</span>
-                <span className="text-base sm:text-lg font-bold text-white font-mono tabular-nums tracking-tight">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:px-5 sm:py-4.5 flex items-center justify-between bg-white dark:bg-slate-800 shadow-sm">
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ</span>
+                <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums tracking-tight">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                     : '-'}
                 </span>
               </div>
 
-              {error && !addingSection && <p className="text-[11px] text-rose-600 text-center">{error}</p>}
-
-
+              {error && !addingSection && !editingItem && <p className="text-[11px] text-rose-600 text-center">{error}</p>}
             </>
           )}
         </div>
+
+        {/* Popup เพิ่มรายการได้ / เพิ่มรายการหัก (อยู่ภายใน Drawer) */}
+        {addingSection && (
+          <div
+            className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in duration-150"
+            onClick={closeAddForm}
+          >
+            <div
+              className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 max-h-[92vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalHeader
+                title={addingSection === 'EARNING' ? 'เพิ่มรายการได้' : 'เพิ่มรายการหัก'}
+                subtitle={`${record.employeeName} (${record.employeeCode})`}
+                onClose={closeAddForm}
+                className="py-2.5 px-8"
+              />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAdd();
+                }}
+                className="flex flex-col flex-1 min-h-0"
+              >
+                <div className="p-4 space-y-3 overflow-y-auto">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      ชื่อหัวข้อ <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder={addingSection === 'EARNING' ? 'เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด' : 'เช่น ค่าปรับขาดงาน, ค่าอุปกรณ์'}
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      disabled={saving}
+                      maxLength={100}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      จำนวนเงิน <span className="text-rose-500">*</span>
+                    </label>
+                    <NumberInput
+                      value={newAmount}
+                      onChange={setNewAmount}
+                      prefix="฿"
+                      placeholder="0.00"
+                      disabled={saving}
+                    />
+                  </div>
+
+                  {addingSection === 'EARNING' && (
+                    <div className="space-y-1.5 pt-0.5">
+                      <OptionCheckCard checked={newTaxable} onChange={setNewTaxable} title="คิดเป็นเงินได้เพื่อภาษี" />
+                      <OptionCheckCard checked={newSso} onChange={setNewSso} title="คิดเป็นค่าจ้างเพื่อประกันสังคม" />
+                    </div>
+                  )}
+
+                  {error && (
+                    <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/30 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/50">
+                      {error}
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={closeAddForm}
+                    className="py-1.5 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    ยกเลิก
+                  </button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    loading={saving}
+                    disabled={!newName.trim() || !newAmount}
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                  >
+                    {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Popup แก้ไขรายการ (อยู่ภายใน Drawer) */}
+        {editingItem && (
+          <div
+            className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in duration-150"
+            onClick={closeEditForm}
+          >
+            <div
+              className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 max-h-[92vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ModalHeader
+                title={editingItem.itemType === 'EARNING' ? 'แก้ไขรายการได้' : 'แก้ไขรายการหัก'}
+                subtitle={`${record.employeeName} (${record.employeeCode})`}
+                onClose={closeEditForm}
+                className="py-2.5 px-8"
+              />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleUpdate();
+                }}
+                className="flex flex-col flex-1 min-h-0"
+              >
+                <div className="p-4 space-y-3 overflow-y-auto">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      ชื่อหัวข้อ <span className="text-rose-500">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="ชื่อหัวข้อ"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      disabled={saving}
+                      maxLength={100}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      จำนวนเงิน <span className="text-rose-500">*</span>
+                    </label>
+                    <NumberInput
+                      value={editAmount}
+                      onChange={setEditAmount}
+                      prefix="฿"
+                      placeholder="0.00"
+                      disabled={saving}
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/30 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/50">
+                      {error}
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={async () => {
+                      if (!editingItem) return;
+                      await handleDelete(editingItem.id);
+                      closeEditForm();
+                    }}
+                    className="py-1.5 px-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    ลบรายการ
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={closeEditForm}
+                      className="py-1.5 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      ยกเลิก
+                    </button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      loading={saving}
+                      disabled={!editName.trim() || !editAmount}
+                    >
+                      {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </ModalShell>
   );
 };
 
-const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => (
-  <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
-    {source === 'BONUS' ? 'โบนัส' : source === 'COMMISSION' ? 'ค่าคอมฯ' : 'ระบุเอง'}
-  </span>
-);
+const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => {
+  if (source === 'BONUS') {
+    return (
+      <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
+        โบนัส
+      </span>
+    );
+  }
+  if (source === 'COMMISSION') {
+    return (
+      <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
+        ค่าคอมฯ
+      </span>
+    );
+  }
+  return null;
+};

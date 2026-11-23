@@ -224,7 +224,7 @@ public class RoleService : IRoleService
 
             var existingPerms = permissions.Select(p => p.PermissionCode).ToHashSet();
             var toAdd = new List<Permission>();
-            var actions = new[] { "VIEW", "CREATE", "EDIT", "APPROVE" };
+            var actions = new[] { "VIEW", "CREATE", "EDIT", "DELETE", "APPROVE" };
 
             foreach (var mod in StandardModules)
             {
@@ -236,6 +236,7 @@ public class RoleService : IRoleService
                         "VIEW" => "ดูข้อมูล",
                         "CREATE" => "สร้าง/เพิ่ม",
                         "EDIT" => "แก้ไข",
+                        "DELETE" => "ลบ",
                         "APPROVE" => "อนุมัติ",
                         _ => act
                     };
@@ -528,7 +529,7 @@ public class RoleService : IRoleService
 
     private static readonly HashSet<string> StandardActions = new(StringComparer.Ordinal)
     {
-        "VIEW", "CREATE", "EDIT", "APPROVE"
+        "VIEW", "CREATE", "EDIT", "DELETE", "APPROVE"
     };
 
     /// <summary>ย้ายสิทธิ์และขอบเขตข้อมูลจาก prefix เดิมไปยัง prefix เป้าหมาย และสามารถลบสิทธิ์เดิมออกเมื่อควบรวมเมนู</summary>
@@ -633,6 +634,7 @@ public class RoleService : IRoleService
             var viewCode = $"{mod.Prefix}_VIEW";
             var createCode = $"{mod.Prefix}_CREATE";
             var editCode = $"{mod.Prefix}_EDIT";
+            var deleteCode = $"{mod.Prefix}_DELETE";
             var approveCode = $"{mod.Prefix}_APPROVE";
 
             bool HasScope(string permCode, string scopeName)
@@ -649,11 +651,14 @@ public class RoleService : IRoleService
                 return false;
             }
 
+            bool hasAnyDeleteScope = activeScopes.Any(s => s.PermissionCode.EndsWith("_DELETE"));
+
             var selfPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "SELF"),
                 Create = HasScope(createCode, "SELF"),
                 Edit = HasScope(editCode, "SELF") || HasScope(approveCode, "SELF"),
+                Delete = HasScope(deleteCode, "SELF") || (!hasAnyDeleteScope && HasScope(editCode, "SELF")),
                 Approve = HasScope(approveCode, "SELF") || HasScope(editCode, "SELF")
             };
 
@@ -662,6 +667,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "TEAM"),
                 Create = HasScope(createCode, "TEAM"),
                 Edit = HasScope(editCode, "TEAM") || HasScope(approveCode, "TEAM"),
+                Delete = HasScope(deleteCode, "TEAM") || (!hasAnyDeleteScope && HasScope(editCode, "TEAM")),
                 Approve = HasScope(approveCode, "TEAM") || HasScope(editCode, "TEAM")
             };
 
@@ -670,6 +676,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "DEPARTMENT"),
                 Create = HasScope(createCode, "DEPARTMENT"),
                 Edit = HasScope(editCode, "DEPARTMENT") || HasScope(approveCode, "DEPARTMENT"),
+                Delete = HasScope(deleteCode, "DEPARTMENT") || (!hasAnyDeleteScope && HasScope(editCode, "DEPARTMENT")),
                 Approve = HasScope(approveCode, "DEPARTMENT") || HasScope(editCode, "DEPARTMENT")
             };
 
@@ -678,6 +685,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "DIVISION"),
                 Create = HasScope(createCode, "DIVISION"),
                 Edit = HasScope(editCode, "DIVISION") || HasScope(approveCode, "DIVISION"),
+                Delete = HasScope(deleteCode, "DIVISION") || (!hasAnyDeleteScope && HasScope(editCode, "DIVISION")),
                 Approve = HasScope(approveCode, "DIVISION") || HasScope(editCode, "DIVISION")
             };
 
@@ -686,6 +694,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "ORGANIZATION"),
                 Create = HasScope(createCode, "ORGANIZATION"),
                 Edit = HasScope(editCode, "ORGANIZATION") || HasScope(approveCode, "ORGANIZATION"),
+                Delete = HasScope(deleteCode, "ORGANIZATION") || (!hasAnyDeleteScope && HasScope(editCode, "ORGANIZATION")),
                 Approve = HasScope(approveCode, "ORGANIZATION") || HasScope(editCode, "ORGANIZATION")
             };
 
@@ -704,6 +713,11 @@ public class RoleService : IRoleService
             {
                 if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Edit = true;
                 else selfPerms.Edit = true;
+            }
+            if (!selfPerms.Delete && !teamPerms.Delete && !deptPerms.Delete && !divPerms.Delete && !orgPerms.Delete && grantedPermCodes.Contains(deleteCode))
+            {
+                if (roleCode is "ADMIN" or "SYSTEM_SUPER") orgPerms.Delete = true;
+                else selfPerms.Delete = true;
             }
             if (!selfPerms.Approve && !teamPerms.Approve && !deptPerms.Approve && !divPerms.Approve && !orgPerms.Approve && grantedPermCodes.Contains(approveCode))
             {
@@ -903,11 +917,11 @@ public class RoleService : IRoleService
 
         // Lockout protection: Cannot revoke all access for super admins
         bool hasAnyPermission = request.Modules.Any(m =>
-            (m.Self != null && (m.Self.View || m.Self.Create || m.Self.Edit || m.Self.Approve)) ||
-            (m.Team != null && (m.Team.View || m.Team.Create || m.Team.Edit || m.Team.Approve)) ||
-            (m.Department != null && (m.Department.View || m.Department.Create || m.Department.Edit || m.Department.Approve)) ||
-            (m.Division != null && (m.Division.View || m.Division.Create || m.Division.Edit || m.Division.Approve)) ||
-            (m.Organization != null && (m.Organization.View || m.Organization.Create || m.Organization.Edit || m.Organization.Approve)) ||
+            (m.Self != null && (m.Self.View || m.Self.Create || m.Self.Edit || m.Self.Delete || m.Self.Approve)) ||
+            (m.Team != null && (m.Team.View || m.Team.Create || m.Team.Edit || m.Team.Delete || m.Team.Approve)) ||
+            (m.Department != null && (m.Department.View || m.Department.Create || m.Department.Edit || m.Department.Delete || m.Department.Approve)) ||
+            (m.Division != null && (m.Division.View || m.Division.Create || m.Division.Edit || m.Division.Delete || m.Division.Approve)) ||
+            (m.Organization != null && (m.Organization.View || m.Organization.Create || m.Organization.Edit || m.Organization.Delete || m.Organization.Approve)) ||
             m.CanView);
 
         if (role.RoleCode is "ADMIN" or "SYSTEM_SUPER" && !hasAnyPermission)
@@ -954,6 +968,7 @@ public class RoleService : IRoleService
             var viewCode = $"{pref}_VIEW";
             var createCode = $"{pref}_CREATE";
             var editCode = $"{pref}_EDIT";
+            var deleteCode = $"{pref}_DELETE";
             var approveCode = $"{pref}_APPROVE";
 
             var scopeList = new (string ScopeName, ScopeActionPermissionsDto? Perms)[]
@@ -985,6 +1000,11 @@ public class RoleService : IRoleService
                     AddDataScope(editCode, scopeName);
                     AddPerm(approveCode);
                     AddDataScope(approveCode, scopeName);
+                }
+                if (perms.Delete)
+                {
+                    AddPerm(deleteCode);
+                    AddDataScope(deleteCode, scopeName);
                 }
             }
         }

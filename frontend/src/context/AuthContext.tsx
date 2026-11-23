@@ -203,10 +203,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    // ผู้ดูแลระบบระดับสูงสุด (ADMIN หรือ SYSTEM_SUPER) มีสิทธิ์เข้าถึงทุกฟังก์ชันในระบบเสมอให้ตรงกับ Backend
-    if (user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
-      return true;
-    }
     return user.permissions?.includes(permission) ?? false;
   };
 

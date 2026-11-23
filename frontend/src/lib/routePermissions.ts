@@ -223,8 +223,8 @@ export const ROUTE_RULES: RouteRule[] = [
 export function isPathAccessible(pathname: string, user: UserProfile | null): { allowed: boolean; rule?: RouteRule } {
   if (!user) return { allowed: false };
 
-  // ผู้ดูแลระบบระดับสูงสุด (ADMIN หรือ SYSTEM_SUPER) มีสิทธิ์เข้าถึงทุกหน้าในระบบเสมอ
-  if (user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
+  // ยกเว้นเฉพาะหน้าตั้งค่าระบบ ที่อนุญาตให้ ADMIN หรือ SYSTEM_SUPER เข้าถึงได้เสมอ เพื่อป้องกัน lockout
+  if (pathname.startsWith('/settings') && user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
     return { allowed: true };
   }
 

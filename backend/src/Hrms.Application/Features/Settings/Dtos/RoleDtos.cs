@@ -33,13 +33,14 @@ public class RoleDetailDto
 }
 
 /// <summary>
-/// สิทธิ์การกระทำ 4 ประการ (ดู, สร้าง, แก้ไข, อนุมัติ) ในขอบเขตข้อมูลที่กำหนด
+/// สิทธิ์การกระทำ (ดู, สร้าง, แก้ไข, ลบ, อนุมัติ) ในขอบเขตข้อมูลที่กำหนด
 /// </summary>
 public class ScopeActionPermissionsDto
 {
     public bool View { get; set; }
     public bool Create { get; set; }
     public bool Edit { get; set; }
+    public bool Delete { get; set; }
     public bool Approve { get; set; }
 }
 

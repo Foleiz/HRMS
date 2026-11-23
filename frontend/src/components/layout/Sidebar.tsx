@@ -538,11 +538,6 @@ export const Sidebar: React.FC = () => {
         return true;
       }
 
-      // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป
-      if (item.href === '/') {
-        const hasAnyPerm = Boolean(user.permissions && user.permissions.length > 0);
-        if (!hasAnyPerm) return false;
-      }
 
       // ตรวจสอบ Role
       if (item.requiredRoles && item.requiredRoles.length > 0) {

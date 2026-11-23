@@ -120,6 +120,35 @@ const formatThaiDayOfWeek = (dateStr?: string | null) => {
   }
 };
 
+const formatThaiFullDate = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('th-TH', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+const getCalendarParts = (dateStr?: string | null) => {
+  if (!dateStr) return { day: '-', month: '-', year: '-', weekday: '' };
+  try {
+    const d = new Date(dateStr);
+    return {
+      day: d.getDate(),
+      month: d.toLocaleDateString('th-TH', { month: 'short' }),
+      year: d.toLocaleDateString('th-TH', { year: 'numeric' }),
+      weekday: d.toLocaleDateString('th-TH', { weekday: 'long' }),
+    };
+  } catch {
+    return { day: '-', month: '-', year: '-', weekday: '' };
+  }
+};
+
 const formatDateForInput = (isoDateStr?: string | null) => {
   if (!isoDateStr) return '';
   const d = new Date(isoDateStr);
@@ -1087,83 +1116,197 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       </div>
 
       {/* ─── 3. Detail Reading Modal ─── */}
-      {readingActivity && (
-        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
-            <ModalHeader
-              icon={Sparkles}
-              title="รายละเอียดประกาศกิจกรรม"
-              onClose={() => setReadingActivity(null)}
-            />
+      {readingActivity && (() => {
+        const statusInfo = getActivityStatusInfo(readingActivity);
+        const meta = parseActivityMeta(readingActivity.content);
+        const startStr = readingActivity.publishedAt || readingActivity.createdAt;
+        const cal = getCalendarParts(startStr);
+        const hasMultiDays = readingActivity.expireAt && readingActivity.expireAt.substring(0, 10) !== startStr?.substring(0, 10);
 
-            <div className="p-6 overflow-y-auto space-y-4 text-xs">
-              {/* Activity Header */}
-              <div>
+        return (
+          <ModalShell
+            className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+            innerClassName="items-center justify-center p-4"
+          >
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-750 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/50 shadow-2xs">
+                    <Sparkles className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      รายละเอียดประกาศกิจกรรม
+                    </h3>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      ข้อมูลกำหนดการและผู้เข้าร่วมกิจกรรม
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReadingActivity(null)}
+                  className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-5">
+                {/* Title & Badges Hero */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60 text-xs">
+                      <Sparkles className="w-3 h-3 text-indigo-500" /> ประกาศกิจกรรม
+                    </span>
+
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusInfo.color}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
+                      <span>{statusInfo.label}</span>
+                    </span>
+
+                    {readingActivity.isPinned && (
+                      <span className="font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-xs flex items-center gap-1">
+                        <Pin className="w-3 h-3 fill-amber-500 text-amber-500" /> ปักหมุด
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-snug tracking-tight">
+                    {readingActivity.title}
+                  </h2>
+
+                  {/* Creator / Date info */}
+                  <div className="flex flex-wrap items-center gap-3.5 text-xs text-slate-400 dark:text-slate-500 pt-0.5">
+                    {readingActivity.createdByEmployeeName && (
+                      <span className="flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>โดย {readingActivity.createdByEmployeeName}</span>
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                      <span>สร้างเมื่อ {formatThaiDate(readingActivity.createdAt)}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Event Schedule Highlight Banner */}
+                <div className="bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-slate-50/60 dark:from-slate-800/90 dark:via-slate-800/60 dark:to-slate-850 p-4 rounded-2xl border border-indigo-100/80 dark:border-slate-700/80 flex items-center gap-4 shadow-2xs">
+                  {/* Calendar Sheet Widget */}
+                  <div className="shrink-0 w-20 bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xs border border-indigo-200/80 dark:border-slate-700 text-center">
+                    <div className="bg-indigo-600 text-white text-[10px] font-bold py-0.5 uppercase tracking-wide">
+                      {cal.month}
+                    </div>
+                    <div className="py-1 px-1">
+                      <div className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono leading-none">
+                        {cal.day}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
+                        {cal.weekday || cal.year}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schedule Details */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-100/70 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <Calendar className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium block leading-none">
+                          วันที่จัดกิจกรรม
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {formatThaiFullDate(startStr)}
+                          {hasMultiDays && (
+                            <span className="text-slate-500 font-normal"> ถึง {formatThaiFullDate(readingActivity.expireAt)}</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-purple-100/70 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                        <Clock className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium block leading-none">
+                          เวลาจัดกิจกรรม
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {meta.timeRange ? `${meta.timeRange} น.` : 'ตลอดทั้งวัน'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Target Audience */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <span>กลุ่มเป้าหมายผู้เข้าร่วม</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                    {renderTargetBadge(readingActivity)}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <FileText className="w-3.5 h-3.5 text-slate-400" />
+                    <span>รายละเอียดและกำหนดการ</span>
+                  </div>
+                  <div className="p-4.5 bg-slate-50/80 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800/80 text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {meta.description || (
+                      <span className="text-slate-400 italic">ไม่มีรายละเอียดเพิ่มเติม</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-3.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-750 flex items-center justify-between">
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                  {readingActivity.readCount > 0 ? (
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" /> อ่านแล้ว {readingActivity.readCount} คน
+                    </span>
+                  ) : null}
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-2xs">
-                    ประกาศกิจกรรม
-                  </span>
-                  {readingActivity.isPinned && (
-                    <span className="font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-2xs flex items-center gap-1">
-                      <Pin className="w-2.5 h-2.5 fill-amber-500" /> ปักหมุด
-                    </span>
+                  {canEdit && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const act = readingActivity;
+                        setReadingActivity(null);
+                        handleOpenEdit(act);
+                      }}
+                      icon={<Edit2 className="w-3.5 h-3.5" />}
+                    >
+                      แก้ไขกิจกรรม
+                    </Button>
                   )}
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2">
-                  {readingActivity.title}
-                </h3>
-              </div>
-
-              {/* Schedule Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                    <Calendar className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-2xs text-slate-400 block">วันที่จัดกิจกรรม</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {formatThaiDate(readingActivity.publishedAt || readingActivity.createdAt)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-2xs text-slate-400 block">เวลาจัดกิจกรรม</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {parseActivityMeta(readingActivity.content).timeRange || 'ตลอดทั้งวัน'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Target Audience */}
-              <div>
-                <span className="text-2xs text-slate-400 block mb-1">กลุ่มเป้าหมายผู้เข้าร่วม:</span>
-                <div>{renderTargetBadge(readingActivity)}</div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <span className="text-2xs text-slate-400 block mb-1">รายละเอียดกิจกรรม:</span>
-                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60">
-                  {parseActivityMeta(readingActivity.content).description || 'ไม่มีรายละเอียดเพิ่มเติม'}
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setReadingActivity(null)}
+                  >
+                    ปิดหน้าต่าง
+                  </Button>
                 </div>
               </div>
             </div>
-
-            <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
-              <Button variant="secondary" onClick={() => setReadingActivity(null)}>
-                ปิดหน้าต่าง
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
-      )}
+          </ModalShell>
+        );
+      })()}
 
       {/* ─── 4. Create / Edit Activity Modal ─── */}
       {isModalOpen && (

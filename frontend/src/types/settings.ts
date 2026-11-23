@@ -69,6 +69,7 @@ export interface ScopeActionPermissions {
   view: boolean;
   create: boolean;
   edit: boolean;
+  delete?: boolean;
   approve: boolean;
 }
 
