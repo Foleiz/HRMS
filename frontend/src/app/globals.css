@@ -580,3 +580,40 @@ html.dark .refresh-indicator__bar::before {
   box-shadow: 0 0 0 1.5px #0f1d36, 0 2px 4px rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
+
+/* ===================== Toggle Switch (High Contrast Light & Dark) ===================== */
+/* สวิตช์เปิด/ปิด: ตัวหมุดสีขาวสว่างบริสุทธิ์ ชัดเจน ไม่ถูกแปลงเป็นสีเข้มในโหมดมืด */
+html [role="switch"] > span,
+html.dark [role="switch"] > span,
+html.dark [role="switch"] span.toggle-thumb,
+html.dark [role="switch"] .toggle-thumb,
+[role="switch"] > span,
+.toggle-thumb {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ตัวรางสวิตช์เมื่อเปิด (ON): สีฟ้าสว่างคมชัด มีมิติ ไม่จมกับพื้นหลังสีมืด */
+html.dark [role="switch"][aria-checked="true"],
+.dark [role="switch"][aria-checked="true"] {
+  background-color: #3b82f6 !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.45) !important;
+  border-color: transparent !important;
+}
+
+html.dark [role="switch"][aria-checked="true"]:hover,
+.dark [role="switch"][aria-checked="true"]:hover {
+  background-color: #60a5fa !important;
+}
+
+/* ตัวรางสวิตช์เมื่อปิด (OFF): เห็นขอบชัดเจน ไม่กลืนหายไปในพื้นหลัง */
+html.dark [role="switch"][aria-checked="false"],
+.dark [role="switch"][aria-checked="false"] {
+  background-color: #334155 !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+
+html.dark [role="switch"][aria-checked="false"]:hover,
+.dark [role="switch"][aria-checked="false"]:hover {
+  background-color: #475569 !important;
+}

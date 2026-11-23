@@ -120,7 +120,7 @@ html.dark .bg-teal-100:not(.theme-light, .theme-light *, [data-stat-card], [data
 html.dark .bg-teal-50:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #174F42 !important; }
 html.dark .bg-violet-100:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #22174F !important; }
 html.dark .bg-violet-50:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #20174F !important; }
-html.dark .bg-white:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: #1E293B !important; }
+html.dark .bg-white:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [role="switch"] *, .toggle-thumb) { background-color: #1E293B !important; }
 html.dark .bg-white\/60:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(30, 41, 59, 0.60) !important; }
 html.dark .bg-white\/70:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(30, 41, 59, 0.70) !important; }
 html.dark .bg-white\/80:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *) { background-color: rgba(30, 41, 59, 0.80) !important; }
