@@ -833,38 +833,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       normalized = normalized.filter((m) => m.moduleCode !== 'GUIDE_PAYROLL');
     }
 
-    // ตรวจสอบโมดูลหมวด GUIDE: หากขั้นตอนใน Flow ถูกติ๊กไม่ครบ ให้ถือว่า Flow นั้นไม่ถูกใช้งาน (ปิด canView ของ GUIDE_xxx)
-    GUIDE_FLOW_CONFIGS.forEach((flow) => {
-      const isScopeActive = (m: ModulePermissionScope) =>
-        m.canView ||
-        m.self?.view || m.self?.create || m.self?.edit || m.self?.delete || m.self?.approve ||
-        m.team?.view || m.team?.create || m.team?.edit || m.team?.delete || m.team?.approve ||
-        m.department?.view || m.department?.create || m.department?.edit || m.department?.delete || m.department?.approve ||
-        m.division?.view || m.division?.create || m.division?.edit || m.division?.delete || m.division?.approve ||
-        m.organization?.view || m.organization?.create || m.organization?.edit || m.organization?.delete || m.organization?.approve;
-
-      const allStepsActive = flow.steps.length > 0 && flow.steps.every((s) => {
-        const m = normalized.find((mod) => mod.moduleCode === s.targetModuleCode);
-        return m ? isScopeActive(m) : false;
-      });
-
-      if (!allStepsActive) {
-        const idx = normalized.findIndex((m) => m.moduleCode === flow.moduleCode);
-        if (idx !== -1) {
-          const def = () => ({ view: false, create: false, edit: false, approve: false });
-          normalized[idx] = {
-            ...normalized[idx],
-            canView: false,
-            self: def(),
-            team: def(),
-            department: def(),
-            division: def(),
-            organization: def(),
-          };
-        }
-      }
-    });
-
     return normalized;
   };
 
@@ -1028,13 +996,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ต้องติ๊กสเต็ปย่อยครบทุกขั้นตอนเท่านั้น หากไม่ครบจะถือว่าไม่ได้ใช้งาน)
+  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ตามสิทธิ์ GUIDE_xxx ของ Role นั้น)
   const isGuideFlowActive = (flow: GuideFlowConfig) => {
-    if (!flow.steps.length) return false;
-    return flow.steps.every((s) => {
-      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
-      return m ? isModuleActive(m) : false;
-    });
+    const guideMod = localModules.find((m) => m.moduleCode === flow.moduleCode);
+    return guideMod ? isModuleActive(guideMod) : false;
   };
 
   // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์อยู่ใน Flow
@@ -1065,92 +1030,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     return false;
   };
 
-  // Helper: นับจำนวนสเต็ปที่เปิดใช้แต่มีคำเตือนต้องแก้ไขสิทธิ์
-  const getGuideFlowWarningCount = (flow: GuideFlowConfig) => {
-    return flow.steps.filter((s) => {
-      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
-      const isStepActive = m ? isModuleActive(m) : false;
-      return isStepActive && checkStepWarning(s, m);
-    }).length;
-  };
-
-  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (หากติ๊กไม่ครบทุกสเต็ป จะถือว่า Flow นี้ปิดใช้งาน)
-  const handleToggleFlowStep = (step: GuideStepConfig, flow: GuideFlowConfig) => {
-    setLocalModules((prev) => {
-      const targetMod = prev.find((m) => m.moduleCode === step.targetModuleCode);
-      const willStepBeActive = targetMod ? !isModuleActive(targetMod) : true;
-
-      // ตรวจสอบว่าหลังจากสลับสเต็ปนี้แล้ว ทุกสเต็ปใน Flow จะเปิดครบทั้งหมดหรือไม่
-      const allStepsWillBeActive = flow.steps.every((s) => {
-        if (s.targetModuleCode === step.targetModuleCode) {
-          return willStepBeActive;
-        }
-        const otherMod = prev.find((pm) => pm.moduleCode === s.targetModuleCode);
-        return otherMod ? isModuleActive(otherMod) : false;
-      });
-
-      const empty = { view: false, create: false, edit: false, approve: false };
-
-      return prev.map((m) => {
-        // 1. อัปเดตโมดูลเป้าหมายของสเต็ปที่คลิก
-        if (m.moduleCode === step.targetModuleCode) {
-          if (willStepBeActive) {
-            return {
-              ...m,
-              canView: true,
-              self: { view: true, create: false, edit: false, approve: false },
-            };
-          } else {
-            return {
-              ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
-            };
-          }
-        }
-
-        // 2. อัปเดตโมดูลหลักของ Flow (GUIDE_xxx): เปิดเฉพาะเมื่อทุกสเต็ปใน Flow ถูกติ๊กครบทั้งหมดเท่านั้น
-        if (m.moduleCode === flow.moduleCode) {
-          if (allStepsWillBeActive) {
-            return {
-              ...m,
-              canView: true,
-              self: { view: true, create: false, edit: false, approve: false },
-            };
-          } else {
-            return {
-              ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
-            };
-          }
-        }
-
-        return m;
-      });
-    });
-    setIsDirty(true);
-  };
-
-  // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดทั้งโมดูล GUIDE_xxx และทุกเมนูย่อยใน Flow)
+  // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดเฉพาะโมดูล GUIDE_xxx โดยไม่แตะต้องโมดูลจริงในระบบ)
   const handleToggleGuideFlow = (flow: GuideFlowConfig) => {
     const currentlyActive = isGuideFlowActive(flow);
-    const targetCodes = new Set([flow.moduleCode, ...flow.steps.map((s) => s.targetModuleCode)]);
+    const empty = { view: false, create: false, edit: false, approve: false };
 
-    setLocalModules((prev) => {
-      const empty = { view: false, create: false, edit: false, approve: false };
-      return prev.map((m) => {
-        if (targetCodes.has(m.moduleCode)) {
+    setLocalModules((prev) =>
+      prev.map((m) => {
+        if (m.moduleCode === flow.moduleCode) {
           if (currentlyActive) {
-            // หากเปิดครบอยู่แล้ว เมื่อกดปิด → ปิดทั้ง Flow และทุกสเต็ป
             return {
               ...m,
               canView: false,
@@ -1161,7 +1049,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               organization: { ...empty },
             };
           } else {
-            // หากยังเปิดไม่ครบ หรือปิดอยู่ เมื่อกดเปิด → เปิดทั้ง Flow และทุกสเต็ปให้ครบสมบูรณ์
             return {
               ...m,
               canView: true,
@@ -1170,24 +1057,20 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           }
         }
         return m;
-      });
-    });
+      })
+    );
     setIsDirty(true);
   };
 
-  // Handler สำหรับ Master Toggle ของหมวด "วิธีการใช้งาน" ทั้งหมด (เปิด/ปิดทั้ง 9 Flows)
+  // Handler สำหรับ Master Toggle ของหมวด "วิธีการใช้งาน" ทั้งหมด (เปิด/ปิดเฉพาะโมดูลหมวด GUIDE ทั้ง 11 Flows)
   const handleToggleGuideCategory = () => {
     const anyActive = GUIDE_FLOW_CONFIGS.some((flow) => isGuideFlowActive(flow));
-    const allTargetCodes = new Set<string>();
-    GUIDE_FLOW_CONFIGS.forEach((flow) => {
-      allTargetCodes.add(flow.moduleCode);
-      flow.steps.forEach((s) => allTargetCodes.add(s.targetModuleCode));
-    });
+    const guideCodes = new Set(GUIDE_FLOW_CONFIGS.map((f) => f.moduleCode));
 
     setLocalModules((prev) => {
       const empty = { view: false, create: false, edit: false, approve: false };
       return prev.map((m) => {
-        if (allTargetCodes.has(m.moduleCode)) {
+        if (guideCodes.has(m.moduleCode)) {
           if (anyActive) {
             return {
               ...m,
@@ -1889,7 +1772,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     >
                                       <span
                                         className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                                          isFlowActive
+                                          activeStepsCount === flow.steps.length
                                             ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
                                             : activeStepsCount > 0
                                             ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40'
@@ -1907,7 +1790,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     </div>
                                   </div>
 
-                                  {/* Expanded Sub-steps */}
+                                  {/* Expanded Sub-steps (Prerequisite Checklist) */}
                                   {isFlowExpanded && (
                                     <div className="border-t border-slate-100/80 dark:border-slate-700/60 divide-y divide-slate-100/70 dark:divide-slate-700/40 bg-white dark:bg-slate-800">
                                       {flow.steps.map((step) => {
@@ -1921,17 +1804,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                             className="px-4 py-2.5 pl-8 sm:pl-10 flex items-center justify-between gap-3 group hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors"
                                           >
                                             {/* Step Number Circle + Title + Route */}
-                                            <div
-                                              onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
-                                              className="flex items-center gap-2.5 min-w-0 cursor-pointer select-none flex-1"
-                                            >
+                                            <div className="flex items-center gap-2.5 min-w-0 select-none flex-1">
                                               <div
                                                 className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 transition-colors ${
-                                                  isWarning
+                                                  !isStepActive
+                                                    ? 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+                                                    : isWarning
                                                     ? 'bg-amber-600'
-                                                    : isStepActive
-                                                    ? 'bg-slate-900 dark:bg-slate-700'
-                                                    : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+                                                    : 'bg-slate-900 dark:bg-slate-700'
                                                 }`}
                                               >
                                                 {step.step}
@@ -1953,22 +1833,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                               </div>
                                             </div>
 
-                                            {/* Right: Warning Pill (if any) + Toggle Switch */}
-                                            <div
-                                              className="flex items-center gap-2.5 shrink-0"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              {isWarning && (
-                                                <span className="text-xs font-medium px-3 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60 shrink-0">
+                                            {/* Right: Prerequisite Status Badge */}
+                                            <div className="flex items-center gap-2.5 shrink-0">
+                                              {!isStepActive ? (
+                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700">
+                                                  ยังไม่มีสิทธิ์ในหน้านี้
+                                                </span>
+                                              ) : isWarning ? (
+                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60">
                                                   ต้องเปิดสิทธิ์ สร้าง/แก้ไข
                                                 </span>
+                                              ) : (
+                                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+                                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                  <span>สิทธิ์พร้อมใช้งาน</span>
+                                                </span>
                                               )}
-
-                                              <ToggleSwitch
-                                                checked={isStepActive}
-                                                onChange={() => handleToggleFlowStep(step, flow)}
-                                                disabled={!canEditRole}
-                                              />
                                             </div>
                                           </div>
                                         );
