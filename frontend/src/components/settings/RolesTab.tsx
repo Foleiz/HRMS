@@ -1812,8 +1812,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                         : 'bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/60'
                                     }`}
                                   >
-                                    {/* Left: Status Dot + Title & Subtitle */}
+                                    {/* Left: Dropdown Chevron + Status Dot + Title & Subtitle */}
                                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                      <div className="mt-0.5 text-slate-400 dark:text-slate-500 shrink-0">
+                                        <ChevronDown
+                                          className={`w-4 h-4 transition-transform duration-200 ${
+                                            isFlowExpanded ? 'rotate-180 text-primary dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
+                                          }`}
+                                        />
+                                      </div>
                                       <span
                                         className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
                                           isFlowActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
