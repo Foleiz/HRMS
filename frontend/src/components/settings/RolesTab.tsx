@@ -1850,7 +1850,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             {GUIDE_FLOW_CONFIGS.map((flow) => {
                               const isFlowActive = isGuideFlowActive(flow);
                               const activeStepsCount = getGuideFlowActiveStepsCount(flow);
-                              const warningCount = getGuideFlowWarningCount(flow);
                               const isFlowExpanded = expandedGuideFlows[flow.id] ?? (flow.id === 'hr-onboarding');
                               const cleanFlowTitle = flow.title.replace(/^ไกด์:\s*/, '');
 
@@ -1898,12 +1897,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                       >
                                         {activeStepsCount}/{flow.steps.length} ขั้นตอน
                                       </span>
-
-                                      {warningCount > 0 && (
-                                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
-                                          {warningCount} ต้องแก้ไข
-                                        </span>
-                                      )}
 
                                       <ToggleSwitch
                                         checked={isFlowActive}
