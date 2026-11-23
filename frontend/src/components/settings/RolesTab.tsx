@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Search,
   Plus,
@@ -13,7 +12,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  ChevronRight,
   Users,
   CalendarCheck,
   CreditCard,
@@ -26,7 +24,6 @@ import {
   X,
   LayoutDashboard,
   Compass,
-  Info,
   Wallet,
   User,
   CalendarDays,
@@ -84,13 +81,15 @@ const ToggleSwitch: React.FC<{
   onChange: () => void;
   disabled?: boolean;
   size?: 'sm' | 'md';
-}> = ({ checked, onChange, disabled = false, size = 'md' }) => {
+  'aria-label'?: string;
+}> = ({ checked, onChange, disabled = false, size = 'md', 'aria-label': ariaLabel = 'สวิตช์เปิด/ปิด' }) => {
   const isSm = size === 'sm';
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       onClick={(e) => {
         e.stopPropagation();
         if (!disabled) onChange();
@@ -579,6 +578,29 @@ const ACTIONS_CONFIG: {
   { key: 'delete', label: 'ลบ', icon: Trash2 },
 ];
 
+/* ─── Check Deep Equality between Permission Matrices ─── */
+const isMatrixEqual = (a: ModulePermissionScope[], b: ModulePermissionScope[]): boolean => {
+  if (a.length !== b.length) return false;
+  const bMap = new Map(b.map((m) => [m.moduleCode, m]));
+  for (const ma of a) {
+    const mb = bMap.get(ma.moduleCode);
+    if (!mb) return false;
+    if (Boolean(ma.canView) !== Boolean(mb.canView)) return false;
+    for (const scope of ['self', 'team', 'department', 'division', 'organization'] as const) {
+      const sa = ma[scope];
+      const sb = mb[scope];
+      if (Boolean(sa?.view) !== Boolean(sb?.view)) return false;
+      if (Boolean(sa?.create) !== Boolean(sb?.create)) return false;
+      if (Boolean(sa?.edit) !== Boolean(sb?.edit)) return false;
+      if (Boolean(sa?.delete) !== Boolean(sb?.delete)) return false;
+      if (Boolean(sa?.approve) !== Boolean(sb?.approve)) return false;
+    }
+  }
+  return true;
+};
+
+let highlightTimer: NodeJS.Timeout | null = null;
+
 export const RolesTab: React.FC<RolesTabProps> = ({
   roles,
   selectedRoleMatrix,
@@ -599,7 +621,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   const [searchRole, setSearchRole] = useState('');
   const [searchModuleQuery, setSearchModuleQuery] = useState('');
   const [localModules, setLocalModules] = useState<ModulePermissionScope[]>([]);
-  const [isDirty, setIsDirty] = useState(false);
+  const [, setIsDirty] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
 
   // Accordion expanded categories
@@ -610,12 +632,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   // Highlighted module for Jump to Module & Flash Highlight Effect
   const [highlightedModuleCode, setHighlightedModuleCode] = useState<string | null>(null);
-  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
-      if (highlightTimerRef.current) {
-        clearTimeout(highlightTimerRef.current);
+      if (highlightTimer) {
+        clearTimeout(highlightTimer);
+        highlightTimer = null;
       }
     };
   }, []);
@@ -642,21 +664,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     };
   }, [activePopover]);
 
-  const [rightPaneHeight, setRightPaneHeight] = useState<number | null>(null);
-  const rightPaneRef = useRef<HTMLDivElement>(null);
-
+  // Unsaved changes confirmation modal state
+  const [isUnsavedModalOpen, setIsUnsavedModalOpen] = useState(false);
+  const [pendingRoleId, setPendingRoleId] = useState<number | null>(null);
+  const rightPaneBodyRef = useRef<HTMLDivElement>(null);
+  // Focus trap / auto-focus on cancel button when unsaved dialog opens
   useEffect(() => {
-    if (!rightPaneRef.current) return;
-    const updateHeight = () => {
-      if (rightPaneRef.current) {
-        setRightPaneHeight(rightPaneRef.current.offsetHeight);
-      }
-    };
-    updateHeight();
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(rightPaneRef.current);
-    return () => resizeObserver.disconnect();
-  }, [selectedRoleMatrix, expandedCategories]);
+    if (isUnsavedModalOpen) {
+      const timer = setTimeout(() => {
+        document.getElementById('unsaved-cancel-btn')?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isUnsavedModalOpen]);
 
   const lastRoleIdRef = useRef<number | null>(null);
 
@@ -858,22 +878,97 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     return normalized;
   };
 
+  /* ── Deep Equality Check for Permission Changes ── */
+  const hasChanges = useMemo(() => {
+    if (!selectedRoleMatrix) return false;
+    const original = normalizeModules(selectedRoleMatrix.modules);
+    return !isMatrixEqual(localModules, original);
+  }, [selectedRoleMatrix, localModules]);
+
+  /* ── Beforeunload warning if has changes ── */
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges]);
+
   /* ── Sync matrix state when selected role changes ── */
   useEffect(() => {
-    if (selectedRoleMatrix) {
-      if (lastRoleIdRef.current !== selectedRoleMatrix.id) {
-        const normalized = normalizeModules(selectedRoleMatrix.modules);
-        setLocalModules(normalized);
-        setIsDirty(false);
-        setSaveSuccessMsg(false);
-        lastRoleIdRef.current = selectedRoleMatrix.id;
-        setActivePopover(null);
-        setExpandedCategories(new Set());
-      } else if (!isDirty) {
+    if (selectedRoleMatrix && lastRoleIdRef.current !== selectedRoleMatrix.id) {
+      lastRoleIdRef.current = selectedRoleMatrix.id;
+      const normalized = normalizeModules(selectedRoleMatrix.modules);
+      setLocalModules(normalized);
+      setIsDirty(false);
+      setSaveSuccessMsg(false);
+      setActivePopover(null);
+      // Requirement 7: Retain expanded categories & guide flows across role switches
+    }
+  }, [selectedRoleMatrix]);
+
+  /* ── Role Switching with Unsaved Changes Guard ── */
+  const executeRoleSwitch = useCallback(
+    (roleId: number) => {
+      onSelectRole(roleId);
+      rightPaneBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    },
+    [onSelectRole]
+  );
+
+  const handleRoleSelect = useCallback(
+    (targetRoleId: number) => {
+      if (selectedRoleMatrix?.id === targetRoleId) return;
+      if (hasChanges) {
+        setPendingRoleId(targetRoleId);
+        setIsUnsavedModalOpen(true);
+        return;
+      }
+      executeRoleSwitch(targetRoleId);
+    },
+    [selectedRoleMatrix?.id, hasChanges, executeRoleSwitch]
+  );
+
+  const handleDiscardAndSwitch = useCallback(() => {
+    if (pendingRoleId !== null) {
+      if (selectedRoleMatrix) {
         setLocalModules(normalizeModules(selectedRoleMatrix.modules));
+        setIsDirty(false);
+      }
+      executeRoleSwitch(pendingRoleId);
+      setIsUnsavedModalOpen(false);
+      setPendingRoleId(null);
+    }
+  }, [pendingRoleId, selectedRoleMatrix, executeRoleSwitch]);
+
+  const handleSaveAndSwitch = useCallback(async () => {
+    if (pendingRoleId !== null && selectedRoleMatrix) {
+      const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
+      const hasAnyPermission = localModules.some((m) =>
+        m.canView || scopes.some((s) => m[s]?.view || m[s]?.create || m[s]?.edit || m[s]?.delete || m[s]?.approve)
+      );
+      if (
+        (selectedRoleMatrix.roleCode === 'ADMIN' || selectedRoleMatrix.roleCode === 'SYSTEM_SUPER') &&
+        !hasAnyPermission
+      ) {
+        toast.error('ไม่อนุญาตให้ยกเลิกสิทธิ์ทั้งหมดของบทบาทผู้ดูแลระบบสูงสุด (Lockout Protection)');
+        return;
+      }
+      try {
+        await onSaveMatrix(selectedRoleMatrix.id, { modules: localModules });
+        setIsDirty(false);
+        executeRoleSwitch(pendingRoleId);
+        setIsUnsavedModalOpen(false);
+        setPendingRoleId(null);
+      } catch {
+        // error handled by parent
       }
     }
-  }, [selectedRoleMatrix, isDirty]);
+  }, [pendingRoleId, selectedRoleMatrix, localModules, onSaveMatrix, toast, executeRoleSwitch]);
 
   /* ── Derived Categories ── */
   const categories = useMemo(() => {
@@ -910,6 +1005,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   // Auto-expand categories matching search
   useEffect(() => {
     if (searchModuleQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpandedCategories(new Set(filteredCategories.map((c) => c.code)));
     }
   }, [searchModuleQuery, filteredCategories]);
@@ -1008,11 +1104,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
         setHighlightedModuleCode(moduleCode);
 
-        if (highlightTimerRef.current) {
-          clearTimeout(highlightTimerRef.current);
+        if (highlightTimer) {
+          clearTimeout(highlightTimer);
         }
-        highlightTimerRef.current = setTimeout(() => {
+        highlightTimer = setTimeout(() => {
           setHighlightedModuleCode(null);
+          highlightTimer = null;
         }, 2200);
       }, 120);
     },
@@ -1397,20 +1494,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
+    <div className="flex flex-col min-[860px]:flex-row h-[calc(100dvh-4rem)] gap-4 min-[860px]:gap-6 overflow-hidden p-4 min-[860px]:p-6 w-full">
 
-      {/* =========== LEFT PANE: ROLES LIST (4 cols lg, 3 cols xl) =========== */}
-      <div className="lg:col-span-4 xl:col-span-3 space-y-3">
-        {/* Search & Add */}
-        <div className="flex items-center gap-2">
+      {/* =========== LEFT PANE: ROLES LIST =========== */}
+      <aside className="flex min-h-0 w-full min-[860px]:w-[340px] shrink-0 flex-col max-[859px]:max-h-[34dvh] min-[860px]:h-full gap-3">
+        {/* Search & Add (Pinned at top) */}
+        <div className="shrink-0 flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchRole}
               onChange={(e) => setSearchRole(e.target.value)}
               placeholder="ค้นหาบทบาท..."
-              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              aria-label="ค้นหาบทบาท"
+              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           {canCreateRole && (
@@ -1418,24 +1516,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               onClick={onAddRoleClick}
               size="sm"
               icon={<Plus className="w-3.5 h-3.5" />}
+              aria-label="เพิ่มบทบาทใหม่"
             >
               เพิ่มบทบาท
             </Button>
           )}
         </div>
 
-        {/* Roles List */}
-        <div
-          style={{ maxHeight: rightPaneHeight ? `${Math.max(380, rightPaneHeight - 52)}px` : 'calc(100vh - 280px)' }}
-          className="space-y-2.5 overflow-y-auto pr-1"
-        >
+        {/* Roles List (Scrollable in its own container) */}
+        <div className="min-h-0 flex-1 overflow-y-auto space-y-2.5 pr-1.5">
           {filteredRoles.map((role) => {
             const isSelected = selectedRoleMatrix?.id === role.id;
             const roleColor = role.color || '#2563EB';
             return (
               <div
                 key={role.id}
-                onClick={() => onSelectRole(role.id)}
+                onClick={() => handleRoleSelect(role.id)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                   isSelected
                     ? 'stat-panel text-white shadow-md'
@@ -1592,109 +1688,115 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             );
           })}
         </div>
-      </div>
+      </aside>
 
       {/* =========== RIGHT PANE: ACCORDION PERMISSION MANAGEMENT =========== */}
-      <div
-        ref={rightPaneRef}
-        className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5 sm:p-6 space-y-4"
-      >
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
         {selectedRoleMatrix ? (
           <>
-            {/* 1. Header Information */}
-            <div className="pb-3 border-b border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <span>ตั้งค่าสิทธิ์สำหรับ:</span>
-                  <span
-                    className="flex items-center gap-1.5 font-bold"
-                    style={{ color: selectedRoleMatrix.color || '#2563EB' }}
-                  >
+            {/* 1. Header Information & Toolbar (Pinned at top of card) */}
+            <div className="p-5 sm:p-6 pb-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>ตั้งค่าสิทธิ์สำหรับ:</span>
                     <span
-                      className="w-2.5 h-2.5 rounded-full inline-block"
-                      style={{ backgroundColor: selectedRoleMatrix.color || '#2563EB' }}
-                    />
-                    {selectedRoleMatrix.roleName}
+                      className="flex items-center gap-1.5 font-bold"
+                      style={{ color: selectedRoleMatrix.color || '#2563EB' }}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full inline-block"
+                        style={{ backgroundColor: selectedRoleMatrix.color || '#2563EB' }}
+                      />
+                      {selectedRoleMatrix.roleName}
+                    </span>
+                  </h2>
+                  {selectedRoleMatrix.description && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {selectedRoleMatrix.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    {localModules.length} โมดูลในระบบ
                   </span>
-                </h2>
-                {selectedRoleMatrix.description && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {selectedRoleMatrix.description}
-                  </p>
-                )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                  {localModules.length} โมดูลในระบบ
-                </span>
-              </div>
-            </div>
+              {/* Top Toolbar: Search (Left) | Actions (Right) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                {/* Left: Search Bar */}
+                <div className="relative max-w-xs sm:max-w-sm w-full">
+                  <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchModuleQuery}
+                    onChange={(e) => setSearchModuleQuery(e.target.value)}
+                    placeholder="ค้นหากลุ่มหรือสิทธิ์..."
+                    aria-label="ค้นหากลุ่มหรือสิทธิ์"
+                    className="w-full pl-9 pr-8 py-2 bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                  {searchModuleQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchModuleQuery('')}
+                      aria-label="ล้างคำค้นหา"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-0.5 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
-            {/* 2. Top Toolbar: Search (Left) | Actions (Right) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              {/* Left: Search Bar */}
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchModuleQuery}
-                  onChange={(e) => setSearchModuleQuery(e.target.value)}
-                  placeholder="ค้นหากลุ่มหรือสิทธิ์..."
-                  className="w-full pl-9 pr-8 py-2 bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-                {searchModuleQuery && (
-                  <button
+                {/* Right: Action Buttons */}
+                <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 shrink-0">
+                  <Button
                     type="button"
-                    onClick={() => setSearchModuleQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-0.5"
+                    variant="secondary"
+                    size="sm"
+                    disabled={visibleCategories.length === 0}
+                    onClick={handleToggleExpandAll}
+                    aria-label={areAllExpanded ? 'หุบทั้งหมด' : 'ขยายทั้งหมด'}
+                    icon={
+                      areAllExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      )
+                    }
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Right: Action Buttons */}
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={visibleCategories.length === 0}
-                  onClick={handleToggleExpandAll}
-                  icon={
-                    areAllExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                    )
-                  }
-                >
-                  {areAllExpanded ? 'หุบทั้งหมด' : 'ขยายทั้งหมด'}
-                </Button>
-                <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={!canEditRole || localModules.length === 0}
-                  onClick={handleToggleSelectAll}
-                  icon={
-                    areAllModulesSelected ? (
-                      <X className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                    ) : (
-                      <CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    )
-                  }
-                >
-                  {areAllModulesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
-                </Button>
+                    {areAllExpanded ? 'หุบทั้งหมด' : 'ขยายทั้งหมด'}
+                  </Button>
+                  <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={!canEditRole || localModules.length === 0}
+                    onClick={handleToggleSelectAll}
+                    aria-label={areAllModulesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                    icon={
+                      areAllModulesSelected ? (
+                        <X className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                      ) : (
+                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      )
+                    }
+                  >
+                    {areAllModulesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* 3. Accordion Group List */}
-            <div className="space-y-3 pt-2">
+            {/* 2. Middle Body: Accordion Group List (Scrollable) */}
+            <div
+              ref={rightPaneBodyRef}
+              className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6 space-y-3"
+            >
               {filteredCategories.length === 0 ? (
                 <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
                   ไม่พบโมดูลหรือสิทธิ์ที่ค้นหา &quot;{searchModuleQuery}&quot;
@@ -2080,46 +2182,47 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               )}
             </div>
 
-            {/* 4. Bottom Sticky Save Bar */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs z-20">
+            {/* 3. Bottom Footer: Status & Action Buttons (Pinned at bottom of card) */}
+            <div className="shrink-0 p-4 sm:px-6 border-t border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
-                {isDirty ? (
-                  <span className="flex items-center gap-1.5 text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60">
+                {hasChanges ? (
+                  <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200/60 dark:border-amber-800/60">
                     <AlertCircle className="w-4 h-4 text-amber-500" />
                     มีการเปลี่ยนแปลงสิทธิ์ที่ยังไม่ได้บันทึก
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                  <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200/60 dark:border-emerald-800/60">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     สิทธิ์การใช้งานเป็นปัจจุบัน
                   </span>
                 )}
                 {saveSuccessMsg && (
-                  <span className="text-emerald-600 font-semibold flex items-center gap-1 animate-in fade-in">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 animate-in fade-in">
                     <Check className="w-4 h-4" /> บันทึกสิทธิ์สำเร็จ!
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-2.5">
-                {isDirty && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      if (selectedRoleMatrix) {
-                        setLocalModules(normalizeModules(selectedRoleMatrix.modules));
-                        setIsDirty(false);
-                      }
-                    }}
-                  >
-                    ยกเลิก
-                  </Button>
-                )}
                 <Button
                   type="button"
-                  disabled={!isDirty || !canEditRole}
+                  variant="secondary"
+                  disabled={!hasChanges}
+                  aria-label="ยกเลิกการเปลี่ยนแปลงสิทธิ์"
+                  onClick={() => {
+                    if (selectedRoleMatrix) {
+                      setLocalModules(normalizeModules(selectedRoleMatrix.modules));
+                      setIsDirty(false);
+                    }
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!hasChanges || !canEditRole}
                   loading={isSavingMatrix}
+                  aria-label="บันทึกสิทธิ์การใช้งาน"
                   onClick={handleSave}
                 >
                   บันทึกสิทธิ์การใช้งาน
@@ -2128,11 +2231,89 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             </div>
           </>
         ) : (
-          <div className="py-24 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium text-xs">
+          <div className="flex-1 flex items-center justify-center p-12 text-slate-400 dark:text-slate-500 font-medium text-xs">
             เลือกบทบาททางด้านซ้ายเพื่อตั้งค่าสิทธิ์การเข้าถึง
           </div>
         )}
-      </div>
+      </section>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      {isUnsavedModalOpen && selectedRoleMatrix && (
+        <ModalShell
+          className="z-[99999]"
+          onBackdropClick={() => {
+            setIsUnsavedModalOpen(false);
+            setPendingRoleId(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-dialog-title"
+            aria-describedby="unsaved-dialog-desc"
+            className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-700 p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-800/50">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <h3
+                  id="unsaved-dialog-title"
+                  className="text-base font-bold text-slate-900 dark:text-slate-100"
+                >
+                  มีสิทธิ์ที่ยังไม่ได้บันทึก
+                </h3>
+                <p
+                  id="unsaved-dialog-desc"
+                  className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed"
+                >
+                  คุณได้แก้ไขสิทธิ์ของบทบาท{' '}
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {selectedRoleMatrix.roleName}
+                  </span>{' '}
+                  แต่ยังไม่ได้บันทึก คุณต้องการดำเนินการอย่างไรก่อนสลับบทบาท?
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-2 text-xs">
+              <Button
+                id="unsaved-cancel-btn"
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setIsUnsavedModalOpen(false);
+                  setPendingRoleId(null);
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full sm:w-auto text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 border-rose-200/80 dark:border-rose-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                onClick={handleDiscardAndSwitch}
+              >
+                ทิ้งการเปลี่ยนแปลง
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="w-full sm:w-auto"
+                loading={isSavingMatrix}
+                onClick={handleSaveAndSwitch}
+              >
+                บันทึกแล้วสลับ
+              </Button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
 
       {/* Scope Details Popover Portal */}
       {activePopover && activeMod && activeScopeConfig && (

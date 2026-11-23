@@ -458,6 +458,23 @@ function SettingsPageContent() {
     }
   };
 
+  // จัดการ layout ของ <main> เมื่ออยู่ในแท็บ roles เพื่อให้ viewport พอดีและไม่มี scrollbar สองชั้น
+  useEffect(() => {
+    if (activeTab === 'roles') {
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        const origOverflow = mainEl.style.overflow;
+        const origPadding = mainEl.style.padding;
+        mainEl.style.overflow = 'hidden';
+        mainEl.style.padding = '0';
+        return () => {
+          mainEl.style.overflow = origOverflow;
+          mainEl.style.padding = origPadding;
+        };
+      }
+    }
+  }, [activeTab]);
+
   const getBreadcrumbTitle = () => {
     switch (activeTab) {
       case 'users':
@@ -472,7 +489,7 @@ function SettingsPageContent() {
   };
 
   return (
-    <div className={`space-y-4 font-sans ${activeTab === 'roles' ? 'pb-2' : 'pb-12'}`}>
+    <div className={activeTab === 'roles' ? 'h-full font-sans overflow-hidden' : 'space-y-4 font-sans pb-12'}>
 
 
       {/* 3. Tab Content */}
