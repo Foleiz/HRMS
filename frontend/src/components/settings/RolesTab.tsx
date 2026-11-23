@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search,
@@ -44,6 +44,7 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   Shield,
+  ArrowUpRight,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -607,6 +608,18 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   // Accordion expanded guide flows
   const [expandedGuideFlows, setExpandedGuideFlows] = useState<Record<string, boolean>>({});
 
+  // Highlighted module for Jump to Module & Flash Highlight Effect
+  const [highlightedModuleCode, setHighlightedModuleCode] = useState<string | null>(null);
+  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
+
   const toggleGuideFlowExpand = (flowId: string) => {
     setExpandedGuideFlows((prev) => ({
       ...prev,
@@ -963,6 +976,48 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       setExpandedCategories(new Set(visibleCategories.map((c) => c.code)));
     }
   };
+
+  /* ── Jump to Module & Flash Highlight Effect ── */
+  const handleJumpToModule = useCallback(
+    (moduleCode: string) => {
+      // 1. ตรวจสอบหมวดหมู่ของโมดูลเป้าหมาย
+      const mod = localModules.find((m) => m.moduleCode === moduleCode);
+      const catCode = mod?.categoryCode || mod?.groupName;
+
+      // หากมีคำค้นหาอยู่ ให้เคลียร์คำค้นหาเพื่อให้แสดงโมดูลทั้งหมด
+      if (searchModuleQuery.trim()) {
+        setSearchModuleQuery('');
+      }
+
+      // 2. หากหมวดหมู่นั้นพับอยู่ ให้สั่งเปิด (Expand) หมวดหมู่นั้นโดยอัตโนมัติ
+      if (catCode) {
+        setExpandedCategories((prev) => {
+          if (prev.has(catCode)) return prev;
+          const next = new Set(prev);
+          next.add(catCode);
+          return next;
+        });
+      }
+
+      // 3. หน่วงเวลาสั้นๆ เพื่อให้ DOM กางเสร็จ แล้ว Smooth Scroll และแสดง Flash Highlight
+      setTimeout(() => {
+        const el = document.getElementById(`permission-module-${moduleCode}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        setHighlightedModuleCode(moduleCode);
+
+        if (highlightTimerRef.current) {
+          clearTimeout(highlightTimerRef.current);
+        }
+        highlightTimerRef.current = setTimeout(() => {
+          setHighlightedModuleCode(null);
+        }, 2200);
+      }, 120);
+    },
+    [localModules, searchModuleQuery]
+  );
 
   // Master switch per module
   const handleToggleModule = (moduleCode: string) => {
@@ -1842,21 +1897,69 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                               </div>
                                             </div>
 
-                                            {/* Right: Prerequisite Status Badge */}
-                                            <div className="flex items-center gap-2.5 shrink-0">
+                                            {/* Right: Prerequisite Status Badge & Jump Button */}
+                                            <div
+                                              className="flex items-center gap-2 shrink-0 flex-wrap justify-end"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
                                               {!isStepActive ? (
-                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700">
-                                                  ยังไม่มีสิทธิ์ในหน้านี้
-                                                </span>
+                                                <>
+                                                  <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700">
+                                                    ยังไม่มีสิทธิ์ในหน้านี้
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      handleJumpToModule(step.targetModuleCode);
+                                                    }}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60 shadow-2xs transition-all cursor-pointer hover:shadow-xs active:scale-95"
+                                                    title={`ไปเปิดสิทธิ์ที่โมดูล ${step.targetModuleCode}`}
+                                                  >
+                                                    <span>ไปเปิดสิทธิ์</span>
+                                                    <ArrowUpRight className="w-3.5 h-3.5" />
+                                                  </button>
+                                                </>
                                               ) : isWarning ? (
-                                                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60">
-                                                  ต้องเปิดสิทธิ์ สร้าง/แก้ไข
-                                                </span>
+                                                <>
+                                                  <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60">
+                                                    ต้องเปิดสิทธิ์ สร้าง/แก้ไข
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      handleJumpToModule(step.targetModuleCode);
+                                                    }}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 shadow-2xs transition-all cursor-pointer hover:shadow-xs active:scale-95"
+                                                    title={`ไปแก้ไขสิทธิ์ที่โมดูล ${step.targetModuleCode}`}
+                                                  >
+                                                    <span>ไปแก้ไขสิทธิ์</span>
+                                                    <ArrowUpRight className="w-3.5 h-3.5" />
+                                                  </button>
+                                                </>
                                               ) : (
-                                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
-                                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                                  <span>สิทธิ์พร้อมใช้งาน</span>
-                                                </span>
+                                                <>
+                                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+                                                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                    <span>สิทธิ์พร้อมใช้งาน</span>
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      handleJumpToModule(step.targetModuleCode);
+                                                    }}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-300 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                                    title={`ดูการตั้งค่าโมดูล ${step.targetModuleCode}`}
+                                                  >
+                                                    <span>ดูการตั้งค่า</span>
+                                                    <ArrowUpRight className="w-3 h-3" />
+                                                  </button>
+                                                </>
                                               )}
                                             </div>
                                           </div>
@@ -1874,11 +1977,18 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
                             const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
+                            const isHighlighted = highlightedModuleCode === mod.moduleCode;
 
                             return (
                               <div
                                 key={mod.moduleCode}
-                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${ modActive ? 'bg-white dark:bg-slate-800' : 'bg-slate-100 dark:bg-slate-900/70'
+                                id={`permission-module-${mod.moduleCode}`}
+                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all duration-700 rounded-lg relative ${
+                                  isHighlighted
+                                    ? 'ring-2 ring-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/60 shadow-lg scale-[1.008] z-10'
+                                    : modActive
+                                    ? 'bg-white dark:bg-slate-800'
+                                    : 'bg-slate-100 dark:bg-slate-900/70'
                                 }`}
                               >
                                 {/* Left: Module Title & Subtitle */}
