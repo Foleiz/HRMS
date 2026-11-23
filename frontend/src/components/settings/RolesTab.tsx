@@ -1825,7 +1825,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             }`}
                           >
                             {isGuideCat
-                              ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} ไกด์เปิดใช้`
+                              ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} เปิดใช้`
                               : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
                           </span>
 
