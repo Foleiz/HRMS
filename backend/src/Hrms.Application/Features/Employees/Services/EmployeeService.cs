@@ -18,17 +18,20 @@ public class EmployeeService : IEmployeeService
     private readonly IAesEncryptionService _cryptoService;
     private readonly ICurrentUserService _currentUserService;
     private readonly INotificationService _notificationService;
+    private readonly IDataScopeService _dataScopeService;
 
     public EmployeeService(
         IHrmsDbContext dbContext,
         IAesEncryptionService cryptoService,
         ICurrentUserService currentUserService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IDataScopeService dataScopeService)
     {
         _dbContext = dbContext;
         _cryptoService = cryptoService;
         _currentUserService = currentUserService;
         _notificationService = notificationService;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task<List<EmployeeDto>> GetAllAsync(string? search = null, CancellationToken cancellationToken = default)
@@ -62,67 +65,10 @@ public class EmployeeService : IEmployeeService
             .AsNoTracking();
 
         // 2. Data Scoping — กรองตามขอบเขตที่ role ของ user กำหนด
-        string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
-        switch (dataScope)
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_PROFILE_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
         {
-            case "SELF":
-            {
-                long? myEmpId = _currentUserService.EmployeeId;
-                if (!myEmpId.HasValue)
-                    return new List<EmployeeDto>();
-                query = query.Where(e => e.Id == myEmpId.Value);
-                break;
-            }
-            case "DEPARTMENT":
-            {
-                // เห็นเฉพาะพนักงานในแผนกเดียวกับตัวเอง
-                long? myDeptId = _currentUserService.DepartmentId;
-                if (!myDeptId.HasValue)
-                {
-                    // ถ้าไม่มี department ใน token ให้ fallback เป็นดูแค่ตัวเอง
-                    long? myEmpId = _currentUserService.EmployeeId;
-                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
-                    query = query.Where(e => e.Id == myEmpId.Value);
-                }
-                else
-                {
-                    query = query.Where(e => e.Assignments.Any(a => a.DepartmentId == myDeptId.Value && a.IsCurrent));
-                }
-                break;
-            }
-            case "DIVISION":
-            {
-                // เห็นเฉพาะพนักงานในฝ่ายเดียวกับตัวเอง
-                long? myDivId = _currentUserService.DivisionId;
-                if (!myDivId.HasValue)
-                {
-                    long? myEmpId = _currentUserService.EmployeeId;
-                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
-                    query = query.Where(e => e.Id == myEmpId.Value);
-                }
-                else
-                {
-                    query = query.Where(e => e.Assignments.Any(a => a.DivisionId == myDivId.Value && a.IsCurrent));
-                }
-                break;
-            }
-            case "TEAM":
-            {
-                // เห็นเฉพาะพนักงานในทีมเดียวกัน หรือสมาชิกทีมที่ตนเป็นหัวหน้า หรือตัวเอง
-                long? myTeamId = _currentUserService.TeamId;
-                long? myEmpId = _currentUserService.EmployeeId;
-                if (!myTeamId.HasValue)
-                {
-                    if (!myEmpId.HasValue) return new List<EmployeeDto>();
-                    query = query.Where(e => e.Id == myEmpId.Value || e.Assignments.Any(a => (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent));
-                }
-                else
-                {
-                    query = query.Where(e => e.Assignments.Any(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent) || (myEmpId.HasValue && e.Id == myEmpId.Value));
-                }
-                break;
-            }
-            // case "ORGANIZATION": ไม่กรอง — เห็นทุกคน (ADMIN, CEO, HR_MGR)
+            query = query.Where(e => accessibleEmpIds.Contains(e.Id));
         }
 
         // 3. กรองคำค้นหา
@@ -164,59 +110,10 @@ public class EmployeeService : IEmployeeService
         // Data Scoping — ตรวจสอบ employee ที่ขอดูก่อนดึงข้อมูล (ข้ามถ้าเป็นข้อมูลตนเอง)
         if (!isSelf)
         {
-            string dataScope = _currentUserService.GetDataScope("EMP_VIEW");
-            switch (dataScope)
+            bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(id, "EMP_PROFILE_VIEW", cancellationToken);
+            if (!canAccess)
             {
-                case "SELF":
-                {
-                    if (!myEmpId.HasValue || myEmpId.Value != id)
-                        throw new ForbiddenException("คุณสามารถดูได้เฉพาะข้อมูลของตนเองเท่านั้น");
-                    break;
-                }
-                case "DEPARTMENT":
-                {
-                    long? myDeptId = _currentUserService.DepartmentId;
-                    if (myDeptId.HasValue)
-                    {
-                        bool inDept = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && a.DepartmentId == myDeptId.Value && a.IsCurrent, cancellationToken);
-                        if (!inDept)
-                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกแผนกของคุณ");
-                    }
-                    break;
-                }
-                case "DIVISION":
-                {
-                    long? myDivId = _currentUserService.DivisionId;
-                    if (myDivId.HasValue)
-                    {
-                        bool inDiv = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && a.DivisionId == myDivId.Value && a.IsCurrent, cancellationToken);
-                        if (!inDiv)
-                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกฝ่ายของคุณ");
-                    }
-                    break;
-                }
-                case "TEAM":
-                {
-                    long? myTeamId = _currentUserService.TeamId;
-                    if (myTeamId.HasValue)
-                    {
-                        bool inTeam = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent, cancellationToken);
-                        if (!inTeam)
-                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
-                    }
-                    else if (myEmpId.HasValue)
-                    {
-                        bool isSubordinate = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent, cancellationToken);
-                        if (!isSubordinate)
-                            throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
-                    }
-                    break;
-                }
-                // case "ORGANIZATION": เห็นได้ทุกคน
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลของพนักงานท่านนี้");
             }
         }
 
@@ -592,10 +489,10 @@ public class EmployeeService : IEmployeeService
         {
             string permToUse = _currentUserService.HasPermission("EMP_MANAGE") ? "EMP_MANAGE" :
                                _currentUserService.HasPermission("EMP_EDIT") ? "EMP_EDIT" : "EMP_PROFILE_EDIT";
-            string scope = _currentUserService.GetDataScope(permToUse);
-            if (scope == "SELF")
+            bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(id, permToUse, cancellationToken);
+            if (!canAccess)
             {
-                throw new ForbiddenException("ขอบเขตสิทธิ์ของคุณแก้ไขได้เฉพาะข้อมูลตนเองเท่านั้น");
+                throw new ForbiddenException("ขอบเขตสิทธิ์ของคุณไม่ครอบคลุมการแก้ไขข้อมูลพนักงานท่านนี้");
             }
         }
 

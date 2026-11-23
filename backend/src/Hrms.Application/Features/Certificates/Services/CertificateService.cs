@@ -13,15 +13,18 @@ public class CertificateService : ICertificateService
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly IDataScopeService _dataScopeService;
 
     public CertificateService(
         IHrmsDbContext context,
         ICurrentUserService currentUserService,
-        IApprovalWorkflowService approvalWorkflow)
+        IApprovalWorkflowService approvalWorkflow,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _currentUserService = currentUserService;
         _approvalWorkflow = approvalWorkflow;
+        _dataScopeService = dataScopeService;
     }
 
     private bool IsAdmin => _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
@@ -173,7 +176,7 @@ public class CertificateService : ICertificateService
     private async Task<List<CertificateRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var isPrivileged = IsHrOrAdmin;
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
 
         var query = _context.CertificateRequests
             .AsNoTracking()
@@ -186,23 +189,23 @@ public class CertificateService : ICertificateService
 
         if (employeeId.HasValue)
         {
-            query = query.Where(r => r.EmployeeId == employeeId.Value);
-        }
-        else if (!isPrivileged)
-        {
-            // ถ้าไม่ใช่ Admin/HR และเป็นการดึงรายการคำขอเพื่ออนุมัติ/ประวัติ
-            // ให้แสดงเฉพาะรายการที่ผู้ใช้นี้ "อยู่ในสายการอนุมัติ" (เป็นผู้อนุมัติในขั้นตอนใดขั้นตอนหนึ่ง หรือเคยดำเนินการไปแล้ว) เท่านั้น
-            if (!currentEmpId.HasValue)
+            if (accessibleEmpIds != null && !accessibleEmpIds.Contains(employeeId.Value))
             {
                 return new List<CertificateRequestDto>();
             }
+            query = query.Where(r => r.EmployeeId == employeeId.Value);
+        }
+        else if (accessibleEmpIds != null)
+        {
+            var allowedInstanceIds = currentEmpId.HasValue
+                ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
+                    currentEmpId.Value,
+                    "CERTIFICATE_REQUEST",
+                    cancellationToken)
+                : new List<long>();
 
-            var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
-                currentEmpId.Value,
-                "CERTIFICATE_REQUEST",
-                cancellationToken);
-
-            query = query.Where(r => r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value));
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId) ||
+                (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

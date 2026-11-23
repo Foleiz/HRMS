@@ -13,6 +13,7 @@ public class ResignationService : IResignationService
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly IDataScopeService _dataScopeService;
 
     private class ResignationReasonPayload
     {
@@ -28,11 +29,13 @@ public class ResignationService : IResignationService
     public ResignationService(
         IHrmsDbContext context,
         ICurrentUserService currentUserService,
-        IApprovalWorkflowService approvalWorkflow)
+        IApprovalWorkflowService approvalWorkflow,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _currentUserService = currentUserService;
         _approvalWorkflow = approvalWorkflow;
+        _dataScopeService = dataScopeService;
     }
 
     private bool IsAdmin => _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
@@ -74,12 +77,13 @@ public class ResignationService : IResignationService
         }
 
         var currentEmpId = _currentUserService.EmployeeId;
-        var isHrOrAdmin = IsHrOrAdmin;
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_PROFILE_VIEW", cancellationToken);
+        bool canAccessTarget = accessibleEmpIds == null || accessibleEmpIds.Contains(request.EmployeeId);
 
         var isApprover = request.ApprovalInstanceId.HasValue && currentEmpId.HasValue &&
             await _approvalWorkflow.IsUserInWorkflowAsync(request.ApprovalInstanceId.Value, currentEmpId.Value, cancellationToken);
 
-        if (request.EmployeeId != currentEmpId && !isHrOrAdmin && !isApprover)
+        if (request.EmployeeId != currentEmpId && !canAccessTarget && !isApprover)
         {
             throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์เข้าถึงคำขอลาออกนี้");
         }
@@ -94,7 +98,7 @@ public class ResignationService : IResignationService
                 .ToListAsync(cancellationToken),
             request.SubmittedAt);
 
-        return await MapToDtoAsync(request, assignment, currentEmpId, isHrOrAdmin, cancellationToken);
+        return await MapToDtoAsync(request, assignment, currentEmpId, canAccessTarget, cancellationToken);
     }
 
     public async Task<ResignationRequestDto> CreateRequestAsync(CreateResignationRequestDto dto, CancellationToken cancellationToken = default)
@@ -350,7 +354,7 @@ public class ResignationService : IResignationService
     private async Task<List<ResignationRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var isPrivileged = IsHrOrAdmin;
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_PROFILE_VIEW", cancellationToken);
 
         var query = _context.ResignationRequests
             .AsNoTracking()
@@ -363,21 +367,23 @@ public class ResignationService : IResignationService
 
         if (employeeId.HasValue)
         {
-            query = query.Where(r => r.EmployeeId == employeeId.Value);
-        }
-        else if (!isPrivileged)
-        {
-            if (!currentEmpId.HasValue)
+            if (accessibleEmpIds != null && !accessibleEmpIds.Contains(employeeId.Value))
             {
                 return new List<ResignationRequestDto>();
             }
+            query = query.Where(r => r.EmployeeId == employeeId.Value);
+        }
+        else if (accessibleEmpIds != null)
+        {
+            var allowedInstanceIds = currentEmpId.HasValue
+                ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
+                    currentEmpId.Value,
+                    "RESIGNATION_REQUEST",
+                    cancellationToken)
+                : new List<long>();
 
-            var allowedInstanceIds = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
-                currentEmpId.Value,
-                "RESIGNATION_REQUEST",
-                cancellationToken);
-
-            query = query.Where(r => r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value));
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId) ||
+                (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

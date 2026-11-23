@@ -15,15 +15,18 @@ public class SalaryService : ISalaryService
     private readonly IAttendanceDailyService _attendanceDailyService;
     private readonly ICurrentUserService _currentUser;
     private readonly IAesEncryptionService _crypto;
+    private readonly IDataScopeService _dataScopeService;
 
     public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService,
-        ICurrentUserService currentUser, IAesEncryptionService crypto, IPayslipFreezeQueue payslipFreezeQueue)
+        ICurrentUserService currentUser, IAesEncryptionService crypto, IPayslipFreezeQueue payslipFreezeQueue,
+        IDataScopeService dataScopeService)
     {
         _payslipFreezeQueue = payslipFreezeQueue;
         _context = context;
         _attendanceDailyService = attendanceDailyService;
         _currentUser = currentUser;
         _crypto = crypto;
+        _dataScopeService = dataScopeService;
     }
 
     /// <summary>เลขบัญชีเต็มเห็นได้เฉพาะการเงิน/ผู้อนุมัติ (คนโอนเงิน) — HR เห็นแบบ xxxxxx1234</summary>
@@ -44,75 +47,7 @@ public class SalaryService : ISalaryService
         if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
             return null;
 
-        string scope = _currentUser.GetDataScope("PAYROLL_VIEW");
-        if (string.Equals(scope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase))
-            return null;
-
-        long? myEmpId = _currentUser.EmployeeId;
-        long? myDeptId = _currentUser.DepartmentId;
-
-        if (!myDeptId.HasValue && myEmpId.HasValue)
-        {
-            myDeptId = await _context.EmployeeAssignments
-                .Where(a => a.EmployeeId == myEmpId.Value && a.IsCurrent)
-                .Select(a => (long?)a.DepartmentId)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-
-        switch (scope?.ToUpperInvariant())
-        {
-            case "SELF":
-                return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
-
-            case "TEAM":
-            {
-                long? myTeamId = _currentUser.TeamId;
-                if (!myTeamId.HasValue && myEmpId.HasValue)
-                {
-                    myTeamId = await _context.EmployeeAssignments
-                        .Where(a => a.EmployeeId == myEmpId.Value && a.IsCurrent)
-                        .Select(a => (long?)a.TeamId)
-                        .FirstOrDefaultAsync(cancellationToken);
-                }
-
-                if (!myTeamId.HasValue)
-                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
-
-                return await _context.EmployeeAssignments
-                    .Where(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent)
-                    .Select(a => a.EmployeeId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-            }
-
-            case "DEPARTMENT":
-            {
-                if (!myDeptId.HasValue)
-                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
-
-                return await _context.EmployeeAssignments
-                    .Where(a => a.DepartmentId == myDeptId.Value && a.IsCurrent)
-                    .Select(a => a.EmployeeId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-            }
-
-            case "DIVISION":
-            {
-                long? myDivId = _currentUser.DivisionId;
-                if (!myDivId.HasValue)
-                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
-
-                return await _context.EmployeeAssignments
-                    .Where(a => a.DivisionId == myDivId.Value && a.IsCurrent)
-                    .Select(a => a.EmployeeId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-            }
-
-            default:
-                return null;
-        }
+        return await _dataScopeService.GetAccessibleEmployeeIdsAsync("PAYROLL_VIEW", cancellationToken);
     }
 
     #region Salary Structures

@@ -13,13 +13,16 @@ public class EmployeeTransferService : IEmployeeTransferService
 {
     private readonly IHrmsDbContext _context;
     private readonly IApprovalWorkflowService _approvalWorkflowService;
+    private readonly IDataScopeService _dataScopeService;
 
     public EmployeeTransferService(
         IHrmsDbContext context,
-        IApprovalWorkflowService approvalWorkflowService)
+        IApprovalWorkflowService approvalWorkflowService,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _approvalWorkflowService = approvalWorkflowService;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task<List<EmployeeTransferDto>> GetAllAsync(
@@ -28,6 +31,8 @@ public class EmployeeTransferService : IEmployeeTransferService
         string? status = null,
         CancellationToken cancellationToken = default)
     {
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_TRANSFER_VIEW", cancellationToken);
+
         var query = _context.EmployeeTransferRequests
             .Include(t => t.Employee)
             .Include(t => t.FromDivision)
@@ -40,6 +45,11 @@ public class EmployeeTransferService : IEmployeeTransferService
             .Include(t => t.ToManager)
             .AsNoTracking()
             .AsQueryable();
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(t => accessibleEmpIds.Contains(t.EmployeeId));
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -85,9 +95,15 @@ public class EmployeeTransferService : IEmployeeTransferService
         var currentMonth = now.Month;
         var currentYear = now.Year;
 
-        var all = await _context.EmployeeTransferRequests
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_TRANSFER_VIEW", cancellationToken);
+
+        var query = _context.EmployeeTransferRequests.AsNoTracking().AsQueryable();
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(t => accessibleEmpIds.Contains(t.EmployeeId));
+        }
+
+        var all = await query.ToListAsync(cancellationToken);
         var pendingCount = all.Count(t => t.Status == "PENDING");
         all = all.Where(t => t.Status == "APPROVED").ToList(); // นับเฉพาะคำสั่งที่มีผลแล้ว
 
@@ -127,6 +143,12 @@ public class EmployeeTransferService : IEmployeeTransferService
         if (entity == null)
         {
             throw new NotFoundException("คำขอย้าย/เลื่อนตำแหน่ง", id);
+        }
+
+        bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(entity.EmployeeId, "EMP_TRANSFER_VIEW", cancellationToken);
+        if (!canAccess)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงข้อมูลการโยกย้ายของพนักงานท่านนี้");
         }
 
         return MapToDto(entity);

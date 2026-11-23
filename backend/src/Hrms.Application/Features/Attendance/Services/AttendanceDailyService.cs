@@ -15,10 +15,12 @@ namespace Hrms.Application.Features.Attendance.Services;
 public class AttendanceDailyService : IAttendanceDailyService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IDataScopeService _dataScopeService;
 
-    public AttendanceDailyService(IHrmsDbContext context)
+    public AttendanceDailyService(IHrmsDbContext context, IDataScopeService dataScopeService)
     {
         _context = context;
+        _dataScopeService = dataScopeService;
     }
 
     public static readonly TimeZoneInfo ThaiZone = GetThaiTimeZone();
@@ -71,6 +73,13 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Include(a => a.Shift)
             .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
             .Where(a => a.WorkDate == queryDate && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || a.Status == "LEAVE" || a.Status == "HOLIDAY"));
+
+        // Data Scoping
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_DAILY_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
 
         // Filter Department
         if (filter.DepartmentId.HasValue && filter.DepartmentId.Value > 0)
@@ -141,12 +150,19 @@ public class AttendanceDailyService : IAttendanceDailyService
 
     public async Task<DailyAttendanceSummaryDto> GetDailySummaryAsync(DateOnly date, CancellationToken cancellationToken = default)
     {
-        var records = await _context.AttendanceDailies
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_DAILY_VIEW", cancellationToken);
+        var query = _context.AttendanceDailies
             .AsNoTracking()
             // นับเฉพาะพนักงานที่ยังทำงานอยู่ (ให้ตรงกับแดชบอร์ด/รายงาน)
             .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
-            .Where(a => a.WorkDate == date && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")))
-            .ToListAsync(cancellationToken);
+            .Where(a => a.WorkDate == date && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")));
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
+
+        var records = await query.ToListAsync(cancellationToken);
 
         if (records.Count == 0)
         {
@@ -1168,8 +1184,15 @@ public class AttendanceDailyService : IAttendanceDailyService
         var startDate = new DateOnly(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_DAILY_VIEW", cancellationToken);
+
         var employeesQuery = _context.Employees
             .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            employeesQuery = employeesQuery.Where(e => accessibleEmpIds.Contains(e.Id));
+        }
 
         if (departmentId.HasValue && departmentId.Value > 0)
         {

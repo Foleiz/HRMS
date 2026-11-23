@@ -108,9 +108,12 @@ public class CurrentUserService : ICurrentUserService
 
         // Alias mapping สำหรับการดูรายชื่อพนักงาน
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase) &&
-            (perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)) ||
-             perms.Any(p => string.Equals(p, "PAYROLL_VIEW", StringComparison.OrdinalIgnoreCase)) ||
-             perms.Any(p => string.Equals(p, "PAYROLL_CALC_VIEW", StringComparison.OrdinalIgnoreCase))))
+            perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        if (string.Equals(permission, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase) &&
+            perms.Any(p => string.Equals(p, "EMP_VIEW", StringComparison.OrdinalIgnoreCase)))
         {
             return true;
         }
@@ -144,14 +147,30 @@ public class CurrentUserService : ICurrentUserService
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add("EMP_PROFILE_VIEW");
-            permsToCheck.Add("PAYROLL_VIEW");
-            permsToCheck.Add("PAYROLL_CALC_VIEW");
         }
         else if (string.Equals(permission, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add("EMP_VIEW");
-            permsToCheck.Add("PAYROLL_VIEW");
-            permsToCheck.Add("PAYROLL_CALC_VIEW");
+        }
+        else if (string.Equals(permission, "TIME_DAILY_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "ATTENDANCE_DAILY_VIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("TIME_DAILY_VIEW");
+            permsToCheck.Add("ATTENDANCE_DAILY_VIEW");
+        }
+        else if (string.Equals(permission, "LEAVE_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "LEAVE_REQUEST_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "LEAVE_BALANCE_VIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("LEAVE_VIEW");
+            permsToCheck.Add("LEAVE_REQUEST_VIEW");
+            permsToCheck.Add("LEAVE_BALANCE_VIEW");
+        }
+        else if (string.Equals(permission, "BENEFIT_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "BENEFIT_BALANCE_VIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("BENEFIT_VIEW");
+            permsToCheck.Add("BENEFIT_BALANCE_VIEW");
         }
         else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
                  permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))

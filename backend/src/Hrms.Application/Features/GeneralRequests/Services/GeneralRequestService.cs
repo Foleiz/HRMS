@@ -21,12 +21,18 @@ public class GeneralRequestService : IGeneralRequestService
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly IDataScopeService _dataScopeService;
 
-    public GeneralRequestService(IHrmsDbContext context, ICurrentUserService currentUser, IApprovalWorkflowService approvalWorkflow)
+    public GeneralRequestService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUser,
+        IApprovalWorkflowService approvalWorkflow,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _currentUser = currentUser;
         _approvalWorkflow = approvalWorkflow;
+        _dataScopeService = dataScopeService;
     }
 
     private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
@@ -55,17 +61,17 @@ public class GeneralRequestService : IGeneralRequestService
     public async Task<List<GeneralRequestDto>> GetAllRequestsAsync(string? status = null, CancellationToken cancellationToken = default)
     {
         var me = _currentUser.EmployeeId;
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
         var query = BaseQuery();
 
         if (!IsAdmin)
         {
             if (!me.HasValue) return new List<GeneralRequestDto>();
             var allowed = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken);
-            var hr = IsHrApprover;
-            // ผู้อนุมัติเห็นเฉพาะคำขอในสายของตน / ฝ่ายบุคคลเห็นคำขอที่ไม่มีสายการอนุมัติด้วย (ต้องพิจารณาเอง)
             query = query.Where(r =>
                 (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
-                || (hr && !r.ApprovalInstanceId.HasValue));
+                || (accessibleEmpIds != null ? accessibleEmpIds.Contains(r.EmployeeId) : false)
+                || (!r.ApprovalInstanceId.HasValue && accessibleEmpIds == null));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

@@ -15,10 +15,12 @@ public class EmploymentContractService : IEmploymentContractService
     private const long MaxFileBytes = 10 * 1024 * 1024; // 10 MB
 
     private readonly IHrmsDbContext _context;
+    private readonly IDataScopeService _dataScopeService;
 
-    public EmploymentContractService(IHrmsDbContext context)
+    public EmploymentContractService(IHrmsDbContext context, IDataScopeService dataScopeService)
     {
         _context = context;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task<List<EmploymentContractDto>> GetAllAsync(
@@ -27,6 +29,8 @@ public class EmploymentContractService : IEmploymentContractService
         string? status,
         CancellationToken cancellationToken = default)
     {
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_CONTRACT_VIEW", cancellationToken);
+
         var query = _context.EmploymentContracts
             .Include(c => c.Employee)
                 .ThenInclude(e => e!.Assignments)
@@ -36,6 +40,11 @@ public class EmploymentContractService : IEmploymentContractService
                     .ThenInclude(a => a.Position)
             .Include(c => c.EmployeeType)
             .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(c => accessibleEmpIds.Contains(c.EmployeeId));
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -94,11 +103,20 @@ public class EmploymentContractService : IEmploymentContractService
 
     public async Task<ContractSummaryStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
     {
-        var rawContracts = await _context.EmploymentContracts
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_CONTRACT_VIEW", cancellationToken);
+
+        var query = _context.EmploymentContracts
             .AsNoTracking()
             .Where(c => c.Status == "ACTIVE"
                 && c.Employee != null
-                && (c.Employee.EmploymentStatus == "ACTIVE" || c.Employee.EmploymentStatus == "PROBATION"))
+                && (c.Employee.EmploymentStatus == "ACTIVE" || c.Employee.EmploymentStatus == "PROBATION"));
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(c => accessibleEmpIds.Contains(c.EmployeeId));
+        }
+
+        var rawContracts = await query
             .OrderByDescending(c => c.StartDate)
             .ThenByDescending(c => c.Id)
             .Select(c => new
@@ -163,11 +181,23 @@ public class EmploymentContractService : IEmploymentContractService
             throw new NotFoundException("สัญญาจ้างงาน", id);
         }
 
+        bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(contract.EmployeeId, "EMP_CONTRACT_VIEW", cancellationToken);
+        if (!canAccess)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงสัญญาจ้างของพนักงานท่านนี้");
+        }
+
         return MapToDto(contract);
     }
 
     public async Task<List<EmploymentContractDto>> GetByEmployeeIdAsync(long employeeId, CancellationToken cancellationToken = default)
     {
+        bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(employeeId, "EMP_CONTRACT_VIEW", cancellationToken);
+        if (!canAccess)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เข้าถึงสัญญาจ้างของพนักงานท่านนี้");
+        }
+
         var contracts = await SelectWithoutBlob(
                 _context.EmploymentContracts
                     .AsNoTracking()

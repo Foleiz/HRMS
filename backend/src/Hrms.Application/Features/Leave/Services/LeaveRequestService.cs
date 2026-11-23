@@ -11,12 +11,18 @@ public partial class LeaveRequestService : ILeaveRequestService
     private readonly IHrmsDbContext _context;
     private readonly IApprovalWorkflowService _approvalWorkflow;
     private readonly ILeaveEntitlementSync _entitlementSync;
+    private readonly IDataScopeService _dataScopeService;
 
-    public LeaveRequestService(IHrmsDbContext context, IApprovalWorkflowService approvalWorkflow, ILeaveEntitlementSync entitlementSync)
+    public LeaveRequestService(
+        IHrmsDbContext context,
+        IApprovalWorkflowService approvalWorkflow,
+        ILeaveEntitlementSync entitlementSync,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _approvalWorkflow = approvalWorkflow;
         _entitlementSync = entitlementSync;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(
@@ -37,12 +43,22 @@ public partial class LeaveRequestService : ILeaveRequestService
             .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
             .AsQueryable();
 
+        // Data scoping
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("LEAVE_REQUEST_VIEW", cancellationToken);
         if (employeeId.HasValue)
         {
+            if (accessibleEmpIds != null && !accessibleEmpIds.Contains(employeeId.Value))
+            {
+                return (new List<LeaveRequestDto>(), 0);
+            }
             query = query.Where(r => r.EmployeeId == employeeId.Value);
         }
+        else if (accessibleEmpIds != null)
+        {
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
+        }
 
-        if (scopeToManagerEmployeeId.HasValue)
+        if (scopeToManagerEmployeeId.HasValue && accessibleEmpIds == null)
         {
             query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
         }
@@ -167,7 +183,12 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         var query = _context.LeaveRequests.AsNoTracking().AsQueryable();
 
-        if (scopeToManagerEmployeeId.HasValue)
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("LEAVE_REQUEST_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
+        }
+        else if (scopeToManagerEmployeeId.HasValue)
         {
             query = await ApplyScopeToQueryAsync(query, scopeToManagerEmployeeId.Value, cancellationToken);
         }

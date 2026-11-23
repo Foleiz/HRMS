@@ -10,10 +10,12 @@ namespace Hrms.Application.Features.MasterData.Services;
 public class BenefitService : IBenefitService
 {
     private readonly IHrmsDbContext _context;
+    private readonly IDataScopeService _dataScopeService;
 
-    public BenefitService(IHrmsDbContext _context)
+    public BenefitService(IHrmsDbContext context, IDataScopeService dataScopeService)
     {
-        this._context = _context;
+        _context = context;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task<List<BenefitItemDto>> GetAllAsync(string? category = null, string? status = null, CancellationToken cancellationToken = default)
@@ -378,6 +380,8 @@ public class BenefitService : IBenefitService
     {
         int targetYear = year ?? DateTime.UtcNow.Year;
 
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("BENEFIT_BALANCE_VIEW", cancellationToken);
+
         var employeesQuery = _context.Employees
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.EmployeeType)
@@ -389,6 +393,11 @@ public class BenefitService : IBenefitService
                 .ThenInclude(a => a.Position)
             .Where(e => e.EmploymentStatus == "ACTIVE") // ไม่แสดงพนักงานที่พ้นสภาพแล้ว
             .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            employeesQuery = employeesQuery.Where(e => accessibleEmpIds.Contains(e.Id));
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -576,6 +585,8 @@ public class BenefitService : IBenefitService
         string? status = null,
         CancellationToken cancellationToken = default)
     {
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("BENEFIT_BALANCE_VIEW", cancellationToken);
+
         var query = _context.EmployeeBenefitClaims
             .Include(c => c.Employee)
             .Include(c => c.BenefitItem)
@@ -583,6 +594,11 @@ public class BenefitService : IBenefitService
             .Include(c => c.ApprovedByUser)
             .Include(c => c.PayrollPeriod)
             .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(c => accessibleEmpIds.Contains(c.EmployeeId));
+        }
 
         if (year.HasValue)
         {
