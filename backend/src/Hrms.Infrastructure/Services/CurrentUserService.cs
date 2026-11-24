@@ -169,6 +169,12 @@ public class CurrentUserService : ICurrentUserService
             permsToCheck.Add("BENEFIT_VIEW");
             permsToCheck.Add("BENEFIT_BALANCE_VIEW");
         }
+        else if (string.Equals(permission, "ORG_CHART_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "ORG_CHART", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("ORG_CHART_VIEW");
+            permsToCheck.Add("ORG_CHART");
+        }
         else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
                  permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
         {

@@ -14,10 +14,17 @@ namespace Hrms.Application.Features.Organization.Services;
 public class OrganizationService : IOrganizationService
 {
     private readonly IHrmsDbContext _dbContext;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IDataScopeService _dataScopeService;
 
-    public OrganizationService(IHrmsDbContext dbContext)
+    public OrganizationService(
+        IHrmsDbContext dbContext,
+        ICurrentUserService currentUserService,
+        IDataScopeService dataScopeService)
     {
         _dbContext = dbContext;
+        _currentUserService = currentUserService;
+        _dataScopeService = dataScopeService;
     }
 
     private static (DateTime Expiry, CompanyDto? Data)? _cachedCompanyProfile;
@@ -993,6 +1000,8 @@ public class OrganizationService : IOrganizationService
     #region Org Chart
     public async Task<OrgChartDto> GetOrgChartAsync(CancellationToken cancellationToken = default)
     {
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("ORG_CHART_VIEW", cancellationToken);
+
         var company = await _dbContext.Companies.AsNoTracking()
             .OrderBy(c => c.Id)
             .Select(c => new { c.CompanyName, c.CeoEmployeeId })
@@ -1016,8 +1025,15 @@ public class OrganizationService : IOrganizationService
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Plan));
 
         // เฉพาะพนักงานที่ยังทำงานอยู่ + ตำแหน่งปัจจุบันล่าสุด
-        var rows = await _dbContext.Employees.AsNoTracking()
-            .Where(e => e.EmploymentStatus == "ACTIVE")
+        var empQuery = _dbContext.Employees.AsNoTracking()
+            .Where(e => e.EmploymentStatus == "ACTIVE");
+
+        if (accessibleEmpIds != null)
+        {
+            empQuery = empQuery.Where(e => accessibleEmpIds.Contains(e.Id));
+        }
+
+        var rows = await empQuery
             .Select(e => new
             {
                 e.Id,
@@ -1042,6 +1058,43 @@ public class OrganizationService : IOrganizationService
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
+
+        // กรองฝ่ายและแผนกตาม Data Scope หากมีการจำกัดขอบเขตข้อมูล
+        if (accessibleEmpIds != null)
+        {
+            var allowedDivisionIds = rows
+                .Where(r => r.Assignment != null)
+                .Select(r => r.Assignment!.DivisionId)
+                .ToHashSet();
+
+            var allowedDepartmentIds = rows
+                .Where(r => r.Assignment != null)
+                .Select(r => r.Assignment!.DepartmentId)
+                .ToHashSet();
+
+            if (_currentUserService.DivisionId.HasValue) allowedDivisionIds.Add(_currentUserService.DivisionId.Value);
+            if (_currentUserService.DepartmentId.HasValue) allowedDepartmentIds.Add(_currentUserService.DepartmentId.Value);
+
+            if (_currentUserService.EmployeeId.HasValue)
+            {
+                long myEmpId = _currentUserService.EmployeeId.Value;
+                foreach (var d in divisions.Where(d => d.HeadEmployeeId == myEmpId)) allowedDivisionIds.Add(d.Id);
+                foreach (var d in departments.Where(d => d.HeadEmployeeId == myEmpId))
+                {
+                    allowedDepartmentIds.Add(d.Id);
+                    allowedDivisionIds.Add(d.DivisionId);
+                }
+            }
+
+            var parents = departments
+                .Where(d => allowedDepartmentIds.Contains(d.Id) && d.ParentDepartmentId.HasValue)
+                .Select(d => d.ParentDepartmentId!.Value)
+                .ToList();
+            foreach (var pid in parents) allowedDepartmentIds.Add(pid);
+
+            divisions = divisions.Where(d => allowedDivisionIds.Contains(d.Id)).ToList();
+            departments = departments.Where(d => allowedDepartmentIds.Contains(d.Id)).ToList();
+        }
 
         var empIds = rows.Select(r => r.Id).ToList();
 
@@ -1087,12 +1140,54 @@ public class OrganizationService : IOrganizationService
             OnLeaveToday = onLeaveToday.Contains(r.Id)
         });
 
+        // ─── กำหนดหัวหน้าสูงสุด (CEO) ───
+        OrgChartPersonDto? ceoDto = null;
+        if (company?.CeoEmployeeId.HasValue == true)
+        {
+            if (people.TryGetValue(company.CeoEmployeeId.Value, out var p))
+            {
+                ceoDto = p;
+            }
+            else
+            {
+                var ceoRow = await _dbContext.Employees.AsNoTracking()
+                    .Where(e => e.Id == company.CeoEmployeeId.Value)
+                    .Select(e => new
+                    {
+                        e.Id,
+                        e.EmployeeCode,
+                        e.Prefix,
+                        e.FirstName,
+                        e.LastName,
+                        e.AvatarUpdatedAt,
+                        Assignment = e.Assignments
+                            .Where(a => a.IsCurrent)
+                            .OrderByDescending(a => a.EffectiveFrom)
+                            .Select(a => new { PositionName = a.Position != null ? a.Position.PositionName : null })
+                            .FirstOrDefault()
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (ceoRow != null)
+                {
+                    ceoDto = new OrgChartPersonDto
+                    {
+                        Id = ceoRow.Id,
+                        EmployeeCode = ceoRow.EmployeeCode,
+                        FullName = $"{ceoRow.Prefix} {ceoRow.FirstName} {ceoRow.LastName}".Trim(),
+                        PositionName = ceoRow.Assignment?.PositionName ?? "ประธานเจ้าหน้าที่บริหาร",
+                        AvatarUrl = ceoRow.AvatarUpdatedAt.HasValue ? $"/api/employees/{ceoRow.Id}/avatar?v={ceoRow.AvatarUpdatedAt.Value.Ticks}" : null
+                    };
+                }
+            }
+        }
+
         // หัวหน้าที่ลาออก/ไม่ active → ถือว่าตำแหน่งว่าง
         OrgChartPersonDto? Person(long? id) => id.HasValue && people.TryGetValue(id.Value, out var p) ? p : null;
 
         // คนที่แสดงเป็นหัวหน้าในแผนผังแล้ว จะไม่ซ้ำในรายชื่อสมาชิก
         var shownAsHead = new HashSet<long>();
-        if (Person(company?.CeoEmployeeId) != null) shownAsHead.Add(company!.CeoEmployeeId!.Value);
+        if (ceoDto != null) shownAsHead.Add(ceoDto.Id);
         foreach (var d in divisions) if (Person(d.HeadEmployeeId) != null) shownAsHead.Add(d.HeadEmployeeId!.Value);
         foreach (var d in departments) if (Person(d.HeadEmployeeId) != null) shownAsHead.Add(d.HeadEmployeeId!.Value);
 
@@ -1193,7 +1288,7 @@ public class OrganizationService : IOrganizationService
         var result = new OrgChartDto
         {
             CompanyName = company?.CompanyName ?? string.Empty,
-            Ceo = Person(company?.CeoEmployeeId),
+            Ceo = ceoDto,
             TotalEmployees = rows.Count,
             TotalDepartments = activeDepartmentIds.Count,
         };
