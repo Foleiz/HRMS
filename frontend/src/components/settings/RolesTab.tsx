@@ -2545,10 +2545,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               })}
             </div>
 
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-0.5 leading-tight select-none">
-              * สิทธิ์สร้าง แก้ไข หรือลบ จำเป็นต้องมีสิทธิ์ดูข้อมูลร่วมด้วยเสมอ
-            </p>
-
             {/* Popover Footer Shortcuts */}
             {(() => {
               const areAllScopeActionsSelected = ACTIONS_CONFIG.every((a) =>
