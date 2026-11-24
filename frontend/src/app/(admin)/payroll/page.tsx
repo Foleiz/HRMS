@@ -5322,14 +5322,21 @@ export default function PayrollPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                     <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between min-h-[104px]">
                       <div className="text-xs text-slate-600 dark:text-slate-300 font-bold tracking-tight">
-                        พนักงานที่มียอดโอน
+                        ต้องโอนทั้งหมด
                       </div>
                       <div className="text-xl font-extrabold text-slate-900 dark:text-slate-100 text-center tabular-nums tracking-tight my-1">
                         {transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0}{' '}
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">คน</span>
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 text-center font-medium">
-                        จากทั้งหมด {transferList?.totalPeriodEmployees ?? selectedPeriod?.employeeCount ?? 0} คนในรอบ
+                        {(() => {
+                          const payable = transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0;
+                          const total = transferList?.totalPeriodEmployees ?? selectedPeriod?.employeeCount ?? payable;
+                          if (total > payable) {
+                            return `จากพนักงาน ${total} คน (ยอด 0 บาท ${total - payable} คน)`;
+                          }
+                          return 'พนักงานทั้งหมดในรอบ';
+                        })()}
                       </div>
                     </div>
 
