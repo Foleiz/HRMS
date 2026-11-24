@@ -1399,27 +1399,41 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const popoverWidth = 288;
-    const popoverHeight = 220;
+    const popoverHeight = 310;
+    const margin = 16;
     const spaceBelow = window.innerHeight - rect.bottom;
-    const openUpward = spaceBelow < popoverHeight && rect.top > popoverHeight;
+    const spaceAbove = rect.top;
 
-    const left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rect.right - popoverWidth));
-
-    if (openUpward) {
-      setActivePopover({
-        moduleCode,
-        scopeKey,
-        bottom: window.innerHeight - rect.top + 6,
-        left,
-      });
-    } else {
-      setActivePopover({
-        moduleCode,
-        scopeKey,
-        top: rect.bottom + 6,
-        left,
-      });
+    // คำนวณแกน X: เปิดชิดซ้ายของปุ่ม หากล้นขอบจอขวาให้ถอยมาพอดีขอบปุ่ม และ clamp ไม่ให้ตกขอบเด็ดขาด
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - margin) {
+      left = rect.right - popoverWidth;
     }
+    left = Math.max(margin, Math.min(window.innerWidth - popoverWidth - margin, left));
+
+    // คำนวณแกน Y: หากพื้นที่ด้านล่างไม่พอ (< 310px) ให้เด้งขึ้นเปิดด้านบน หรือ clamp ให้อยู่ในหน้าจอเสมอ
+    let top: number | undefined;
+    let bottom: number | undefined;
+
+    if (spaceBelow >= popoverHeight + margin) {
+      top = rect.bottom + 6;
+    } else if (spaceAbove >= popoverHeight + margin) {
+      bottom = window.innerHeight - rect.top + 6;
+    } else {
+      if (spaceBelow >= spaceAbove) {
+        top = Math.max(margin, window.innerHeight - popoverHeight - margin);
+      } else {
+        bottom = margin;
+      }
+    }
+
+    setActivePopover({
+      moduleCode,
+      scopeKey,
+      top,
+      bottom,
+      left,
+    });
   };
 
   const activeMod = useMemo(() => {
@@ -2170,7 +2184,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                                   {/* Scope Pills พร้อมตัวชี้ (Pointer) และ Highlight บนปุ่มขอบเขตสิทธิ์เป้าหมาย */}
                                   {!isDashboardCat && (
-                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                    <div className="flex items-center gap-1 shrink-0 flex-nowrap">
                                       {SCOPES_CONFIG.map((scope) => {
                                         const isScopeBlocked = isEssCat && scope.key !== 'self';
                                         const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
@@ -2205,7 +2219,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                                 if (isThisScopeTargeted) setHighlightTarget(null);
                                                 handleOpenPopover(e, mod.moduleCode, scope.key);
                                               }}
-                                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
                                                 isThisScopeTargeted
                                                   ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
                                                   : isButtonDisabled
@@ -2390,8 +2404,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               left: `${activePopover.left}px`,
               ...(activePopover.top !== undefined ? { top: `${activePopover.top}px` } : {}),
               ...(activePopover.bottom !== undefined ? { bottom: `${activePopover.bottom}px` } : {}),
+              maxHeight: 'calc(100vh - 32px)',
             }}
-            className="w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 space-y-2.5 z-[100000] animate-in fade-in zoom-in-95 duration-100 select-none"
+            className="w-72 max-h-[calc(100vh-32px)] overflow-y-auto bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 p-3.5 space-y-2.5 z-[100000] animate-in fade-in zoom-in-95 duration-100 select-none"
           >
             {/* Popover Header */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700/60">
