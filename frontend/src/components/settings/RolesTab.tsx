@@ -630,8 +630,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   // Accordion expanded guide flows
   const [expandedGuideFlows, setExpandedGuideFlows] = useState<Record<string, boolean>>({});
 
-  // Highlighted module for Jump to Module & Flash Highlight Effect
-  const [highlightedModuleCode, setHighlightedModuleCode] = useState<string | null>(null);
+  // Highlighted module and specific button target for Jump to Module & Flash Highlight Effect
+  const [highlightTarget, setHighlightTarget] = useState<{
+    moduleCode: string;
+    actionType: 'toggle' | 'edit';
+    targetScopeKey?: 'self' | 'team' | 'department' | 'division' | 'organization';
+  } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -1075,7 +1079,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   /* ── Jump to Module & Flash Highlight Effect ── */
   const handleJumpToModule = useCallback(
-    (moduleCode: string) => {
+    (moduleCode: string, actionType: 'toggle' | 'edit' = 'edit') => {
       // 1. ตรวจสอบหมวดหมู่ของโมดูลเป้าหมาย
       const mod = localModules.find((m) => m.moduleCode === moduleCode);
       const catCode = mod?.categoryCode || mod?.groupName;
@@ -1095,25 +1099,48 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         });
       }
 
-      // 3. หน่วงเวลาสั้นๆ เพื่อให้ DOM กางเสร็จ แล้ว Smooth Scroll และแสดง Flash Highlight
+      // 3. หา Scope เป้าหมายที่จะชี้ไป (สำหรับกรณี 'edit')
+      let targetScopeKey: 'self' | 'team' | 'department' | 'division' | 'organization' = 'organization';
+      const isEss = catCode ? ESS_CATEGORY_CODES.has(catCode) : false;
+      if (isEss) {
+        targetScopeKey = 'self';
+      } else if (mod) {
+        const scopes: Array<'organization' | 'division' | 'department' | 'team' | 'self'> = [
+          'organization',
+          'division',
+          'department',
+          'team',
+          'self',
+        ];
+        const activeScope = scopes.find((s) => getScopeActiveCount(mod, s) > 0);
+        if (activeScope) {
+          targetScopeKey = activeScope;
+        }
+      }
+
+      // 4. หน่วงเวลาสั้นๆ เพื่อให้ DOM กางเสร็จ แล้ว Smooth Scroll และแสดง Pointer + Highlight ที่ปุ่มเป้าหมาย
       setTimeout(() => {
         const el = document.getElementById(`permission-module-${moduleCode}`);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        setHighlightedModuleCode(moduleCode);
+        setHighlightTarget({
+          moduleCode,
+          actionType,
+          targetScopeKey,
+        });
 
         if (highlightTimer) {
           clearTimeout(highlightTimer);
         }
         highlightTimer = setTimeout(() => {
-          setHighlightedModuleCode(null);
+          setHighlightTarget(null);
           highlightTimer = null;
-        }, 2200);
-      }, 120);
+        }, 4500);
+      }, 150);
     },
-    [localModules, searchModuleQuery]
+    [localModules, searchModuleQuery, getScopeActiveCount]
   );
 
   // Master switch per module
@@ -2024,7 +2051,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                                     onClick={(e) => {
                                                       e.preventDefault();
                                                       e.stopPropagation();
-                                                      handleJumpToModule(step.targetModuleCode);
+                                                      handleJumpToModule(step.targetModuleCode, 'toggle');
                                                     }}
                                                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60 shadow-2xs transition-all cursor-pointer hover:shadow-xs active:scale-95"
                                                     title={`ไปเปิดสิทธิ์ที่โมดูล ${step.targetModuleCode}`}
@@ -2043,7 +2070,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                                     onClick={(e) => {
                                                       e.preventDefault();
                                                       e.stopPropagation();
-                                                      handleJumpToModule(step.targetModuleCode);
+                                                      handleJumpToModule(step.targetModuleCode, 'edit');
                                                     }}
                                                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 shadow-2xs transition-all cursor-pointer hover:shadow-xs active:scale-95"
                                                     title={`ไปแก้ไขสิทธิ์ที่โมดูล ${step.targetModuleCode}`}
@@ -2074,15 +2101,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
                             const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
-                            const isHighlighted = highlightedModuleCode === mod.moduleCode;
+                            const isRowHighlighted = highlightTarget?.moduleCode === mod.moduleCode;
+                            const isToggleHighlighted =
+                              isRowHighlighted && (highlightTarget.actionType === 'toggle' || isDashboardCat);
+                            const isEditHighlighted =
+                              isRowHighlighted && highlightTarget.actionType === 'edit' && !isDashboardCat;
 
                             return (
                               <div
                                 key={mod.moduleCode}
                                 id={`permission-module-${mod.moduleCode}`}
-                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all duration-700 rounded-lg relative ${
-                                  isHighlighted
-                                    ? 'ring-2 ring-indigo-500 bg-indigo-50/90 dark:bg-indigo-950/60 shadow-lg scale-[1.008] z-10'
+                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all duration-500 rounded-xl relative ${
+                                  isRowHighlighted
+                                    ? isEditHighlighted
+                                      ? 'ring-2 ring-amber-400/90 bg-amber-50/80 dark:bg-amber-950/40 shadow-lg scale-[1.008] z-20'
+                                      : 'ring-2 ring-indigo-500/90 bg-indigo-50/80 dark:bg-indigo-950/40 shadow-lg scale-[1.008] z-20'
                                     : modActive
                                     ? 'bg-white dark:bg-slate-800'
                                     : 'bg-slate-100 dark:bg-slate-900/70'
@@ -2106,14 +2139,36 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                                 {/* Right: Controls */}
                                 <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
-                                  {/* Master Module Toggle */}
-                                  <ToggleSwitch
-                                    checked={modActive}
-                                    onChange={() => handleToggleModule(mod.moduleCode)}
-                                    disabled={!canEditRole}
-                                  />
+                                  {/* Master Module Toggle พร้อมตัวชี้ (Pointer) และ Highlight */}
+                                  <div className="relative inline-flex items-center">
+                                    {isToggleHighlighted && (
+                                      <div className="absolute -top-10 right-0 flex flex-col items-center pointer-events-none z-30 animate-bounce">
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-xl border border-indigo-400 whitespace-nowrap">
+                                          <span>👇</span>
+                                          <span>คลิกเปิดสิทธิ์ตรงนี้</span>
+                                        </div>
+                                        <div className="w-2 h-2 bg-indigo-600 border-r border-b border-indigo-400 rotate-45 -mt-1" />
+                                      </div>
+                                    )}
+                                    <div
+                                      className={
+                                        isToggleHighlighted
+                                          ? 'ring-4 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-800 rounded-full shadow-lg shadow-indigo-500/40 scale-110 transition-all duration-300'
+                                          : ''
+                                      }
+                                      onClick={() => {
+                                        if (isToggleHighlighted) setHighlightTarget(null);
+                                      }}
+                                    >
+                                      <ToggleSwitch
+                                        checked={modActive}
+                                        onChange={() => handleToggleModule(mod.moduleCode)}
+                                        disabled={!canEditRole}
+                                      />
+                                    </div>
+                                  </div>
 
-                                  {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด; หมวด ESS แสดงครบ 5 ระดับแต่บล็อกขอบเขตที่ไม่ใช่ "ตัวเอง") */}
+                                  {/* Scope Pills พร้อมตัวชี้ (Pointer) และ Highlight บนปุ่มขอบเขตสิทธิ์เป้าหมาย */}
                                   {!isDashboardCat && (
                                     <div className="flex items-center gap-1.5">
                                       {SCOPES_CONFIG.map((scope) => {
@@ -2124,35 +2179,52 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                         const isPopoverOpen =
                                           activePopover?.moduleCode === mod.moduleCode &&
                                           activePopover?.scopeKey === scope.key;
+                                        const isThisScopeTargeted =
+                                          isEditHighlighted && highlightTarget.targetScopeKey === scope.key;
 
                                         return (
-                                          <button
-                                            key={scope.key}
-                                            type="button"
-                                            disabled={isButtonDisabled}
-                                            title={
-                                              isScopeBlocked
-                                                ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
-                                                : undefined
-                                            }
-                                            onClick={(e) => handleOpenPopover(e, mod.moduleCode, scope.key)}
-                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
-                                              isButtonDisabled
-                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
-                                                : isScopeActive
-                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
-                                                : isPopoverOpen
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
-                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
-                                            }`}
-                                          >
-                                            <span>{scope.label}</span>
-                                            {isScopeActive && (
-                                              <span className="ml-1 text-[10px] opacity-90">
-                                                ({count})
-                                              </span>
+                                          <div key={scope.key} className="relative inline-flex">
+                                            {isThisScopeTargeted && (
+                                              <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-30 animate-bounce">
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[11px] font-bold shadow-xl border border-amber-300 whitespace-nowrap">
+                                                  <span>👇</span>
+                                                  <span>คลิกแก้ไขสิทธิ์ตรงนี้</span>
+                                                </div>
+                                                <div className="w-2 h-2 bg-amber-600 border-r border-b border-amber-300 rotate-45 -mt-1" />
+                                              </div>
                                             )}
-                                          </button>
+                                            <button
+                                              type="button"
+                                              disabled={isButtonDisabled}
+                                              title={
+                                                isScopeBlocked
+                                                  ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
+                                                  : undefined
+                                              }
+                                              onClick={(e) => {
+                                                if (isThisScopeTargeted) setHighlightTarget(null);
+                                                handleOpenPopover(e, mod.moduleCode, scope.key);
+                                              }}
+                                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                                isThisScopeTargeted
+                                                  ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
+                                                  : isButtonDisabled
+                                                  ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
+                                                  : isScopeActive
+                                                  ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
+                                                  : isPopoverOpen
+                                                  ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
+                                                  : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
+                                              }`}
+                                            >
+                                              <span>{scope.label}</span>
+                                              {isScopeActive && (
+                                                <span className="ml-1 text-[10px] opacity-90">
+                                                  ({count})
+                                                </span>
+                                              )}
+                                            </button>
+                                          </div>
                                         );
                                       })}
                                     </div>
