@@ -12,7 +12,6 @@ import {
   Save,
   HelpCircle,
   Info,
-  Sparkles,
   Calculator,
   ArrowRight,
 } from 'lucide-react';
@@ -118,13 +117,6 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
   const minEmpDeduction = Math.round(minWageBase * safeEmpPercent * 100) / 100;
   const totalMaxContribution = Math.round((maxEmpDeduction + maxCompContribution) * 100) / 100;
 
-  const handleApplyPreset = (empP: number, compP: number, maxW: number, minW: number = 1650) => {
-    setEmployeePercent(empP);
-    setEmployerPercent(compP);
-    setMaxWageBase(maxW);
-    setMinWageBase(minW);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validationErrors.length > 0) return;
@@ -160,37 +152,6 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
 
         {/* Content Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Quick Presets Bar */}
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>เทมเพลตอัตรากฎหมายประกันสังคม (Quick Presets):</span>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleApplyPreset(5.0, 5.0, 15000, 1650)}
-                className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-purple-50 border border-slate-200 dark:border-slate-700 hover:border-purple-300 rounded-lg font-medium text-slate-700 dark:text-slate-300 hover:text-purple-700 transition-colors shadow-2xs cursor-pointer"
-              >
-                มาตรฐาน 5% (เพดาน 15,000 / สูงสุด 750 บ.)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset(5.0, 5.0, 17500, 1650)}
-                className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-purple-50 border border-slate-200 dark:border-slate-700 hover:border-purple-300 rounded-lg font-medium text-slate-700 dark:text-slate-300 hover:text-purple-700 transition-colors shadow-2xs cursor-pointer"
-              >
-                ปรับเพดานใหม่ 17,500 บ. (สูงสุด 875 บ.)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleApplyPreset(3.0, 3.0, 15000, 1650)}
-                className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-purple-50 border border-slate-200 dark:border-slate-700 hover:border-purple-300 rounded-lg font-medium text-slate-700 dark:text-slate-300 hover:text-purple-700 transition-colors shadow-2xs cursor-pointer"
-              >
-                ลดหย่อนชั่วคราว 3% (สูงสุด 450 บ.)
-              </button>
-            </div>
-          </div>
-
           {/* Form Fields Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Rate Name */}
