@@ -178,12 +178,7 @@ public class CurrentUserService : ICurrentUserService
         else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
                  permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("APPROVAL_PAYROLL_VIEW");
-            permsToCheck.Add("PAYROLL_VIEW");
-            permsToCheck.Add("PAYROLL_CALC_VIEW");
-            permsToCheck.Add("PAYROLL_HR_VIEW");
-            permsToCheck.Add("PAYROLL_FINANCE_VIEW");
-            permsToCheck.Add("PAYROLL_ADMIN_VIEW");
+            return "ORGANIZATION";
         }
 
         var scopes = new List<string>();

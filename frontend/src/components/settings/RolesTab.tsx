@@ -1149,6 +1149,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       prev.map((m) => {
         const isCurrentModDashboard =
           m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD';
+        const isCurrentModPayroll =
+          m.categoryCode === 'PAYROLL' || m.groupName === 'PAYROLL' || m.moduleCode.startsWith('PAYROLL_');
 
         if (m.moduleCode !== moduleCode) return m;
 
@@ -1166,12 +1168,20 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             organization: { ...empty },
           };
         } else {
-          // Turn ON (default: self view = true)
+          // Turn ON (default: self view = true, or organization for payroll)
           if (isCurrentModDashboard) {
             return {
               ...m,
               canView: true,
               self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          if (isCurrentModPayroll) {
+            return {
+              ...m,
+              canView: true,
+              organization: { view: true, create: true, edit: true, delete: false, approve: true },
+              dataScope: 'ORGANIZATION',
             };
           }
           return {
@@ -1322,6 +1332,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               ...m,
               canView: true,
               self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          if (catCode === 'PAYROLL') {
+            return {
+              ...m,
+              canView: true,
+              organization: { view: true, create: true, edit: true, delete: false, approve: true },
+              dataScope: 'ORGANIZATION',
             };
           }
 
@@ -2115,6 +2133,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
                             const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
+                            const isPayrollCat = cat.code === 'PAYROLL' || mod.moduleCode.startsWith('PAYROLL_');
                             const isRowHighlighted = highlightTarget?.moduleCode === mod.moduleCode;
                             const isToggleHighlighted =
                               isRowHighlighted && (highlightTarget.actionType === 'toggle' || isDashboardCat);
@@ -2175,54 +2194,100 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                                   {/* Scope Pills พร้อมตัวชี้ (Pointer) และ Highlight บนปุ่มขอบเขตสิทธิ์เป้าหมาย */}
                                   {!isDashboardCat && (
-                                    <div className="flex items-center gap-1 shrink-0 flex-nowrap">
-                                      {SCOPES_CONFIG.map((scope) => {
-                                        const isScopeBlocked = isEssCat && scope.key !== 'self';
-                                        const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
-                                        const count = isScopeBlocked ? 0 : getScopeActiveCount(mod, scope.key);
-                                        const isScopeActive = count > 0;
-                                        const isPopoverOpen =
-                                          activePopover?.moduleCode === mod.moduleCode &&
-                                          activePopover?.scopeKey === scope.key;
-                                        const isThisScopeTargeted =
-                                          isEditHighlighted && highlightTarget.targetScopeKey === scope.key;
+                                    isPayrollCat ? (
+                                      <div className="flex items-center gap-1 shrink-0 flex-nowrap">
+                                        {(() => {
+                                          const isButtonDisabled = !modActive || !canEditRole;
+                                          const count = getScopeActiveCount(mod, 'organization');
+                                          const isScopeActive = count > 0;
+                                          const isPopoverOpen =
+                                            activePopover?.moduleCode === mod.moduleCode &&
+                                            activePopover?.scopeKey === 'organization';
+                                          const isThisScopeTargeted =
+                                            isEditHighlighted && highlightTarget.targetScopeKey === 'organization';
 
-                                        return (
-                                          <button
-                                            key={scope.key}
-                                            type="button"
-                                            disabled={isButtonDisabled}
-                                            title={
-                                              isScopeBlocked
-                                                ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
-                                                : undefined
-                                            }
-                                            onClick={(e) => {
-                                              if (isThisScopeTargeted) setHighlightTarget(null);
-                                              handleOpenPopover(e, mod.moduleCode, scope.key);
-                                            }}
-                                            className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
-                                              isThisScopeTargeted
-                                                ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
-                                                : isButtonDisabled
-                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
-                                                : isScopeActive
-                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
-                                                : isPopoverOpen
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
-                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
-                                            }`}
-                                          >
-                                            <span>{scope.label}</span>
-                                            {isScopeActive && (
-                                              <span className="ml-1 text-[10px] opacity-90">
-                                                ({count})
-                                              </span>
-                                            )}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
+                                          return (
+                                            <button
+                                              key="organization"
+                                              type="button"
+                                              disabled={isButtonDisabled}
+                                              title="หมวดเงินเดือนใช้งานระดับทั้งองค์กร (Organization Only)"
+                                              onClick={(e) => {
+                                                if (isThisScopeTargeted) setHighlightTarget(null);
+                                                handleOpenPopover(e, mod.moduleCode, 'organization');
+                                              }}
+                                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                                isThisScopeTargeted
+                                                  ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
+                                                  : isButtonDisabled
+                                                  ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
+                                                  : isScopeActive
+                                                  ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
+                                                  : isPopoverOpen
+                                                  ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
+                                                  : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
+                                              }`}
+                                            >
+                                              <span>ทั้งองค์กร</span>
+                                              {isScopeActive && (
+                                                <span className="ml-1 text-[10px] opacity-90">
+                                                  ({count})
+                                                </span>
+                                              )}
+                                            </button>
+                                          );
+                                        })()}
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1 shrink-0 flex-nowrap">
+                                        {SCOPES_CONFIG.map((scope) => {
+                                          const isScopeBlocked = isEssCat && scope.key !== 'self';
+                                          const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
+                                          const count = isScopeBlocked ? 0 : getScopeActiveCount(mod, scope.key);
+                                          const isScopeActive = count > 0;
+                                          const isPopoverOpen =
+                                            activePopover?.moduleCode === mod.moduleCode &&
+                                            activePopover?.scopeKey === scope.key;
+                                          const isThisScopeTargeted =
+                                            isEditHighlighted && highlightTarget.targetScopeKey === scope.key;
+
+                                          return (
+                                            <button
+                                              key={scope.key}
+                                              type="button"
+                                              disabled={isButtonDisabled}
+                                              title={
+                                                isScopeBlocked
+                                                  ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
+                                                  : undefined
+                                              }
+                                              onClick={(e) => {
+                                                if (isThisScopeTargeted) setHighlightTarget(null);
+                                                handleOpenPopover(e, mod.moduleCode, scope.key);
+                                              }}
+                                              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                                isThisScopeTargeted
+                                                  ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
+                                                  : isButtonDisabled
+                                                  ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
+                                                  : isScopeActive
+                                                  ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
+                                                  : isPopoverOpen
+                                                  ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
+                                                  : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
+                                              }`}
+                                            >
+                                              <span>{scope.label}</span>
+                                              {isScopeActive && (
+                                                <span className="ml-1 text-[10px] opacity-90">
+                                                  ({count})
+                                                </span>
+                                              )}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )
                                   )}
                                 </div>
                               </div>
