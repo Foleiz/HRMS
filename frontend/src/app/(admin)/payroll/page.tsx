@@ -6117,16 +6117,6 @@ export default function PayrollPage() {
                   กำหนดอัตราสมทบฝ่ายพนักงาน ฝ่ายนายจ้าง และเพดานฐานค่าจ้างสูงสุดตามกฎหมาย
                 </p>
               </div>
-              {canEditSso && ssoRates.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleOpenEditSsoRate(ssoRates[0])}
-                  icon={<Edit2 className="w-4 h-4" />}
-                >
-                  แก้ไขอัตราประกันสังคม
-                </Button>
-              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -6164,12 +6154,14 @@ export default function PayrollPage() {
                         </td>
                         {canEditSso && (
                           <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <button
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               onClick={() => handleOpenEditSsoRate(r)}
-                              className="px-2.5 py-1 text-xs font-semibold text-primary hover:text-primary-hover hover:underline cursor-pointer"
+                              icon={<Edit2 className="w-3.5 h-3.5" />}
                             >
-                              แก้ไข
-                            </button>
+                              แก้ไขอัตราประกันสังคม
+                            </Button>
                           </td>
                         )}
                       </tr>
