@@ -203,14 +203,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    return user.permissions?.includes(permission) ?? false;
+    // ยกเว้นเฉพาะการจัดการบทบาทและสิทธิ์ (SETTINGS_ROLES) สำหรับ ADMIN / SYSTEM_SUPER เพื่อป้องกัน Lockout
+    if (
+      permission.toUpperCase().startsWith('SETTINGS_ROLES') &&
+      user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))
+    ) {
+      return true;
+    }
+    if (user.permissions?.includes(permission)) return true;
+
+    if (permission.endsWith('_APPROVE')) {
+      const editEq = `${permission.slice(0, -8)}_EDIT`;
+      if (user.permissions?.includes(editEq)) return true;
+    }
+    if (permission.endsWith('_DELETE')) {
+      const editEq = `${permission.slice(0, -7)}_EDIT`;
+      if (user.permissions?.includes(editEq)) return true;
+    }
+    if (permission.endsWith('_EXPORT')) {
+      const viewEq = `${permission.slice(0, -7)}_VIEW`;
+      if (user.permissions?.includes(viewEq)) return true;
+    }
+    if (permission === 'EMP_VIEW' && user.permissions?.includes('EMP_PROFILE_VIEW')) return true;
+    if (permission === 'EMP_EDIT' && user.permissions?.includes('EMP_PROFILE_EDIT')) return true;
+    if (permission === 'EMP_CREATE' && user.permissions?.includes('EMP_PROFILE_CREATE')) return true;
+    if (permission === 'EMP_DELETE' && user.permissions?.includes('EMP_PROFILE_DELETE')) return true;
+    if (
+      permission === 'EMP_MANAGE' &&
+      (user.permissions?.includes('EMP_PROFILE_EDIT') || user.permissions?.includes('EMP_PROFILE_CREATE'))
+    ) {
+      return true;
+    }
+    return false;
   };
 
   const getDataScope = (permission: string) => {
     if (!user) return 'SELF';
+    const scope =
+      user.dataScopes?.find((s) => s.permissionCode === permission) ??
+      user.dataScopes?.find((s) => s.permissionCode === `${permission}_VIEW`);
+    if (scope) return scope.dataVisibilityScope;
     if (user.roles?.includes('ADMIN') || user.roles?.includes('SYSTEM_SUPER')) return 'ORGANIZATION';
-    const scope = user.dataScopes?.find((s) => s.permissionCode === permission);
-    return scope ? scope.dataVisibilityScope : 'SELF';
+    return 'SELF';
   };
 
   return (

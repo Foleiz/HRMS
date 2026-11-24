@@ -15,11 +15,19 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
 {
     private readonly IHrmsDbContext _context;
     private readonly IAttendanceDailyService _attendanceDailyService;
+    private readonly IDataScopeService _dataScopeService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public AttendanceAdjustmentService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService)
+    public AttendanceAdjustmentService(
+        IHrmsDbContext context,
+        IAttendanceDailyService attendanceDailyService,
+        IDataScopeService dataScopeService,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _attendanceDailyService = attendanceDailyService;
+        _dataScopeService = dataScopeService;
+        _currentUserService = currentUserService;
     }
 
     private static DateTime? EnsureUtc(DateTime? dt)
@@ -38,6 +46,16 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             .Include(a => a.RequestedByEmployee)
             .Include(a => a.ReviewedByEmployee)
             .AsQueryable();
+
+        bool isSelfQuery = filter.EmployeeId.HasValue && _currentUserService.EmployeeId.HasValue && filter.EmployeeId.Value == _currentUserService.EmployeeId.Value;
+        if (!isSelfQuery)
+        {
+            var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_TIME_VIEW", cancellationToken);
+            if (accessibleEmpIds != null)
+            {
+                query = query.Where(a => accessibleEmpIds.Contains(a.RequestedByEmployeeId));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.Status) && filter.Status != "ALL")
         {

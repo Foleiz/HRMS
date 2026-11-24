@@ -161,9 +161,7 @@ function EmployeeEditPageContent() {
   const returnUrl = searchParams.get('returnUrl') || (isFromProfile ? '/profile' : `/employees/${employeeId}`);
 
   const canEdit =
-    isFromProfile ||
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
+    (isFromProfile && hasPermission('ESS_PROFILE_EDIT')) ||
     hasPermission('EMP_PROFILE_EDIT') ||
     hasPermission('EMP_EDIT');
 
@@ -286,7 +284,7 @@ function EmployeeEditPageContent() {
   });
 
   const canEditEmployeeType =
-    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_PROFILE_EDIT') || hasPermission('EMP_EDIT') || hasPermission('EMP_MANAGE');
+    hasPermission('EMP_PROFILE_EDIT') || hasPermission('EMP_EDIT') || hasPermission('EMP_MANAGE');
   const employeeTypeOptions = useEmployeeTypeOptions(formData.employeeType);
 
   // โหลดข้อมูลพนักงานเดิม

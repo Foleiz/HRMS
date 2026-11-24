@@ -187,7 +187,7 @@ function SchedulesContent() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
   const canCreateSchedule = hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
   const canEditSchedule = hasPermission('TIME_SCHEDULE_EDIT') || isSuper;

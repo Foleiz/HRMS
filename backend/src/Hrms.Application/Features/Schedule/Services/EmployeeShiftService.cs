@@ -21,15 +21,21 @@ public class EmployeeShiftService : IEmployeeShiftService
     private readonly IHrmsDbContext _context;
     private readonly ILogger<EmployeeShiftService> _logger;
     private readonly IAttendanceDailyService _attendanceDailyService;
+    private readonly IDataScopeService _dataScopeService;
 
     /// <summary>งวดเงินเดือนที่ล็อกแล้ว — ไม่แก้ข้อมูลเวลาของเดือนนั้นเมื่อเปลี่ยนกะ (ตรงกับกติกายกเลิกชุดนำเข้า)</summary>
     private static readonly string[] LockedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
 
-    public EmployeeShiftService(IHrmsDbContext context, ILogger<EmployeeShiftService> logger, IAttendanceDailyService attendanceDailyService)
+    public EmployeeShiftService(
+        IHrmsDbContext context,
+        ILogger<EmployeeShiftService> logger,
+        IAttendanceDailyService attendanceDailyService,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _logger = logger;
         _attendanceDailyService = attendanceDailyService;
+        _dataScopeService = dataScopeService;
     }
 
     /// <summary>เดือน (ปี*100+เดือน) ที่งวดเงินเดือนล็อกแล้ว ในช่วงของรายการที่จะคำนวณใหม่</summary>
@@ -174,10 +180,17 @@ public class EmployeeShiftService : IEmployeeShiftService
         string? search = null, 
         DateOnly? date = null)
     {
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_SCHEDULE_VIEW");
+
         var query = _context.EmployeeShifts
             .Include(es => es.Employee)
             .Include(es => es.Shift)
             .AsQueryable();
+
+        if (accessibleEmpIds != null)
+        {
+            query = query.Where(es => accessibleEmpIds.Contains(es.EmployeeId));
+        }
 
         if (date.HasValue)
         {
@@ -449,8 +462,13 @@ public class EmployeeShiftService : IEmployeeShiftService
         var monthStart = new DateOnly(year, month, 1);
         var monthEnd = new DateOnly(year, month, daysInMonth);
 
-        // ดึงพนักงานทั้งหมด
+        // ดึงพนักงานตามขอบเขตข้อมูล (Data Scope)
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_SCHEDULE_VIEW");
         var employeesQuery = _context.Employees.AsQueryable();
+        if (accessibleEmpIds != null)
+        {
+            employeesQuery = employeesQuery.Where(e => accessibleEmpIds.Contains(e.Id));
+        }
 
         var employees = await employeesQuery
             .OrderBy(e => e.EmployeeCode)
@@ -544,7 +562,14 @@ public class EmployeeShiftService : IEmployeeShiftService
 
     public async Task<List<AssignableEmployeeDto>> GetAssignableEmployeesAsync(long? departmentId = null, long? employeeTypeId = null)
     {
-        var employees = await _context.Employees
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("TIME_SCHEDULE_VIEW");
+        var employeesQuery = _context.Employees.AsQueryable();
+        if (accessibleEmpIds != null)
+        {
+            employeesQuery = employeesQuery.Where(e => accessibleEmpIds.Contains(e.Id));
+        }
+
+        var employees = await employeesQuery
             .OrderBy(e => e.EmployeeCode)
             .ToListAsync();
 

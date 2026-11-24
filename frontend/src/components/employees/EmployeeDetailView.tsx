@@ -217,11 +217,9 @@ export default function EmployeeDetailView({
 
   // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_CREATE / EMP_DOC_EDIT)
   const canManageDocuments =
-    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_CREATE') || hasPermission('EMP_DOC_EDIT');
+    hasPermission('EMP_DOC_CREATE') || hasPermission('EMP_DOC_EDIT');
 
   const canEditEmployee =
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
     hasPermission('EMP_PROFILE_EDIT') ||
     hasPermission('EMP_EDIT') ||
     (isProfilePage && hasPermission('ESS_PROFILE_EDIT'));

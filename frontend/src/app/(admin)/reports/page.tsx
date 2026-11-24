@@ -23,43 +23,39 @@ function ReportsPageContent() {
   const toastRef = useRef(toast);
   toastRef.current = toast;
 
-  // สิทธิ์การเข้าถึงแต่ละรายงาน
+  // สิทธิ์การเข้าถึงแต่ละรายงาน (อิงตามการตั้งค่าสิทธิ์ในตารางบทบาท)
   const canViewHeadcount =
-    hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+    hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW');
   const canExportHeadcount =
-    hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
+    hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || canViewHeadcount;
 
   const canViewLateness =
-    hasPermission('REPORT_ATT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+    hasPermission('REPORT_ATT_VIEW') || hasPermission('REPORT_VIEW');
   const canExportLateness =
-    hasPermission('REPORT_ATT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
+    hasPermission('REPORT_ATT_EXPORT') || hasPermission('REPORT_EXPORT') || canViewLateness;
 
   const canViewAttendance = canViewHeadcount || canViewLateness;
 
   const canViewLeave =
     hasPermission('REPORT_LEAVE_VIEW') ||
     hasPermission('REPORT_LEAVE') ||
-    hasPermission('REPORT_VIEW') ||
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER');
+    hasPermission('REPORT_VIEW');
 
   const canViewTurnover =
-    hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+    hasPermission('REPORT_HEADCOUNT_VIEW') || hasPermission('REPORT_VIEW');
   const canExportTurnover =
-    hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
+    hasPermission('REPORT_HEADCOUNT_EXPORT') || hasPermission('REPORT_EXPORT') || canViewTurnover;
 
   const canViewTax =
     hasPermission('PAYROLL_VIEW') ||
     hasPermission('PAYROLL_TAX_VIEW') ||
     hasPermission('PAYROLL_ADMIN_VIEW') ||
-    hasPermission('PAYROLL_FINANCE_VIEW') ||
-    hasRole('ADMIN');
+    hasPermission('PAYROLL_FINANCE_VIEW');
   const canExportTax =
     hasPermission('PAYROLL_TAX_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
     hasPermission('PAYROLL_ADMIN_VIEW') ||
-    hasPermission('PAYROLL_EXPORT') ||
-    hasRole('ADMIN');
+    hasPermission('PAYROLL_EXPORT');
   const canExportSso = canExportTax || hasPermission('PAYROLL_HR_VIEW');
 
   const canViewAnyReport =

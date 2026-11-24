@@ -681,14 +681,13 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
     'bg-indigo-600 text-white',
   ];
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
-  const canCreateEmp = hasPermission('EMP_PROFILE_CREATE') || isSuper;
-  const canEditEmp = hasPermission('EMP_PROFILE_EDIT') || isSuper;
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
-  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
+  const canCreateEmp = hasPermission('EMP_PROFILE_CREATE');
+  const canEditEmp = hasPermission('EMP_PROFILE_EDIT');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
 
   useEffect(() => {
     if (!canViewProfile) {

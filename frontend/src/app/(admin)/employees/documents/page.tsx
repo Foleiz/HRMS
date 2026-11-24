@@ -46,7 +46,7 @@ export default function ExpiringDocumentsPage() {
   const canViewTypes = hasPermission('EMP_TYPE_VIEW');
   const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
   const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
   const isHr = canViewDocs;
 
   const subNavTabs = [

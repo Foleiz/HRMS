@@ -117,7 +117,7 @@ function DailyAttendanceContent() {
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewDaily = hasPermission('TIME_DAILY_VIEW') || isSuper;
   const canViewImport = hasPermission('TIME_IMPORT_VIEW') || isSuper;
   const canViewAnyTime = canViewDaily || canViewImport || isSuper;

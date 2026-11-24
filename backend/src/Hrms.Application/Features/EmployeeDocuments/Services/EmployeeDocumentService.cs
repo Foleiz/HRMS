@@ -28,10 +28,9 @@ public class EmployeeDocumentService : IEmployeeDocumentService
         _dataScope = dataScope;
     }
 
-    private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
-    private bool HasDocView => IsAdmin || _currentUser.HasPermission("EMP_DOC_VIEW") || _currentUser.HasPermission("EMP_DOC");
-    private bool HasDocCreate => IsAdmin || _currentUser.HasPermission("EMP_DOC_CREATE") || _currentUser.HasPermission("EMP_DOC");
-    private bool HasDocEdit => IsAdmin || _currentUser.HasPermission("EMP_DOC_EDIT") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocView => _currentUser.HasPermission("EMP_DOC_VIEW") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocCreate => _currentUser.HasPermission("EMP_DOC_CREATE") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocEdit => _currentUser.HasPermission("EMP_DOC_EDIT") || _currentUser.HasPermission("EMP_DOC");
 
     public async Task<List<EmployeeDocumentDto>> GetByEmployeeAsync(long employeeId, CancellationToken cancellationToken = default)
     {

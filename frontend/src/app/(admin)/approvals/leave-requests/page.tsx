@@ -158,9 +158,9 @@ export default function LeaveRequestsApprovalPage() {
   const { user, hasPermission, hasRole } = useAuth();
   // ยกเลิกใบลาของคนอื่นได้เฉพาะฝ่ายบุคคล/ผู้ดูแล (ผู้อนุมัติสายงานยกเลิกไม่ได้) — ตรงกับ backend
   const canHrCancelLeave =
-    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('APPROVAL_LEAVE_APPROVE') || hasPermission('LEAVE_BALANCE_EDIT');
+    hasPermission('APPROVAL_LEAVE_APPROVE') || hasPermission('LEAVE_BALANCE_EDIT');
   // คำขอปรับเวลา: สิทธิ์ตรงกับ AttendanceAdjustmentController
-  const isSuperUser = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuperUser = false;
   const canViewTimeAdjust = isSuperUser || hasPermission('TIME_DAILY_VIEW') || hasPermission('APPROVAL_TIME_VIEW');
   const canReviewTimeAdjust = isSuperUser || hasPermission('TIME_DAILY_EDIT') || hasPermission('APPROVAL_TIME_APPROVE');
 

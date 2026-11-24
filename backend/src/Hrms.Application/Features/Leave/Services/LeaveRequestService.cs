@@ -44,7 +44,10 @@ public partial class LeaveRequestService : ILeaveRequestService
             .AsQueryable();
 
         // Data scoping
-        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("LEAVE_REQUEST_VIEW", cancellationToken);
+        bool isSelfRequest = employeeId.HasValue && currentViewerEmployeeId.HasValue && employeeId.Value == currentViewerEmployeeId.Value;
+        var accessibleEmpIds = isSelfRequest
+            ? null
+            : await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_LEAVE_VIEW", cancellationToken);
         if (employeeId.HasValue)
         {
             if (accessibleEmpIds != null && !accessibleEmpIds.Contains(employeeId.Value))
@@ -183,7 +186,7 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         var query = _context.LeaveRequests.AsNoTracking().AsQueryable();
 
-        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("LEAVE_REQUEST_VIEW", cancellationToken);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_LEAVE_VIEW", cancellationToken);
         if (accessibleEmpIds != null)
         {
             query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));

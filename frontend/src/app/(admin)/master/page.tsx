@@ -69,7 +69,7 @@ export default function MasterDataHubPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const searchParams = useSearchParams();
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewMasterData = hasPermission('MASTER_DATA_VIEW') || isSuper;
   const canCreateMasterData = hasPermission('MASTER_DATA_CREATE') || isSuper;
   const canEditMasterData = hasPermission('MASTER_DATA_EDIT') || isSuper;

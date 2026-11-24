@@ -60,11 +60,9 @@ public class LeaveBalancesController : ControllerBase
         [FromQuery] long? leaveTypeId,
         CancellationToken cancellationToken)
     {
-        // หากผู้ใช้ไม่มีสิทธิ์ LEAVE_BALANCE_VIEW และไม่ใช่ Admin ให้ดึงได้เฉพาะยอดวันลาของตนเองเท่านั้น
+        // หากผู้ใช้ไม่มีสิทธิ์ LEAVE_BALANCE_VIEW ให้ดึงได้เฉพาะยอดวันลาของตนเองเท่านั้น
         long? targetEmpId = employeeId;
-        bool hasViewAllPerm = _currentUserService.HasRole("ADMIN") ||
-                              _currentUserService.HasRole("SYSTEM_SUPER") ||
-                              _currentUserService.HasPermission("LEAVE_BALANCE_VIEW") ||
+        bool hasViewAllPerm = _currentUserService.HasPermission("LEAVE_BALANCE_VIEW") ||
                               _currentUserService.HasPermission("LEAVE_BALANCE");
 
         if (!hasViewAllPerm)

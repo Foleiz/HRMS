@@ -150,13 +150,12 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
     public async Task<List<EmployeeChangeHistoryEntry>> GetAsync(long employeeId, int limit = 300, CancellationToken cancellationToken = default)
     {
         bool isSelf = _currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == employeeId;
-        bool isSuper = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
         bool hasPerm = _currentUser.HasPermission("EMP_HISTORY_VIEW") || _currentUser.HasPermission("EMP_PROFILE_VIEW");
 
-        if (!isSelf && !isSuper && !hasPerm)
+        if (!isSelf && !hasPerm)
             throw new ForbiddenException("คุณไม่มีสิทธิ์ดูประวัติการเปลี่ยนแปลงข้อมูลพนักงาน");
 
-        if (!isSelf && !isSuper)
+        if (!isSelf)
         {
             var canAccess = await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_HISTORY_VIEW", cancellationToken)
                 || await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_PROFILE_VIEW", cancellationToken);

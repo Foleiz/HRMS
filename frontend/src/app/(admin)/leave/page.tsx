@@ -60,7 +60,7 @@ type ActiveTab = 'types' | 'policies' | 'balances';
 
 function LeaveManagementPageContent() {
   const { hasPermission, hasRole } = useAuth();
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
   const canViewPolicies = hasPermission('LEAVE_POLICY_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
   const canViewBalances = hasPermission('LEAVE_BALANCE_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;

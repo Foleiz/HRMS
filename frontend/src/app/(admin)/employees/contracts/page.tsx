@@ -311,15 +311,14 @@ function ContractsPageContent() {
     return employees.filter((emp) => !contractedEmpIds.has(emp.id));
   }, [employees, contracts]);
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || isSuper;
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || isSuper;
-  const canViewDocs = hasPermission('EMP_DOC_VIEW') || isSuper;
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
 
-  const canCreateContracts = hasPermission('EMP_CONTRACT_CREATE') || hasPermission('EMP_MANAGE') || isSuper;
-  const canEditContracts = hasPermission('EMP_CONTRACT_EDIT') || hasPermission('EMP_MANAGE') || isSuper;
+  const canCreateContracts = hasPermission('EMP_CONTRACT_CREATE') || hasPermission('EMP_MANAGE');
+  const canEditContracts = hasPermission('EMP_CONTRACT_EDIT') || hasPermission('EMP_MANAGE');
 
   // Sub-Navigation Tabs matching Mockup
   const subNavTabs = [

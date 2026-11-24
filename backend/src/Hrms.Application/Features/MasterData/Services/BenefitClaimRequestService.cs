@@ -19,12 +19,18 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IApprovalWorkflowService _approvalWorkflow;
+    private readonly IDataScopeService _dataScopeService;
 
-    public BenefitClaimRequestService(IHrmsDbContext context, ICurrentUserService currentUser, IApprovalWorkflowService approvalWorkflow)
+    public BenefitClaimRequestService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUser,
+        IApprovalWorkflowService approvalWorkflow,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _currentUser = currentUser;
         _approvalWorkflow = approvalWorkflow;
+        _dataScopeService = dataScopeService;
     }
 
     private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
@@ -134,18 +140,13 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
 
     public async Task<List<BenefitClaimRequestDto>> GetForApprovalAsync(string? status = null, CancellationToken cancellationToken = default)
     {
-        var me = _currentUser.EmployeeId;
         // เฉพาะคำขอที่พนักงานยื่นเอง (รายการที่ฝ่ายบุคคลบันทึกให้ไม่ต้องอนุมัติ)
         var query = _context.EmployeeBenefitClaims.AsNoTracking().Where(c => c.RequestedByEmployeeId != null);
 
-        if (!IsAdmin)
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_EMP_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
         {
-            if (!me.HasValue) return new List<BenefitClaimRequestDto>();
-            var allowed = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken);
-            var hr = IsHrApprover;
-            query = query.Where(c =>
-                (c.ApprovalInstanceId.HasValue && allowed.Contains(c.ApprovalInstanceId.Value))
-                || (hr && !c.ApprovalInstanceId.HasValue));
+            query = query.Where(c => accessibleEmpIds.Contains(c.EmployeeId));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

@@ -176,7 +176,10 @@ public class CertificateService : ICertificateService
     private async Task<List<CertificateRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
+        bool isSelfQuery = employeeId.HasValue && currentEmpId.HasValue && employeeId.Value == currentEmpId.Value;
+        var accessibleEmpIds = isSelfQuery
+            ? null
+            : await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_EMP_VIEW", cancellationToken);
 
         var query = _context.CertificateRequests
             .AsNoTracking()
@@ -197,15 +200,7 @@ public class CertificateService : ICertificateService
         }
         else if (accessibleEmpIds != null)
         {
-            var allowedInstanceIds = currentEmpId.HasValue
-                ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
-                    currentEmpId.Value,
-                    "CERTIFICATE_REQUEST",
-                    cancellationToken)
-                : new List<long>();
-
-            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId) ||
-                (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)));
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

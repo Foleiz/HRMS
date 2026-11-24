@@ -10,10 +10,12 @@ namespace Hrms.Application.Features.Settings.Services;
 public class AuditLogService : IAuditLogService
 {
     private readonly IHrmsDbContext _dbContext;
+    private readonly IDataScopeService _dataScopeService;
 
-    public AuditLogService(IHrmsDbContext dbContext)
+    public AuditLogService(IHrmsDbContext dbContext, IDataScopeService dataScopeService)
     {
         _dbContext = dbContext;
+        _dataScopeService = dataScopeService;
     }
 
     public async Task LogAsync(
@@ -46,145 +48,157 @@ public class AuditLogService : IAuditLogService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private IQueryable<AuditLog> BuildFilterQuery(AuditLogQueryFilter filter)
-    {
-        var baseQuery = _dbContext.AuditLogs
-            .AsNoTracking()
-            .AsQueryable();
-
-        if (filter.StartDate.HasValue)
-        {
-            var startUtc = DateTime.SpecifyKind(filter.StartDate.Value.Date, DateTimeKind.Utc);
-            baseQuery = baseQuery.Where(a => a.CreatedAt >= startUtc);
-        }
-
-        if (filter.EndDate.HasValue)
-        {
-            var endUtc = DateTime.SpecifyKind(filter.EndDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
-            baseQuery = baseQuery.Where(a => a.CreatedAt <= endUtc);
-        }
-
-        if (filter.UserId.HasValue)
-        {
-            baseQuery = baseQuery.Where(a => a.UserId == filter.UserId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Action) && filter.Action != "ทั้งหมด")
-        {
-            baseQuery = baseQuery.Where(a => a.Action == filter.Action.Trim().ToUpperInvariant());
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.EntityType) && filter.EntityType != "ทั้งหมด")
-        {
-            baseQuery = baseQuery.Where(a => a.EntityType == filter.EntityType.Trim().ToUpperInvariant());
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var s = filter.Search.Trim().ToLower();
-            baseQuery = baseQuery.Where(a =>
-                (a.User != null && a.User.Username.ToLower().Contains(s)) ||
-                (a.User != null && a.User.Employee != null && (a.User.Employee.FirstName.ToLower().Contains(s) || a.User.Employee.LastName.ToLower().Contains(s))) ||
-                (a.FieldName != null && a.FieldName.ToLower().Contains(s)) ||
-                (a.IpAddress != null && a.IpAddress.ToLower().Contains(s)) ||
-                a.EntityType.ToLower().Contains(s) ||
-                (a.EntityId != null && a.EntityId.ToString()!.Contains(s)));
-        }
-
-        return baseQuery;
-    }
-
-    public async Task<PagedResult<AuditLogDto>> GetLogsAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default)
-    {
-        var baseQuery = BuildFilterQuery(filter);
-
-        var totalCount = await baseQuery.CountAsync(cancellationToken);
-
-        int page = filter.Page > 0 ? filter.Page : 1;
-        int pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
-
-        var entities = await baseQuery
-            .OrderByDescending(a => a.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Include(a => a.User)
-                .ThenInclude(u => u!.Employee)
-            .ToListAsync(cancellationToken);
-
-        var subjects = await ResolveSubjectEmployeesAsync(entities, cancellationToken);
-
-        var items = entities.Select(a => new AuditLogDto
-        {
-            Id = a.Id,
-            UserId = a.UserId,
-            Username = a.User != null ? a.User.Username : "SYSTEM",
-            FullName = a.User != null && a.User.Employee != null
-                ? $"{a.User.Employee.FirstName} {a.User.Employee.LastName}"
-                : (a.User != null ? a.User.Username : "ระบบ"),
-            Action = a.Action,
-            EntityType = a.EntityType,
-            EntityId = a.EntityId,
-            FieldName = a.FieldName,
-            OldValue = CleanJsonDisplay(a.OldValue),
-            NewValue = CleanJsonDisplay(a.NewValue),
-            IpAddress = a.IpAddress,
-            Description = FormatDescription(a.Action, a.EntityType, a.EntityId, a.FieldName)
-                + (subjects.TryGetValue(a.Id, out var sub) ? $" ของ {sub.Name}" : string.Empty),
-            CreatedAt = a.CreatedAt,
-            SubjectEmployeeId = subjects.TryGetValue(a.Id, out var sub2) ? sub2.Id : null,
-            SubjectEmployeeCode = subjects.TryGetValue(a.Id, out var sub3) ? sub3.Code : null,
-            SubjectEmployeeName = subjects.TryGetValue(a.Id, out var sub4) ? sub4.Name : null,
-        }).ToList();
-
-        return new PagedResult<AuditLogDto>(items, totalCount, page, pageSize);
-    }
-
-    public async Task<byte[]> ExportLogsCsvAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default)
-    {
-        var query = BuildFilterQuery(filter)
-            .OrderByDescending(a => a.CreatedAt)
-            .Select(a => new
-            {
-                a.Id,
-                a.CreatedAt,
-                Username = a.User != null ? a.User.Username : "SYSTEM",
-                FullName = a.User != null && a.User.Employee != null
-                    ? a.User.Employee.FirstName + " " + a.User.Employee.LastName
-                    : (a.User != null ? a.User.Username : "ระบบ"),
-                a.Action,
-                a.EntityType,
-                a.EntityId,
-                a.FieldName,
-                a.OldValue,
-                a.NewValue,
-                a.IpAddress
-            });
-
-        using var memoryStream = new MemoryStream();
-        // UTF-8 with BOM for Thai Excel support
-        using (var writer = new StreamWriter(memoryStream, new UTF8Encoding(true), bufferSize: 65536, leaveOpen: true))
-        {
-            await writer.WriteLineAsync("ID,วันเวลา,ผู้ใช้งาน,ชื่อ-นามสกุล,การกระทำ,ประเภทข้อมูล,รหัสข้อมูล,ฟิลด์ที่แก้ไข,ค่าเดิม,ค่าใหม่,IP Address");
-
-            await foreach (var item in query.AsAsyncEnumerable().WithCancellation(cancellationToken))
-            {
-                var dateStr = item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                var oldVal = EscapeCsv(CleanJsonDisplay(item.OldValue));
-                var newVal = EscapeCsv(CleanJsonDisplay(item.NewValue));
-                var user = EscapeCsv(item.Username);
-                var name = EscapeCsv(item.FullName);
-                var field = EscapeCsv(item.FieldName);
-                var ip = EscapeCsv(item.IpAddress);
-
-                await writer.WriteLineAsync($"{item.Id},\"{dateStr}\",\"{user}\",\"{name}\",\"{item.Action}\",\"{item.EntityType}\",\"{item.EntityId}\",\"{field}\",\"{oldVal}\",\"{newVal}\",\"{ip}\"");
-            }
-
-            await writer.FlushAsync(cancellationToken);
-        }
-
-        return memoryStream.ToArray();
-    }
-
+    private IQueryable<AuditLog> BuildFilterQuery(AuditLogQueryFilter filter)
+    {
+        var baseQuery = _dbContext.AuditLogs
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (filter.StartDate.HasValue)
+        {
+            var startUtc = DateTime.SpecifyKind(filter.StartDate.Value.Date, DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(a => a.CreatedAt >= startUtc);
+        }
+
+        if (filter.EndDate.HasValue)
+        {
+            var endUtc = DateTime.SpecifyKind(filter.EndDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            baseQuery = baseQuery.Where(a => a.CreatedAt <= endUtc);
+        }
+
+        if (filter.UserId.HasValue)
+        {
+            baseQuery = baseQuery.Where(a => a.UserId == filter.UserId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Action) && filter.Action != "ทั้งหมด")
+        {
+            baseQuery = baseQuery.Where(a => a.Action == filter.Action.Trim().ToUpperInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.EntityType) && filter.EntityType != "ทั้งหมด")
+        {
+            baseQuery = baseQuery.Where(a => a.EntityType == filter.EntityType.Trim().ToUpperInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var s = filter.Search.Trim().ToLower();
+            baseQuery = baseQuery.Where(a =>
+                (a.User != null && a.User.Username.ToLower().Contains(s)) ||
+                (a.User != null && a.User.Employee != null && (a.User.Employee.FirstName.ToLower().Contains(s) || a.User.Employee.LastName.ToLower().Contains(s))) ||
+                (a.FieldName != null && a.FieldName.ToLower().Contains(s)) ||
+                (a.IpAddress != null && a.IpAddress.ToLower().Contains(s)) ||
+                a.EntityType.ToLower().Contains(s) ||
+                (a.EntityId != null && a.EntityId.ToString()!.Contains(s)));
+        }
+
+        return baseQuery;
+    }
+
+    public async Task<PagedResult<AuditLogDto>> GetLogsAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = BuildFilterQuery(filter);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_AUDIT_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
+        {
+            baseQuery = baseQuery.Where(a => a.User != null && accessibleEmpIds.Contains(a.User.EmployeeId));
+        }
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        int page = filter.Page > 0 ? filter.Page : 1;
+        int pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
+
+        var entities = await baseQuery
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(a => a.User)
+                .ThenInclude(u => u!.Employee)
+            .ToListAsync(cancellationToken);
+
+        var subjects = await ResolveSubjectEmployeesAsync(entities, cancellationToken);
+
+        var items = entities.Select(a => new AuditLogDto
+        {
+            Id = a.Id,
+            UserId = a.UserId,
+            Username = a.User != null ? a.User.Username : "SYSTEM",
+            FullName = a.User != null && a.User.Employee != null
+                ? $"{a.User.Employee.FirstName} {a.User.Employee.LastName}"
+                : (a.User != null ? a.User.Username : "ระบบ"),
+            Action = a.Action,
+            EntityType = a.EntityType,
+            EntityId = a.EntityId,
+            FieldName = a.FieldName,
+            OldValue = CleanJsonDisplay(a.OldValue),
+            NewValue = CleanJsonDisplay(a.NewValue),
+            IpAddress = a.IpAddress,
+            Description = FormatDescription(a.Action, a.EntityType, a.EntityId, a.FieldName)
+                + (subjects.TryGetValue(a.Id, out var sub) ? $" ของ {sub.Name}" : string.Empty),
+            CreatedAt = a.CreatedAt,
+            SubjectEmployeeId = subjects.TryGetValue(a.Id, out var sub2) ? sub2.Id : null,
+            SubjectEmployeeCode = subjects.TryGetValue(a.Id, out var sub3) ? sub3.Code : null,
+            SubjectEmployeeName = subjects.TryGetValue(a.Id, out var sub4) ? sub4.Name : null,
+        }).ToList();
+
+        return new PagedResult<AuditLogDto>(items, totalCount, page, pageSize);
+    }
+
+    public async Task<byte[]> ExportLogsCsvAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = BuildFilterQuery(filter);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_AUDIT_VIEW", cancellationToken);
+        if (accessibleEmpIds != null)
+        {
+            baseQuery = baseQuery.Where(a => a.User != null && accessibleEmpIds.Contains(a.User.EmployeeId));
+        }
+
+        var query = baseQuery
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.CreatedAt,
+                Username = a.User != null ? a.User.Username : "SYSTEM",
+                FullName = a.User != null && a.User.Employee != null
+                    ? a.User.Employee.FirstName + " " + a.User.Employee.LastName
+                    : (a.User != null ? a.User.Username : "ระบบ"),
+                a.Action,
+                a.EntityType,
+                a.EntityId,
+                a.FieldName,
+                a.OldValue,
+                a.NewValue,
+                a.IpAddress
+            });
+
+        using var memoryStream = new MemoryStream();
+        // UTF-8 with BOM for Thai Excel support
+        using (var writer = new StreamWriter(memoryStream, new UTF8Encoding(true), bufferSize: 65536, leaveOpen: true))
+        {
+            await writer.WriteLineAsync("ID,วันเวลา,ผู้ใช้งาน,ชื่อ-นามสกุล,การกระทำ,ประเภทข้อมูล,รหัสข้อมูล,ฟิลด์ที่แก้ไข,ค่าเดิม,ค่าใหม่,IP Address");
+
+            await foreach (var item in query.AsAsyncEnumerable().WithCancellation(cancellationToken))
+            {
+                var dateStr = item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                var oldVal = EscapeCsv(CleanJsonDisplay(item.OldValue));
+                var newVal = EscapeCsv(CleanJsonDisplay(item.NewValue));
+                var user = EscapeCsv(item.Username);
+                var name = EscapeCsv(item.FullName);
+                var field = EscapeCsv(item.FieldName);
+                var ip = EscapeCsv(item.IpAddress);
+
+                await writer.WriteLineAsync($"{item.Id},\"{dateStr}\",\"{user}\",\"{name}\",\"{item.Action}\",\"{item.EntityType}\",\"{item.EntityId}\",\"{field}\",\"{oldVal}\",\"{newVal}\",\"{ip}\"");
+            }
+
+            await writer.FlushAsync(cancellationToken);
+        }
+
+        return memoryStream.ToArray();
+    }
+
 
     public async Task<List<string>> GetDistinctEntityTypesAsync(CancellationToken cancellationToken = default)
     {

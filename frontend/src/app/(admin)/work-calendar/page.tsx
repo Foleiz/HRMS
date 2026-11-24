@@ -257,7 +257,7 @@ function WorkCalendarPageContent() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewCalendar = hasPermission('WORK_CALENDAR_VIEW') || isSuper;
   const canCreateCalendar = hasPermission('WORK_CALENDAR_CREATE') || isSuper;
   const canEditCalendar = hasPermission('WORK_CALENDAR_EDIT') || isSuper;

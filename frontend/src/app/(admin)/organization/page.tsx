@@ -127,7 +127,7 @@ function OrganizationPageContent() {
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canViewStruct = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
   const canViewPos = hasPermission('ORG_POS_VIEW') || hasPermission('ORG_VIEW') || isSuper;
   const canViewBenefits = hasPermission('ORG_BENEFIT_VIEW') || hasPermission('ORG_VIEW') || isSuper;

@@ -26,7 +26,7 @@ function AnnouncementsPageContent() {
   const { setBreadcrumb } = useBreadcrumb();
   const { hasRole, hasPermission } = useAuth();
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
 
   // ตรวจสอบสิทธิ์สำหรับประกาศข่าวสารทั่วไป
   const canViewGeneral = Boolean(

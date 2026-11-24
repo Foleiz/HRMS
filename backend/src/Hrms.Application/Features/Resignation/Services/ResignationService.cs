@@ -354,7 +354,10 @@ public class ResignationService : IResignationService
     private async Task<List<ResignationRequestDto>> GetRequestsInternalAsync(long? employeeId, string? status, CancellationToken cancellationToken)
     {
         var currentEmpId = _currentUserService.EmployeeId;
-        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_PROFILE_VIEW", cancellationToken);
+        bool isSelfQuery = employeeId.HasValue && currentEmpId.HasValue && employeeId.Value == currentEmpId.Value;
+        var accessibleEmpIds = isSelfQuery
+            ? null
+            : await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_EMP_VIEW", cancellationToken);
 
         var query = _context.ResignationRequests
             .AsNoTracking()
@@ -375,15 +378,7 @@ public class ResignationService : IResignationService
         }
         else if (accessibleEmpIds != null)
         {
-            var allowedInstanceIds = currentEmpId.HasValue
-                ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(
-                    currentEmpId.Value,
-                    "RESIGNATION_REQUEST",
-                    cancellationToken)
-                : new List<long>();
-
-            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId) ||
-                (r.ApprovalInstanceId.HasValue && allowedInstanceIds.Contains(r.ApprovalInstanceId.Value)));
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

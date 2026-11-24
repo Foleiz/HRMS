@@ -60,24 +60,12 @@ public class GeneralRequestService : IGeneralRequestService
 
     public async Task<List<GeneralRequestDto>> GetAllRequestsAsync(string? status = null, CancellationToken cancellationToken = default)
     {
-        var me = _currentUser.EmployeeId;
-        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("APPROVAL_EMP_VIEW", cancellationToken);
         var query = BaseQuery();
 
         if (accessibleEmpIds != null)
         {
-            var allowed = me.HasValue ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken) : new List<long>();
-            query = query.Where(r =>
-                (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
-                || accessibleEmpIds.Contains(r.EmployeeId));
-        }
-        else if (!IsAdmin)
-        {
-            if (!me.HasValue) return new List<GeneralRequestDto>();
-            var allowed = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken);
-            query = query.Where(r =>
-                (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
-                || (!r.ApprovalInstanceId.HasValue && accessibleEmpIds == null));
+            query = query.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
         }
 
         if (!string.IsNullOrWhiteSpace(status))

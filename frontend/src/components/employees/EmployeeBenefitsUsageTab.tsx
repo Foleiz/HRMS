@@ -107,7 +107,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const isSelf = mode === 'self';
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canCreateClaim = isSelf
     ? isSuper || hasPermission('ESS_BENEFIT_CREATE') || hasPermission('ESS_BENEFIT_CLAIM_CREATE')
     : isSuper || hasPermission('BENEFIT_BALANCE_CREATE') || hasPermission('BENEFIT_BALANCE_EDIT');

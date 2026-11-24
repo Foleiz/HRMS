@@ -51,8 +51,9 @@ public class RequirePermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 2. Admin และ Super Admin ผ่านได้เสมอ
-        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
+        // 2. ยกเว้นเฉพาะการจัดการบทบาทและสิทธิ์ (SETTINGS_ROLES) สำหรับ ADMIN / SYSTEM_SUPER เพื่อป้องกัน Lockout
+        if ((_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER")) &&
+            _permissionCode.Contains("SETTINGS_ROLES", StringComparison.OrdinalIgnoreCase))
         {
             await next();
             return;

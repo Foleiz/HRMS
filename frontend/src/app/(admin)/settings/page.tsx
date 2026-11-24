@@ -46,18 +46,12 @@ function SettingsPageContent() {
 
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
 
-  // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง)
-  const canViewUsersTab =
-    hasPermission('SETTINGS_USERS_VIEW') ||
-    isSuper;
+  // Permission flags for each sub-tab (ต้องมีสิทธิ์เฉพาะเจาะจงของแต่ละแท็บจริง ยกเว้นแท็บบทบาทและสิทธิ์ที่เปิดให้ ADMIN เสมอเพื่อป้องกัน Lockout)
+  const canViewUsersTab = hasPermission('SETTINGS_USERS_VIEW');
 
-  const canCreateUser =
-    hasPermission('SETTINGS_USERS_CREATE') ||
-    isSuper;
+  const canCreateUser = hasPermission('SETTINGS_USERS_CREATE');
 
-  const canEditUser =
-    hasPermission('SETTINGS_USERS_EDIT') ||
-    isSuper;
+  const canEditUser = hasPermission('SETTINGS_USERS_EDIT');
 
   const canViewRolesTab =
     hasPermission('SETTINGS_ROLES_VIEW') ||
@@ -71,9 +65,7 @@ function SettingsPageContent() {
     hasPermission('SETTINGS_ROLES_EDIT') ||
     isSuper;
 
-  const canViewAuditLogTab =
-    hasPermission('SETTINGS_AUDIT_VIEW') ||
-    isSuper;
+  const canViewAuditLogTab = hasPermission('SETTINGS_AUDIT_VIEW');
 
   const canViewApprovalFlowsTab =
     hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||

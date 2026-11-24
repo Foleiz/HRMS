@@ -468,7 +468,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
   const canViewEmployee =
-    hasPermission('EMP_VIEW') || hasPermission('EMP_PROFILE_VIEW') || hasRole('ADMIN');
+    hasPermission('EMP_VIEW') || hasPermission('EMP_PROFILE_VIEW');
 
   const [chart, setChart] = useState<OrgChart | null>(null);
   const [loading, setLoading] = useState(true);

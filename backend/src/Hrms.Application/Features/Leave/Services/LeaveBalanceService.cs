@@ -9,11 +9,19 @@ public class LeaveBalanceService : ILeaveBalanceService
 {
     private readonly IHrmsDbContext _context;
     private readonly ILeaveEntitlementSync _sync;
+    private readonly IDataScopeService _dataScopeService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public LeaveBalanceService(IHrmsDbContext context, ILeaveEntitlementSync sync)
+    public LeaveBalanceService(
+        IHrmsDbContext context,
+        ILeaveEntitlementSync sync,
+        IDataScopeService dataScopeService,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _sync = sync;
+        _dataScopeService = dataScopeService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<List<LeaveBalanceDto>> GetAllAsync(long? employeeId = null, int? year = null, long? leaveTypeId = null, CancellationToken cancellationToken = default)
@@ -32,6 +40,16 @@ public class LeaveBalanceService : ILeaveBalanceService
             .Include(b => b.Employee)
             .Include(b => b.LeaveType)
             .AsQueryable();
+
+        bool isSelf = employeeId.HasValue && _currentUserService.EmployeeId.HasValue && employeeId.Value == _currentUserService.EmployeeId.Value;
+        if (!isSelf)
+        {
+            var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("LEAVE_BALANCE_VIEW", cancellationToken);
+            if (accessibleEmpIds != null)
+            {
+                query = query.Where(b => accessibleEmpIds.Contains(b.EmployeeId));
+            }
+        }
 
         if (employeeId.HasValue)
         {

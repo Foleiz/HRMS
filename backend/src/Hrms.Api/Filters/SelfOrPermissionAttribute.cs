@@ -54,14 +54,7 @@ public class SelfOrPermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 1. Admin หรือ Super Admin ผ่านได้เสมอ
-        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
-        {
-            await next();
-            return;
-        }
-
-        // 2. ดึงค่า Employee ID เป้าหมายจาก Parameter
+        // 1. ดึงค่า Employee ID เป้าหมายจาก Parameter
         long? targetEmployeeId = ExtractTargetEmployeeId(context);
 
         // หากไม่มีการระบุ employeeId มาใน request (อาจเป็น optional param สำหรับ self-service)
@@ -72,19 +65,22 @@ public class SelfOrPermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 3. หากเป็นข้อมูลของตนเอง อนุญาตทันที (Self Access)
+        // 2. หากเป็นข้อมูลของตนเอง อนุญาตทันที (Self Access)
         if (_currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == targetEmployeeId.Value)
         {
             await next();
             return;
         }
 
-        // 4. หากไม่ใช่ของตนเอง ต้องมี Permission ที่กำหนด
-        bool hasPerm = _currentUser.HasPermission(_permissionCode)
-            || (!_permissionCode.Contains('_') && _currentUser.HasPermission($"{_permissionCode}_VIEW"))
-            || (_permissionCode.EndsWith("_VIEW") && _currentUser.HasPermission(_permissionCode[..^5]));
+        // 3. หากไม่ใช่ของตนเอง ต้องมี Permission ที่กำหนด (รองรับหลายสิทธิ์คั่นด้วย , หรือ |)
+        var codes = _permissionCode.Split(new[] { ',', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var matchedCodes = codes.Where(c =>
+            _currentUser.HasPermission(c)
+            || (!c.Contains('_') && _currentUser.HasPermission($"{c}_VIEW"))
+            || (c.EndsWith("_VIEW") && _currentUser.HasPermission(c[..^5]))
+        ).ToList();
 
-        if (!hasPerm)
+        if (matchedCodes.Count == 0)
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail($"คุณไม่มีสิทธิ์เข้าถึงข้อมูลของพนักงานท่านนี้ (ต้องการสิทธิ์: {_permissionCode})"))
             {
@@ -93,10 +89,10 @@ public class SelfOrPermissionFilter : IAsyncActionFilter
             return;
         }
 
-        // 5. ตรวจสอบขอบเขตข้อมูลขั้นต่ำ หากระบุ
+        // 4. ตรวจสอบขอบเขตข้อมูลขั้นต่ำ หากระบุ
         if (!string.IsNullOrWhiteSpace(_minScope))
         {
-            if (!_dataScope.HasScope(_permissionCode, _minScope))
+            if (!matchedCodes.Any(c => _dataScope.HasScope(c, _minScope)))
             {
                 context.Result = new ObjectResult(ApiResponse<object>.Fail($"ขอบเขตข้อมูลของคุณไม่เพียงพอสำหรับการเข้าถึงข้อมูลพนักงานท่านนี้ (ต้องการระดับ: {_minScope})"))
                 {
@@ -106,11 +102,16 @@ public class SelfOrPermissionFilter : IAsyncActionFilter
             }
         }
 
-        // 6. ตรวจสอบว่าพนักงานเป้าหมายอยู่ใน Data Scope ของผู้ใช้หรือไม่
-        bool canAccess = await _dataScope.CanAccessEmployeeAsync(
-            targetEmployeeId.Value,
-            _permissionCode,
-            context.HttpContext.RequestAborted);
+        // 5. ตรวจสอบว่าพนักงานเป้าหมายอยู่ใน Data Scope ของผู้ใช้หรือไม่
+        bool canAccess = false;
+        foreach (var c in matchedCodes)
+        {
+            if (await _dataScope.CanAccessEmployeeAsync(targetEmployeeId.Value, c, context.HttpContext.RequestAborted))
+            {
+                canAccess = true;
+                break;
+            }
+        }
 
         if (!canAccess)
         {

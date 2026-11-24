@@ -11,7 +11,7 @@ export default function OrgChartPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const { hasPermission, hasRole } = useAuth();
 
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canView = hasPermission('ORG_CHART_VIEW') || hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
 
   useEffect(() => {

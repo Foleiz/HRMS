@@ -36,9 +36,9 @@ import { EmployeeAccordionItem } from '@/components/common/EmployeeAccordionItem
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = false;
   const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
-  const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasPermission('BENEFIT_VIEW') || isSuper;
+  const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasPermission('BENEFIT_BALANCE_CREATE') || isSuper;
   const canViewClaims = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();

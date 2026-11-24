@@ -511,7 +511,6 @@ export const Sidebar: React.FC = () => {
   const checkSubItemAccessible = useCallback(
     (subItem: SubMenuItem): boolean => {
       if (!user) return true;
-      if (hasRole('ADMIN') || hasRole('SYSTEM_SUPER')) return true;
 
       if (subItem.requiredRoles && subItem.requiredRoles.length > 0) {
         const hasAnyRole = subItem.requiredRoles.some((role) => hasRole(role));
