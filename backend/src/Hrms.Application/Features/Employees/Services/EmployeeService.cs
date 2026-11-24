@@ -485,7 +485,7 @@ public class EmployeeService : IEmployeeService
             }
         }
 
-        if (!isSelfUpdate && !isSuper)
+        if (!isSelfUpdate)
         {
             string permToUse = _currentUserService.HasPermission("EMP_MANAGE") ? "EMP_MANAGE" :
                                _currentUserService.HasPermission("EMP_EDIT") ? "EMP_EDIT" : "EMP_PROFILE_EDIT";

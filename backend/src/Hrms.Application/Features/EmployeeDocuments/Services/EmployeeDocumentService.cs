@@ -60,7 +60,7 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             if (!HasDocCreate)
                 throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารเข้าแฟ้มพนักงาน");
 
-            if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_CREATE", cancellationToken))
+            if (!await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_CREATE", cancellationToken))
                 throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารของพนักงานท่านนี้");
         }
 
@@ -148,7 +148,7 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             if (!HasDocEdit)
                 throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารในแฟ้มพนักงาน");
 
-            if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
+            if (!await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
                 throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารของพนักงานท่านนี้");
         }
 

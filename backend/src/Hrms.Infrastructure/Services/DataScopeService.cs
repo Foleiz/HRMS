@@ -28,18 +28,14 @@ public class DataScopeService : IDataScopeService
         _context = context;
     }
 
-    private bool IsAdmin => _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER");
 
     public string GetScope(string permissionCode)
     {
-        if (IsAdmin) return "ORGANIZATION";
         return _currentUser.GetDataScope(permissionCode);
     }
 
     public bool HasScope(string permissionCode, string minScope)
     {
-        if (IsAdmin) return true;
-
         string userScope = GetScope(permissionCode);
         int userRank = ScopeHierarchy.TryGetValue(userScope, out int uRank) ? uRank : 0;
         int minRank = ScopeHierarchy.TryGetValue(minScope, out int mRank) ? mRank : 0;
@@ -49,8 +45,6 @@ public class DataScopeService : IDataScopeService
 
     public async Task<bool> CanAccessEmployeeAsync(long targetEmployeeId, string permissionCode, CancellationToken ct = default)
     {
-        if (IsAdmin) return true;
-
         // หากเป็นข้อมูลของตัวเอง เข้าถึงได้เสมอ
         if (_currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == targetEmployeeId)
         {
@@ -120,8 +114,6 @@ public class DataScopeService : IDataScopeService
 
     public async Task<List<long>?> GetAccessibleEmployeeIdsAsync(string permissionCode, CancellationToken ct = default)
     {
-        if (IsAdmin) return null; // null = ไม่ต้องกรอง เห็นทุกคน
-
         string scope = GetScope(permissionCode);
         if (string.Equals(scope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase))
         {
@@ -193,8 +185,6 @@ public class DataScopeService : IDataScopeService
 
     public async Task<long?> ResolveDepartmentFilterAsync(long? requestedDeptId, string permissionCode, CancellationToken ct = default)
     {
-        if (IsAdmin) return requestedDeptId;
-
         string scope = GetScope(permissionCode);
         if (string.Equals(scope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase))
         {

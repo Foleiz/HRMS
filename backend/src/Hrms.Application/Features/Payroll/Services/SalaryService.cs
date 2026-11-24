@@ -44,9 +44,6 @@ public class SalaryService : ISalaryService
     /// </summary>
     private async Task<List<long>?> GetPermittedEmployeeIdsAsync(CancellationToken cancellationToken)
     {
-        if (_currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER"))
-            return null;
-
         return await _dataScopeService.GetAccessibleEmployeeIdsAsync("PAYROLL_VIEW", cancellationToken);
     }
 

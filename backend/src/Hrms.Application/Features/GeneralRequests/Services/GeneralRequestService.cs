@@ -64,13 +64,19 @@ public class GeneralRequestService : IGeneralRequestService
         var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("EMP_DOC_VIEW", cancellationToken);
         var query = BaseQuery();
 
-        if (!IsAdmin)
+        if (accessibleEmpIds != null)
+        {
+            var allowed = me.HasValue ? await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken) : new List<long>();
+            query = query.Where(r =>
+                (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
+                || accessibleEmpIds.Contains(r.EmployeeId));
+        }
+        else if (!IsAdmin)
         {
             if (!me.HasValue) return new List<GeneralRequestDto>();
             var allowed = await _approvalWorkflow.GetInstanceIdsForApproverUserAsync(me.Value, DocumentTypeCode, cancellationToken);
             query = query.Where(r =>
                 (r.ApprovalInstanceId.HasValue && allowed.Contains(r.ApprovalInstanceId.Value))
-                || (accessibleEmpIds != null ? accessibleEmpIds.Contains(r.EmployeeId) : false)
                 || (!r.ApprovalInstanceId.HasValue && accessibleEmpIds == null));
         }
 

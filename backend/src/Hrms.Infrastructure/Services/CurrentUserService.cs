@@ -132,9 +132,6 @@ public class CurrentUserService : ICurrentUserService
 
     public string GetDataScope(string permission)
     {
-        // หากเป็น ADMIN หรือ SYSTEM_SUPER ให้ Scope สูงสุดคือทั้งบริษัท
-        if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER")) return "ORGANIZATION";
-
         var permsToCheck = new List<string> { permission };
         if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
         {
@@ -194,7 +191,11 @@ public class CurrentUserService : ICurrentUserService
         }
 
         if (scopes.Count == 0)
+        {
+            if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER"))
+                return "ORGANIZATION";
             return "SELF";
+        }
 
         // เลือก scope ที่มีลำดับสูงสุด (กว้างสุด)
         return scopes
