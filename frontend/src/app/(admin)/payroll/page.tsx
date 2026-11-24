@@ -6123,14 +6123,14 @@ export default function PayrollPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40 whitespace-nowrap">
-                    <th className="py-3 px-4 font-semibold">ชื่ออัตรา</th>
-                    <th className="py-3 px-4 font-semibold text-center">ฝ่ายพนักงาน (%)</th>
-                    <th className="py-3 px-4 font-semibold text-center">ฝ่ายนายจ้าง (%)</th>
-                    <th className="py-3 px-4 font-semibold text-right">ฐานค่าจ้างต่ำสุด</th>
-                    <th className="py-3 px-4 font-semibold text-right">ฐานค่าจ้างสูงสุด (เพดาน)</th>
-                    <th className="py-3 px-4 font-semibold text-right">เงินสมทบสูงสุด/เดือน</th>
-                    <th className="py-3 px-4 font-semibold text-center">สถานะ</th>
-                    {canEditSso && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
+                    <th className="py-3.5 px-4 font-semibold">ชื่อเกณฑ์</th>
+                    <th className="py-3.5 px-4 font-semibold text-center">ฝ่ายลูกจ้าง (%)</th>
+                    <th className="py-3.5 px-4 font-semibold text-center">ฝ่ายนายจ้าง (%)</th>
+                    <th className="py-3.5 px-4 font-semibold text-right">ฐานต่ำสุด</th>
+                    <th className="py-3.5 px-4 font-semibold text-right">เพดานสูงสุด</th>
+                    <th className="py-3.5 px-4 font-semibold text-right">เงินสมทบสูงสุด/เดือน</th>
+                    <th className="py-3.5 px-4 font-semibold text-center">สถานะ</th>
+                    {canEditSso && <th className="py-3.5 px-4 font-semibold text-center">จัดการ</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -6138,29 +6138,43 @@ export default function PayrollPage() {
                     const empPct = r.employeeContributionPercent >= 1 ? r.employeeContributionPercent : r.employeeContributionPercent * 100;
                     const compPct = r.employerContributionPercent >= 1 ? r.employerContributionPercent : r.employerContributionPercent * 100;
                     const maxContribution = Math.round(r.maxWageBaseAmount * (empPct / 100));
+                    const hasParen = r.rateName.includes('(');
+                    const mainTitle = hasParen ? r.rateName.split('(')[0].trim() : r.rateName;
+                    const subTitle = hasParen ? `(${r.rateName.split('(').slice(1).join('(')}` : null;
+
                     return (
-                      <tr key={r.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{r.rateName}</td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">{empPct}%</td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">{compPct}%</td>
-                        <td className="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">฿{r.minWageBaseAmount.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">฿{r.maxWageBaseAmount.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">฿{maxContribution.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <tr key={r.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 whitespace-nowrap">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                            {mainTitle}
+                          </div>
+                          {subTitle && (
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                              {subTitle}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-200">{empPct}%</td>
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-200">{compPct}%</td>
+                        <td className="py-3.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">฿{r.minWageBaseAmount.toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">฿{r.maxWageBaseAmount.toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">฿{maxContribution.toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-center">
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             <span>ใช้งาน</span>
                           </span>
                         </td>
                         {canEditSso && (
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-center">
                             <Button
                               size="sm"
                               variant="secondary"
                               onClick={() => handleOpenEditSsoRate(r)}
                               icon={<Edit2 className="w-3.5 h-3.5" />}
+                              className="whitespace-nowrap"
                             >
-                              แก้ไขอัตราประกันสังคม
+                              แก้ไข
                             </Button>
                           </td>
                         )}
