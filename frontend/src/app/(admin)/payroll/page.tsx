@@ -6079,22 +6079,22 @@ export default function PayrollPage() {
                         <td className="py-3 px-4 text-right font-mono font-medium text-slate-800 dark:text-slate-200">
                           ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${
                               (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
                                 : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                             }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
+                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                 (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
                                   ? 'bg-emerald-500'
                                   : 'bg-slate-400'
                               }`}
                             />
-                            {(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}
+                            <span>{(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}</span>
                           </span>
                         </td>
                       </tr>
@@ -6132,7 +6132,7 @@ export default function PayrollPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40 whitespace-nowrap">
                     <th className="py-3 px-4 font-semibold">ชื่ออัตรา</th>
                     <th className="py-3 px-4 font-semibold text-center">ฝ่ายพนักงาน (%)</th>
                     <th className="py-3 px-4 font-semibold text-center">ฝ่ายนายจ้าง (%)</th>
@@ -6156,14 +6156,14 @@ export default function PayrollPage() {
                         <td className="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">฿{r.minWageBaseAmount.toLocaleString()}</td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">฿{r.maxWageBaseAmount.toLocaleString()}</td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">฿{maxContribution.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            ใช้งาน
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span>ใช้งาน</span>
                           </span>
                         </td>
                         {canEditSso && (
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
                             <button
                               onClick={() => handleOpenEditSsoRate(r)}
                               className="px-2.5 py-1 text-xs font-semibold text-primary hover:text-primary-hover hover:underline cursor-pointer"
