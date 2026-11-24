@@ -9,7 +9,6 @@ import {
   Lock,
   Sparkles,
   Coins,
-  Info,
 } from 'lucide-react';
 import { PayrollItem, SocialSecurityRate, TaxBracket, UpdateSocialSecurityRatePayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -542,15 +541,6 @@ export const PayrollItemModal: React.FC<Props> = ({
                 <span>{error}</span>
               </div>
             )}
-
-          {!item && (
-            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/60 rounded-xl text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                <span className="font-semibold">เพิ่มรายการกำหนดเอง:</span> สำหรับรายการรายรับ/รายหักเฉพาะของบริษัท โดยสามารถระบุจำนวนเงินเริ่มต้นเพื่อนำไปแสดงในรอบเงินเดือน
-              </div>
-            </div>
-          )}
 
           {/* Item Name */}
           <FormField label="ชื่อรายการ" required>
