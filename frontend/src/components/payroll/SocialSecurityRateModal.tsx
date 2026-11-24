@@ -146,7 +146,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
         {/* Header */}
         <ModalHeader
           icon={ShieldCheck}
-          title={<><span>{rate ? 'แก้ไขเกณฑ์และอัตราเงินสมทบประกันสังคม' : 'เพิ่มเกณฑ์อัตราเงินสมทบประกันสังคม'}</span> <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200"> {status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้'} </span></>}
+          title={rate ? 'แก้ไขเกณฑ์และอัตราเงินสมทบประกันสังคม' : 'เพิ่มเกณฑ์อัตราเงินสมทบประกันสังคม'}
           onClose={onClose}
         />
 
