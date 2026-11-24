@@ -80,9 +80,17 @@ const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: () => void;
   disabled?: boolean;
+  onDisabledClick?: () => void;
   size?: 'sm' | 'md';
   'aria-label'?: string;
-}> = ({ checked, onChange, disabled = false, size = 'md', 'aria-label': ariaLabel = 'สวิตช์เปิด/ปิด' }) => {
+}> = ({
+  checked,
+  onChange,
+  disabled = false,
+  onDisabledClick,
+  size = 'md',
+  'aria-label': ariaLabel = 'สวิตช์เปิด/ปิด',
+}) => {
   const isSm = size === 'sm';
   return (
     <button
@@ -90,18 +98,25 @@ const ToggleSwitch: React.FC<{
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
+      aria-disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
-        if (!disabled) onChange();
+        if (disabled) {
+          onDisabledClick?.();
+          return;
+        }
+        onChange();
       }}
-      disabled={disabled}
-      className={`relative inline-flex shrink-0 items-center rounded-full transition-all duration-200 focus:outline-none cursor-pointer ${
+      disabled={disabled && !onDisabledClick}
+      className={`relative inline-flex shrink-0 items-center rounded-full transition-all duration-200 focus:outline-none ${
+        disabled ? 'opacity-40 !cursor-not-allowed' : 'cursor-pointer'
+      } ${
         isSm ? 'h-5 w-9' : 'h-6 w-11'
       } ${
         checked
           ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-[0_0_8px_rgba(59,130,246,0.45)]'
           : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border dark:border-slate-600/60'
-      } ${disabled ? 'opacity-40 !cursor-not-allowed' : ''}`}
+      }`}
     >
       <span
         className={`inline-block transform rounded-full shadow-sm transition-transform duration-200 toggle-thumb ${
@@ -684,6 +699,76 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   const lastRoleIdRef = useRef<number | null>(null);
 
+  /* ── Module Helpers ── */
+  const isModuleActive = (mod: ModulePermissionScope): boolean => {
+    if (mod.categoryCode === 'DASHBOARD' || mod.groupName === 'DASHBOARD') {
+      return Boolean(
+        mod.canView ||
+        mod.self?.view ||
+        mod.team?.view ||
+        mod.department?.view ||
+        mod.division?.view ||
+        mod.organization?.view
+      );
+    }
+    const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
+    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.delete);
+  };
+
+  const getScopeActiveCount = (
+    mod: ModulePermissionScope,
+    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
+  ): number => {
+    const sc = mod[scopeKey];
+    if (!sc) return 0;
+    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.delete ? 1 : 0);
+  };
+
+  // Helper: ตรวจสอบว่าสเต็ปนี้มีเงื่อนไขเตือน (ต้องแก้ไขสิทธิ์ เช่น ขาดสิทธิ์ Create/Edit)
+  const checkStepWarning = (step: GuideStepConfig, targetMod?: ModulePermissionScope): boolean => {
+    if (!targetMod) return true;
+    if (!isModuleActive(targetMod)) return true;
+
+    if (step.requiresWrite) {
+      const scopes: Array<'self' | 'team' | 'department' | 'division' | 'organization'> = [
+        'self',
+        'team',
+        'department',
+        'division',
+        'organization',
+      ];
+      const hasWrite = scopes.some((s) => targetMod[s]?.create || targetMod[s]?.edit);
+      return !hasWrite;
+    }
+
+    return false;
+  };
+
+  // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์พร้อมใช้งานครบถ้วนตามเงื่อนไขใน Flow
+  const getGuideFlowActiveStepsCount = (
+    flow: GuideFlowConfig,
+    modulesList: ModulePermissionScope[] = localModules
+  ): number => {
+    return flow.steps.filter((s) => {
+      const m = modulesList.find((mod) => mod.moduleCode === s.targetModuleCode);
+      if (!m || !isModuleActive(m)) return false;
+      // หากสเต็ปนั้นมีเงื่อนไขเตือน (เช่น ต้องการสิทธิ์เขียน Create/Edit แต่ยังไม่มี) ไม่นับว่าสิทธิ์พร้อมใช้งาน
+      if (checkStepWarning(s, m)) return false;
+      return true;
+    }).length;
+  };
+
+  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ตามสิทธิ์ GUIDE_xxx ของ Role นั้น และต้องมีสิทธิ์ครบทุกขั้นตอน)
+  const isGuideFlowActive = (
+    flow: GuideFlowConfig,
+    modulesList: ModulePermissionScope[] = localModules
+  ): boolean => {
+    const guideMod = modulesList.find((m) => m.moduleCode === flow.moduleCode);
+    if (!guideMod || !isModuleActive(guideMod)) return false;
+    const activeStepsCount = getGuideFlowActiveStepsCount(flow, modulesList);
+    return activeStepsCount === flow.steps.length;
+  };
+
   /* ── Normalize legacy data ── */
   const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] => {
     let normalized = mods.map((m) => {
@@ -879,6 +964,29 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       normalized = normalized.filter((m) => m.moduleCode !== 'GUIDE_PAYROLL');
     }
 
+    // ตรวจสอบโมดูลหมวด GUIDE: หากขั้นตอนจำเป็นยังเปิดไม่ครบ (activeSteps < totalSteps) ให้ปิดสิทธิ์โมดูลไกด์นั้นเสมอ
+    GUIDE_FLOW_CONFIGS.forEach((flow) => {
+      const activeSteps = getGuideFlowActiveStepsCount(flow, normalized);
+      if (activeSteps < flow.steps.length) {
+        const idx = normalized.findIndex((m) => m.moduleCode === flow.moduleCode);
+        if (idx !== -1 && isModuleActive(normalized[idx])) {
+          const def = () => ({ view: false, create: false, edit: false, delete: false, approve: false });
+          normalized[idx] = {
+            ...normalized[idx],
+            canView: false,
+            canCreate: false,
+            canEdit: false,
+            canApprove: false,
+            self: def(),
+            team: def(),
+            department: def(),
+            division: def(),
+            organization: def(),
+          };
+        }
+      }
+    });
+
     return normalized;
   };
 
@@ -949,6 +1057,28 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     }
   }, [pendingRoleId, selectedRoleMatrix, executeRoleSwitch]);
 
+  const sanitizeModulesBeforeSave = (modules: ModulePermissionScope[]) => {
+    return modules.map((m) => {
+      const flow = GUIDE_FLOW_CONFIGS.find((f) => f.moduleCode === m.moduleCode);
+      if (flow && getGuideFlowActiveStepsCount(flow, modules) < flow.steps.length && isModuleActive(m)) {
+        const def = () => ({ view: false, create: false, edit: false, delete: false, approve: false });
+        return {
+          ...m,
+          canView: false,
+          canCreate: false,
+          canEdit: false,
+          canApprove: false,
+          self: def(),
+          team: def(),
+          department: def(),
+          division: def(),
+          organization: def(),
+        };
+      }
+      return m;
+    });
+  };
+
   const handleSaveAndSwitch = useCallback(async () => {
     if (pendingRoleId !== null && selectedRoleMatrix) {
       const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
@@ -963,7 +1093,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         return;
       }
       try {
-        await onSaveMatrix(selectedRoleMatrix.id, { modules: localModules });
+        const sanitized = sanitizeModulesBeforeSave(localModules);
+        await onSaveMatrix(selectedRoleMatrix.id, { modules: sanitized });
         setIsDirty(false);
         executeRoleSwitch(pendingRoleId);
         setIsUnsavedModalOpen(false);
@@ -1026,31 +1157,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       if (!a.isSystemDefault && b.isSystemDefault) return 1;
       return a.id - b.id;
     });
-
-  /* ── Module Helpers ── */
-  const isModuleActive = (mod: ModulePermissionScope): boolean => {
-    if (mod.categoryCode === 'DASHBOARD' || mod.groupName === 'DASHBOARD') {
-      return Boolean(
-        mod.canView ||
-        mod.self?.view ||
-        mod.team?.view ||
-        mod.department?.view ||
-        mod.division?.view ||
-        mod.organization?.view
-      );
-    }
-    const scopes = ['self', 'team', 'department', 'division', 'organization'] as const;
-    return scopes.some((s) => mod[s]?.view || mod[s]?.create || mod[s]?.edit || mod[s]?.delete);
-  };
-
-  const getScopeActiveCount = (
-    mod: ModulePermissionScope,
-    scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
-  ): number => {
-    const sc = mod[scopeKey];
-    if (!sc) return 0;
-    return (sc.view ? 1 : 0) + (sc.create ? 1 : 0) + (sc.edit ? 1 : 0) + (sc.delete ? 1 : 0);
-  };
 
   /* ── Toggle Handlers ── */
   const toggleCategoryExpand = (catCode: string) => {
@@ -1194,46 +1300,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ตามสิทธิ์ GUIDE_xxx ของ Role นั้น)
-  const isGuideFlowActive = (flow: GuideFlowConfig) => {
-    const guideMod = localModules.find((m) => m.moduleCode === flow.moduleCode);
-    return guideMod ? isModuleActive(guideMod) : false;
-  };
+  // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดเฉพาะโมดูล GUIDE_xxx โดยต้องเปิดสิทธิ์ครบทุกขั้นตอนก่อน)
+  const handleToggleGuideFlow = (flow: GuideFlowConfig) => {
+    const activeStepsCount = getGuideFlowActiveStepsCount(flow);
+    const isAllStepsReady = activeStepsCount === flow.steps.length;
+    const currentlyActive = isGuideFlowActive(flow);
 
-  // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์พร้อมใช้งานครบถ้วนตามเงื่อนไขใน Flow
-  const getGuideFlowActiveStepsCount = (flow: GuideFlowConfig) => {
-    return flow.steps.filter((s) => {
-      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
-      if (!m || !isModuleActive(m)) return false;
-      // หากสเต็ปนั้นมีเงื่อนไขเตือน (เช่น ต้องการสิทธิ์เขียน Create/Edit แต่ยังไม่มี) ไม่นับว่าสิทธิ์พร้อมใช้งาน
-      if (checkStepWarning(s, m)) return false;
-      return true;
-    }).length;
-  };
-
-  // Helper: ตรวจสอบว่าสเต็ปนี้มีเงื่อนไขเตือน (ต้องแก้ไขสิทธิ์ เช่น ขาดสิทธิ์ Create/Edit)
-  const checkStepWarning = (step: GuideStepConfig, targetMod?: ModulePermissionScope): boolean => {
-    if (!targetMod) return true;
-    if (!isModuleActive(targetMod)) return true;
-
-    if (step.requiresWrite) {
-      const scopes: Array<'self' | 'team' | 'department' | 'division' | 'organization'> = [
-        'self',
-        'team',
-        'department',
-        'division',
-        'organization',
-      ];
-      const hasWrite = scopes.some((s) => targetMod[s]?.create || targetMod[s]?.edit);
-      return !hasWrite;
+    if (!currentlyActive && !isAllStepsReady) {
+      toast.warning(
+        `ไม่สามารถเปิดใช้งานคู่มือนี้ได้ เนื่องจากต้องเปิดสิทธิ์ขั้นตอนให้ครบก่อน (${activeStepsCount}/${flow.steps.length} ขั้นตอน)`
+      );
+      return;
     }
 
-    return false;
-  };
-
-  // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดเฉพาะโมดูล GUIDE_xxx โดยไม่แตะต้องโมดูลจริงในระบบ)
-  const handleToggleGuideFlow = (flow: GuideFlowConfig) => {
-    const currentlyActive = isGuideFlowActive(flow);
     const empty = { view: false, create: false, edit: false, approve: false };
 
     setLocalModules((prev) =>
@@ -1263,37 +1342,65 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Handler สำหรับ Master Toggle ของหมวด "วิธีการใช้งาน" ทั้งหมด (เปิด/ปิดเฉพาะโมดูลหมวด GUIDE ทั้ง 11 Flows)
+  // Handler สำหรับ Master Toggle ของหมวด "วิธีการใช้งาน" ทั้งหมด (เปิดเฉพาะโมดูลที่สิทธิ์ครบถ้วนแล้วเท่านั้น)
   const handleToggleGuideCategory = () => {
     const anyActive = GUIDE_FLOW_CONFIGS.some((flow) => isGuideFlowActive(flow));
-    const guideCodes = new Set(GUIDE_FLOW_CONFIGS.map((f) => f.moduleCode));
+    const readyFlows = GUIDE_FLOW_CONFIGS.filter(
+      (f) => getGuideFlowActiveStepsCount(f) === f.steps.length
+    );
+    const readyCodes = new Set(readyFlows.map((f) => f.moduleCode));
+
+    if (!anyActive && readyCodes.size === 0) {
+      toast.warning('ไม่สามารถเปิดใช้งานคู่มือได้ เนื่องจากยังไม่มีคู่มือใดที่มีสิทธิ์ครบทุกขั้นตอน');
+      return;
+    }
+
+    const empty = { view: false, create: false, edit: false, approve: false };
 
     setLocalModules((prev) => {
-      const empty = { view: false, create: false, edit: false, approve: false };
       return prev.map((m) => {
-        if (guideCodes.has(m.moduleCode)) {
-          if (anyActive) {
-            return {
-              ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
-            };
-          } else {
+        const flow = GUIDE_FLOW_CONFIGS.find((f) => f.moduleCode === m.moduleCode);
+        if (!flow) return m;
+
+        if (anyActive) {
+          return {
+            ...m,
+            canView: false,
+            self: { ...empty },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
+        } else {
+          if (readyCodes.has(m.moduleCode)) {
             return {
               ...m,
               canView: true,
               self: { view: true, create: false, edit: false, approve: false },
             };
           }
+          return {
+            ...m,
+            canView: false,
+            self: { ...empty },
+            team: { ...empty },
+            department: { ...empty },
+            division: { ...empty },
+            organization: { ...empty },
+          };
         }
-        return m;
       });
     });
     setIsDirty(true);
+
+    if (!anyActive) {
+      if (readyCodes.size < GUIDE_FLOW_CONFIGS.length) {
+        toast.info(`เปิดใช้งานคู่มือที่มีสิทธิ์ครบถ้วนแล้ว (${readyCodes.size}/${GUIDE_FLOW_CONFIGS.length} คู่มือ)`);
+      } else {
+        toast.success('เปิดใช้งานคู่มือทั้งหมดเรียบร้อยแล้ว');
+      }
+    }
   };
 
   // Master switch per category
@@ -1562,7 +1669,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return;
     }
     try {
-      await onSaveMatrix(selectedRoleMatrix.id, { modules: localModules });
+      const sanitized = sanitizeModulesBeforeSave(localModules);
+      await onSaveMatrix(selectedRoleMatrix.id, { modules: sanitized });
+      setLocalModules(sanitized);
       setIsDirty(false);
       setSaveSuccessMsg(true);
       setTimeout(() => setSaveSuccessMsg(false), 3000);
@@ -1980,6 +2089,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               const activeStepsCount = getGuideFlowActiveStepsCount(flow);
                               const isFlowExpanded = expandedGuideFlows[flow.id] ?? (flow.id === 'hr-onboarding');
                               const cleanFlowTitle = flow.title.replace(/^ไกด์:\s*/, '');
+                              const isAllStepsReady = activeStepsCount === flow.steps.length;
 
                               return (
                                 <div key={flow.id} className="transition-colors">
@@ -2023,7 +2133,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     >
                                       <span
                                         className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                                          activeStepsCount === flow.steps.length
+                                          isAllStepsReady
                                             ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
                                             : activeStepsCount > 0
                                             ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40'
@@ -2033,11 +2143,30 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                         {activeStepsCount}/{flow.steps.length} ขั้นตอน
                                       </span>
 
-                                      <ToggleSwitch
-                                        checked={isFlowActive}
-                                        onChange={() => handleToggleGuideFlow(flow)}
-                                        disabled={!canEditRole}
-                                      />
+                                      <div
+                                        className="relative inline-flex items-center"
+                                        title={
+                                          !isAllStepsReady
+                                            ? `ไม่สามารถเปิดใช้งานได้: ต้องเปิดสิทธิ์ของทุกขั้นตอนให้ครบก่อน (${activeStepsCount}/${flow.steps.length} ขั้นตอน)`
+                                            : undefined
+                                        }
+                                      >
+                                        <ToggleSwitch
+                                          checked={isFlowActive}
+                                          onChange={() => handleToggleGuideFlow(flow)}
+                                          disabled={!canEditRole || !isAllStepsReady}
+                                          onDisabledClick={
+                                            !isAllStepsReady
+                                              ? () => {
+                                                  toast.warning(
+                                                    `ไม่สามารถเปิดใช้งานคู่มือนี้ได้ เนื่องจากต้องเปิดสิทธิ์ขั้นตอนให้ครบก่อน (${activeStepsCount}/${flow.steps.length} ขั้นตอน)`
+                                                  );
+                                                }
+                                              : undefined
+                                          }
+                                          aria-label={`สวิตช์เปิด/ปิดคู่มือ ${cleanFlowTitle}`}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
 
