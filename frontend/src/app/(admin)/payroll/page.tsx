@@ -6334,8 +6334,6 @@ export default function PayrollPage() {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                       {periods.map((p) => {
                         const isCurrent = selectedPeriod?.id === p.id;
-                        const today = new Date();
-                        const isCurrentMonthPeriod = p.year === today.getFullYear() && p.month === (today.getMonth() + 1);
                         return (
                           <tr
                             key={p.id}
@@ -6344,19 +6342,12 @@ export default function PayrollPage() {
                             }`}
                           >
                             <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
-                                  {p.periodName}
-                                </span>
-                                {isCurrentMonthPeriod && (
-                                  <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded">
-                                    ปัจจุบัน
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[11px] text-slate-400 font-mono">
-                                ปี {p.year + 543} / เดือน {p.month}
+                              <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
+                                {p.periodName}
                               </span>
+                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                ปี {p.year + 543} / เดือน {p.month}
+                              </div>
                             </td>
                             <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                               {formatThaiDateSlash(p.startDate)} - {formatThaiDateSlash(p.endDate)}

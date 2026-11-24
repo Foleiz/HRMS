@@ -363,24 +363,15 @@ export default function PayrollPeriodsTab({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                 {paginatedPeriods.map((p) => {
-                  const isCurrentMonthPeriod =
-                    p.year === currentRealYear && p.month === currentRealMonth;
                   return (
                     <tr
                       key={p.id}
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors"
                     >
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
-                            {p.periodName}
-                          </span>
-                          {isCurrentMonthPeriod && (
-                            <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded">
-                              ปัจจุบัน
-                            </span>
-                          )}
-                        </div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
+                          {p.periodName}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {formatDateSlash(p.startDate)} - {formatDateSlash(p.endDate)}
