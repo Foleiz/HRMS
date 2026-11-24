@@ -1363,10 +1363,26 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       prev.map((m) => {
         if (m.moduleCode !== moduleCode) return m;
         const currentScope = m[scopeKey] || { view: false, create: false, edit: false, delete: false, approve: false };
+        const nextValue = !currentScope[actionKey];
+
         const updatedScope = {
           ...currentScope,
-          [actionKey]: !currentScope[actionKey],
+          [actionKey]: nextValue,
         };
+
+        // ลอจิกความสัมพันธ์ของสิทธิ์ (Permission Dependency):
+        // 1. ถ้าเลือกสร้าง, แก้ไข, หรือลบ -> บังคับเลือก "ดูข้อมูล" (view) เสมอ
+        if (actionKey !== 'view' && nextValue) {
+          updatedScope.view = true;
+        }
+        // 2. ถ้าเอา "ดูข้อมูล" ออก -> ปลดสร้าง, แก้ไข, ลบ ออกทั้งหมด
+        else if (actionKey === 'view' && !nextValue) {
+          updatedScope.create = false;
+          updatedScope.edit = false;
+          updatedScope.delete = false;
+          updatedScope.approve = false;
+        }
+
         return {
           ...m,
           [scopeKey]: updatedScope,
@@ -2528,6 +2544,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 );
               })}
             </div>
+
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-0.5 leading-tight select-none">
+              * สิทธิ์สร้าง แก้ไข หรือลบ จำเป็นต้องมีสิทธิ์ดูข้อมูลร่วมด้วยเสมอ
+            </p>
 
             {/* Popover Footer Shortcuts */}
             {(() => {

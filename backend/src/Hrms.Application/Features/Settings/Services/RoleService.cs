@@ -1012,10 +1012,10 @@ public class RoleService : IRoleService
             if (isPayrollModule)
             {
                 // สำหรับหมวดเงินเดือน หากมีการเปิดสิทธิ์ ขอบเขตข้อมูลจะถูกบังคับเป็น ORGANIZATION ทั้งหมด
-                bool anyView = scopeList.Any(s => s.Perms?.View == true);
                 bool anyCreate = scopeList.Any(s => s.Perms?.Create == true);
                 bool anyEdit = scopeList.Any(s => s.Perms?.Edit == true || s.Perms?.Approve == true);
                 bool anyDelete = scopeList.Any(s => s.Perms?.Delete == true);
+                bool anyView = scopeList.Any(s => s.Perms?.View == true) || anyCreate || anyEdit || anyDelete;
 
                 if (anyView)
                 {
@@ -1046,7 +1046,10 @@ public class RoleService : IRoleService
             {
                 if (perms == null) continue;
 
-                if (perms.View)
+                // สิทธิ์เขียน (สร้าง/แก้ไข/ลบ) ต้องมีสิทธิ์ดูข้อมูล (View) ร่วมด้วยเสมอ
+                bool hasWriteAction = perms.Create || perms.Edit || perms.Approve || perms.Delete;
+
+                if (perms.View || hasWriteAction)
                 {
                     AddPerm(viewCode);
                     AddDataScope(viewCode, scopeName);
