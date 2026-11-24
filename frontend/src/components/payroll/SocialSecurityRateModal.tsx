@@ -52,7 +52,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
   useEffect(() => {
     if (isOpen) {
       if (rate) {
-        setRateName(rate.rateName || 'อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)');
+        setRateName('');
         setEmployeePercent(
           Number(rate.employeeContributionPercent) <= 1.0
             ? Math.round(Number(rate.employeeContributionPercent) * 1000) / 10
@@ -70,7 +70,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
         setStatus(rate.status || 'ACTIVE');
       } else {
         // Defaults
-        setRateName('อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)');
+        setRateName('');
         setEmployeePercent(5.0);
         setEmployerPercent(5.0);
         setMinWageBase(1650);
@@ -86,9 +86,6 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
   // Validation
   useEffect(() => {
     const errors: string[] = [];
-    if (!rateName.trim()) {
-      errors.push('กรุณาระบุชื่อเกณฑ์ประกันสังคม');
-    }
     if (isNaN(employeePercent) || employeePercent < 0 || employeePercent > 100) {
       errors.push('อัตราเงินสมทบฝ่ายลูกจ้างต้องอยู่ระหว่าง 0% ถึง 100%');
     }
@@ -122,7 +119,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
     if (validationErrors.length > 0) return;
 
     const payload: UpdateSocialSecurityRatePayload = {
-      rateName: rateName.trim(),
+      rateName: rateName.trim() || rate?.rateName || 'อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)',
       employeeContributionPercent: safeEmpPercent,
       employerContributionPercent: safeCompPercent,
       minWageBaseAmount: minWageBase,
@@ -157,7 +154,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
             {/* Rate Name */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                ชื่อเกณฑ์ประกันสังคม <span className="text-rose-500">*</span>
+                ชื่อเกณฑ์ประกันสังคม
               </label>
               <Input
                 type="text"
