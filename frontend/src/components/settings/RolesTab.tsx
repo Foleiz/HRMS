@@ -2155,15 +2155,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                 <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                                   {/* Master Module Toggle พร้อมตัวชี้ (Pointer) และ Highlight */}
                                   <div className="relative inline-flex items-center">
-                                    {isToggleHighlighted && (
-                                      <div className="absolute -top-10 right-0 flex flex-col items-center pointer-events-none z-30 animate-bounce">
-                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-xl border border-indigo-400 whitespace-nowrap">
-                                          <span>👇</span>
-                                          <span>คลิกเปิดสิทธิ์ตรงนี้</span>
-                                        </div>
-                                        <div className="w-2 h-2 bg-indigo-600 border-r border-b border-indigo-400 rotate-45 -mt-1" />
-                                      </div>
-                                    )}
                                     <div
                                       className={
                                         isToggleHighlighted
@@ -2197,48 +2188,38 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                           isEditHighlighted && highlightTarget.targetScopeKey === scope.key;
 
                                         return (
-                                          <div key={scope.key} className="relative inline-flex">
-                                            {isThisScopeTargeted && (
-                                              <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-30 animate-bounce">
-                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[11px] font-bold shadow-xl border border-amber-300 whitespace-nowrap">
-                                                  <span>👇</span>
-                                                  <span>คลิกแก้ไขสิทธิ์ตรงนี้</span>
-                                                </div>
-                                                <div className="w-2 h-2 bg-amber-600 border-r border-b border-amber-300 rotate-45 -mt-1" />
-                                              </div>
+                                          <button
+                                            key={scope.key}
+                                            type="button"
+                                            disabled={isButtonDisabled}
+                                            title={
+                                              isScopeBlocked
+                                                ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
+                                                : undefined
+                                            }
+                                            onClick={(e) => {
+                                              if (isThisScopeTargeted) setHighlightTarget(null);
+                                              handleOpenPopover(e, mod.moduleCode, scope.key);
+                                            }}
+                                            className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                              isThisScopeTargeted
+                                                ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
+                                                : isButtonDisabled
+                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
+                                                : isScopeActive
+                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
+                                                : isPopoverOpen
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
+                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
+                                            }`}
+                                          >
+                                            <span>{scope.label}</span>
+                                            {isScopeActive && (
+                                              <span className="ml-1 text-[10px] opacity-90">
+                                                ({count})
+                                              </span>
                                             )}
-                                            <button
-                                              type="button"
-                                              disabled={isButtonDisabled}
-                                              title={
-                                                isScopeBlocked
-                                                  ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
-                                                  : undefined
-                                              }
-                                              onClick={(e) => {
-                                                if (isThisScopeTargeted) setHighlightTarget(null);
-                                                handleOpenPopover(e, mod.moduleCode, scope.key);
-                                              }}
-                                              className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
-                                                isThisScopeTargeted
-                                                  ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-slate-800 scale-110 shadow-xl shadow-amber-500/40 z-20 font-bold bg-amber-500 text-white border-amber-600 animate-pulse cursor-pointer'
-                                                  : isButtonDisabled
-                                                  ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
-                                                  : isScopeActive
-                                                  ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
-                                                  : isPopoverOpen
-                                                  ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
-                                                  : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
-                                              }`}
-                                            >
-                                              <span>{scope.label}</span>
-                                              {isScopeActive && (
-                                                <span className="ml-1 text-[10px] opacity-90">
-                                                  ({count})
-                                                </span>
-                                              )}
-                                            </button>
-                                          </div>
+                                          </button>
                                         );
                                       })}
                                     </div>
