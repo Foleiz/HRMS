@@ -10,15 +10,20 @@ namespace Hrms.Application.Features.Reports.Services;
 public class OperationalReportService : IOperationalReportService
 {
     private readonly IHrmsDbContext _context;
-
     private readonly ICurrentUserService _currentUser;
     private readonly IAesEncryptionService _crypto;
+    private readonly IDataScopeService _dataScopeService;
 
-    public OperationalReportService(IHrmsDbContext context, ICurrentUserService currentUser, IAesEncryptionService crypto)
+    public OperationalReportService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUser,
+        IAesEncryptionService crypto,
+        IDataScopeService dataScopeService)
     {
         _context = context;
         _currentUser = currentUser;
         _crypto = crypto;
+        _dataScopeService = dataScopeService;
     }
 
     private static readonly string[] ClosedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
@@ -91,9 +96,18 @@ public class OperationalReportService : IOperationalReportService
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Plan));
 
         // พนักงานที่ยังทำงานอยู่ + ตำแหน่งปัจจุบัน
-        var rows = await _context.EmployeeAssignments.AsNoTracking()
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("REPORT_HEADCOUNT_VIEW", cancellationToken);
+
+        var assignmentQuery = _context.EmployeeAssignments.AsNoTracking()
             .Where(a => a.IsCurrent && deptIds.Contains(a.DepartmentId)
-                        && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
+                        && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE");
+
+        if (accessibleEmpIds != null)
+        {
+            assignmentQuery = assignmentQuery.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
+
+        var rows = await assignmentQuery
             .Select(a => new
             {
                 a.EmployeeId,
@@ -112,6 +126,12 @@ public class OperationalReportService : IOperationalReportService
                     : (a.Position != null && a.Position.EmployeeLevel != null ? a.Position.EmployeeLevel.LevelName : null),
             })
             .ToListAsync(cancellationToken);
+
+        if (accessibleEmpIds != null)
+        {
+            var allowedDeptIds = rows.Select(r => r.DepartmentId).ToHashSet();
+            departments = departments.Where(d => allowedDeptIds.Contains(d.Id)).ToList();
+        }
 
         // ใช้ตำแหน่งปัจจุบันล่าสุดคนละ 1 รายการ
         var people = rows.GroupBy(r => r.EmployeeId).Select(g => g.OrderByDescending(x => x.EffectiveFrom).First()).ToList();
@@ -260,12 +280,26 @@ public class OperationalReportService : IOperationalReportService
             .ToListAsync(cancellationToken);
 
         // 2. ดึงการมอบหมายงานปัจจุบันของพนักงาน (IsCurrent)
-        var assignments = await _context.EmployeeAssignments
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("REPORT_ATT_VIEW", cancellationToken);
+
+        var assignmentQuery = _context.EmployeeAssignments
             .Include(a => a.Employee)
             .Where(a => a.IsCurrent && a.EffectiveFrom <= date && (a.EffectiveTo == null || a.EffectiveTo >= date))
             .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            assignmentQuery = assignmentQuery.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
+
+        var assignments = await assignmentQuery.ToListAsync(cancellationToken);
+
+        if (accessibleEmpIds != null)
+        {
+            var allowedDeptIds = assignments.Select(a => a.DepartmentId).ToHashSet();
+            departments = departments.Where(d => allowedDeptIds.Contains(d.Id)).ToList();
+        }
 
         // วันหยุด/วันทำงานของบริษัท — ใช้ตัดสินคนที่ยังไม่มีบันทึกเวลาในวันนั้น
         var schedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
@@ -438,6 +472,8 @@ public class OperationalReportService : IOperationalReportService
         var startDate = new DateOnly(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("REPORT_ATT_VIEW", cancellationToken);
+
         // 1. ดึงพนักงานปัจจุบัน (IsCurrent) พร้อม Assignment
         var empQuery = _context.EmployeeAssignments
             .Include(a => a.Employee)
@@ -445,6 +481,11 @@ public class OperationalReportService : IOperationalReportService
             .Include(a => a.Position)
             .Where(a => a.IsCurrent && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE") // ไม่นับพนักงานที่พ้นสภาพ (ให้ตรงกับรายงานรายวัน)
             .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            empQuery = empQuery.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
 
         if (departmentId.HasValue && departmentId.Value > 0)
         {
@@ -805,18 +846,33 @@ public class OperationalReportService : IOperationalReportService
             .ToListAsync(cancellationToken);
 
         // 2. ดึงข้อมูลสัญญาจ้างและการมอบหมายงานปัจจุบันของพนักงานทั้งหมด
-        var contracts = await _context.EmploymentContracts
-            .Include(c => c.Employee)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var accessibleEmpIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("REPORT_HEADCOUNT_VIEW", cancellationToken);
 
-        var assignments = await _context.EmployeeAssignments
+        var contractQuery = _context.EmploymentContracts
+            .Include(c => c.Employee)
+            .AsNoTracking();
+
+        var assignmentQuery = _context.EmployeeAssignments
             .Include(a => a.Employee)
             .Include(a => a.Department)
             .Include(a => a.Position)
             .Where(a => a.IsCurrent)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .AsNoTracking();
+
+        if (accessibleEmpIds != null)
+        {
+            contractQuery = contractQuery.Where(c => accessibleEmpIds.Contains(c.EmployeeId));
+            assignmentQuery = assignmentQuery.Where(a => accessibleEmpIds.Contains(a.EmployeeId));
+        }
+
+        var contracts = await contractQuery.ToListAsync(cancellationToken);
+        var assignments = await assignmentQuery.ToListAsync(cancellationToken);
+
+        if (accessibleEmpIds != null)
+        {
+            var allowedDeptIds = assignments.Select(a => a.DepartmentId).ToHashSet();
+            departments = departments.Where(d => allowedDeptIds.Contains(d.Id)).ToList();
+        }
 
         var contractMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).First());
         // วันเริ่มงาน = วันเริ่มของสัญญาแรก (การต่อสัญญาใหม่ไม่นับเป็นพนักงานเข้าใหม่) — ตรงกับรายงานพนักงานแยกตามแผนก

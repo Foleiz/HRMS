@@ -175,6 +175,24 @@ public class CurrentUserService : ICurrentUserService
             permsToCheck.Add("ORG_CHART_VIEW");
             permsToCheck.Add("ORG_CHART");
         }
+        else if (string.Equals(permission, "REPORT_HEADCOUNT_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "REPORT_HEADCOUNT", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("REPORT_HEADCOUNT_VIEW");
+            permsToCheck.Add("REPORT_HEADCOUNT");
+        }
+        else if (string.Equals(permission, "REPORT_ATT_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "REPORT_ATT", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("REPORT_ATT_VIEW");
+            permsToCheck.Add("REPORT_ATT");
+        }
+        else if (string.Equals(permission, "REPORT_LEAVE_VIEW", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "REPORT_LEAVE", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add("REPORT_LEAVE_VIEW");
+            permsToCheck.Add("REPORT_LEAVE");
+        }
         else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
                  permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
         {

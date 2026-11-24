@@ -108,15 +108,21 @@ public class LeaveInsightsService : ILeaveInsightsService
         string scope;
         long? scopeDept = null, scopeDiv = null;
 
-        var widestScope = _dataScope.GetScope("LEAVE_BALANCE_VIEW");
+        var widestScope = _dataScope.GetScope("REPORT_LEAVE_VIEW");
         if (string.Equals(widestScope, "SELF", StringComparison.OrdinalIgnoreCase))
         {
-            var essScope = _dataScope.GetScope("ESS_LEAVE_VIEW");
-            if (!string.Equals(essScope, "SELF", StringComparison.OrdinalIgnoreCase))
-                widestScope = essScope;
+            var lbScope = _dataScope.GetScope("LEAVE_BALANCE_VIEW");
+            if (!string.Equals(lbScope, "SELF", StringComparison.OrdinalIgnoreCase))
+                widestScope = lbScope;
+            else
+            {
+                var essScope = _dataScope.GetScope("ESS_LEAVE_VIEW");
+                if (!string.Equals(essScope, "SELF", StringComparison.OrdinalIgnoreCase))
+                    widestScope = essScope;
+            }
         }
 
-        bool isOrg = _currentUser.HasRole("ADMIN") || _currentUser.HasRole("SYSTEM_SUPER") || string.Equals(widestScope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase);
+        bool isOrg = string.Equals(widestScope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase);
 
         if (isOrg)
         {
@@ -147,12 +153,21 @@ public class LeaveInsightsService : ILeaveInsightsService
             }
         }
 
+        var accessibleEmpIds = await _dataScope.GetAccessibleEmployeeIdsAsync("REPORT_LEAVE_VIEW", cancellationToken);
+
         var fromUtc = DateTime.SpecifyKind(from.ToDateTime(TimeOnly.MinValue).AddHours(-7), DateTimeKind.Utc);
         var toUtc = DateTime.SpecifyKind(to.AddDays(1).ToDateTime(TimeOnly.MinValue).AddHours(-7), DateTimeKind.Utc);
         var statuses = includePending ? new[] { "APPROVED", "PENDING" } : new[] { "APPROVED" };
 
-        var raw = await _context.LeaveRequests.AsNoTracking()
-            .Where(r => statuses.Contains(r.Status) && r.StartDatetime < toUtc && r.EndDatetime >= fromUtc)
+        var leaveQuery = _context.LeaveRequests.AsNoTracking()
+            .Where(r => statuses.Contains(r.Status) && r.StartDatetime < toUtc && r.EndDatetime >= fromUtc);
+
+        if (accessibleEmpIds != null)
+        {
+            leaveQuery = leaveQuery.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
+        }
+
+        var raw = await leaveQuery
             .Select(r => new
             {
                 r.Id, r.EmployeeId, r.LeaveTypeId, r.StartDatetime, r.EndDatetime, r.LeaveDays, r.Status,
@@ -206,8 +221,17 @@ public class LeaveInsightsService : ILeaveInsightsService
         var fromUtc = DateTime.SpecifyKind(new DateTime(year, 1, 1).AddHours(-7), DateTimeKind.Utc);
         var toUtc = DateTime.SpecifyKind(new DateTime(year + 1, 1, 1).AddHours(-7), DateTimeKind.Utc);
 
-        var raw = await _context.LeaveRequests.AsNoTracking()
-            .Where(r => (r.Status == "APPROVED" || r.Status == "PENDING") && r.StartDatetime >= fromUtc && r.StartDatetime < toUtc)
+        var accessibleEmpIds = await _dataScope.GetAccessibleEmployeeIdsAsync("REPORT_LEAVE_VIEW", cancellationToken);
+
+        var leaveQuery = _context.LeaveRequests.AsNoTracking()
+            .Where(r => (r.Status == "APPROVED" || r.Status == "PENDING") && r.StartDatetime >= fromUtc && r.StartDatetime < toUtc);
+
+        if (accessibleEmpIds != null)
+        {
+            leaveQuery = leaveQuery.Where(r => accessibleEmpIds.Contains(r.EmployeeId));
+        }
+
+        var raw = await leaveQuery
             .Select(r => new
             {
                 r.EmployeeId, r.LeaveTypeId, r.StartDatetime, r.LeaveDays, r.Status,
