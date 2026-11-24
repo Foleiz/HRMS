@@ -3016,10 +3016,7 @@ export default function PayrollPage() {
                                 <Sparkles className="w-3 h-3" />
                               </span>
                               <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                                รายการมาตรฐานของระบบ ({systemItems.length})
-                              </span>
-                              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal hidden sm:inline">
-                                — เชื่อมโยงและคำนวณให้อัตโนมัติจากโมดูลสัญญาจ้าง, ลงเวลา, หรือกฎหมาย
+                                รายการมาตรฐานของระบบ
                               </span>
                             </div>
                           </td>
@@ -3035,10 +3032,7 @@ export default function PayrollPage() {
                                   <Layers className="w-3 h-3" />
                                 </span>
                                 <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                                  รายการเพิ่มเติมที่กำหนดเอง ({customItems.length})
-                                </span>
-                                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal hidden sm:inline">
-                                  — รายการที่องค์กรสร้างเพิ่มเอง สามารถระบุจำนวนเงินได้อิสระ
+                                  รายการเพิ่มเติมที่กำหนดเอง
                                 </span>
                               </div>
                               {canCreateItem && (
