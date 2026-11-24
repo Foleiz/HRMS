@@ -2855,7 +2855,7 @@ export default function PayrollPage() {
                     const customItems = filteredPayrollItems.filter(
                       (i) => !getAutoPullSource(i.itemCode) && i.calculationType !== 'FORMULA'
                     );
-                    const colSpan = itemsSubTab === 'DEDUCTION' ? 7 : 6;
+                    const colSpan = itemsSubTab === 'DEDUCTION' ? 8 : 7;
 
                     const renderPayrollItemRow = (item: PayrollItem) => {
                       const isItemActive = item.status ? item.status.toUpperCase() === 'ACTIVE' : true;
