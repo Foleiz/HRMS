@@ -245,7 +245,7 @@ const menuGroups: MenuGroup[] = [
           { title: 'โบนัส', href: '/payroll?tab=bonus', icon: Sparkles, requiredPermissions: ['PAYROLL_BONUS_VIEW'] },
           { title: 'ค่าคอมมิชชั่น', href: '/payroll?tab=commission', icon: Percent, requiredPermissions: ['PAYROLL_BONUS_VIEW', 'PAYROLL_VIEW', 'PAYROLL_HR_VIEW'] },
           { title: 'ประมวลเงินเดือน', href: '/payroll?tab=process', icon: Calculator, requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_FINANCE_VIEW', 'PAYROLL_ADMIN_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_VIEW'] },
-          { title: 'กำหนดวันตัดรอบและจ่ายเงิน', href: '/payroll?tab=schedule-settings', icon: CalendarClock, requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_PERIOD_VIEW'] },
+          { title: 'ตั้งค่าเงินเดือน', href: '/payroll?tab=schedule-settings', icon: CalendarClock, requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_PERIOD_VIEW'] },
           { title: 'ภาษีและประกันสังคม', href: '/payroll?tab=tax-sso', icon: ReceiptText, requiredPermissions: ['PAYROLL_TAX_VIEW'] },
         ],
       },

@@ -2310,7 +2310,7 @@ export default function PayrollPage() {
       case 'process':
         return 'ประมวลเงินเดือน';
       case 'schedule-settings':
-        return 'กำหนดวันตัดรอบและจ่ายเงิน';
+        return 'ตั้งค่าเงินเดือน';
       case 'bank-transfer':
         return 'โอนเงินธนาคาร';
       case 'tax-sso':
@@ -2336,7 +2336,7 @@ export default function PayrollPage() {
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
     ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
     ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
-    ...(canAccessHrView || canViewPeriods || isAdmin ? [{ id: 'schedule-settings' as ActiveTab, label: 'กำหนดวันตัดรอบและจ่ายเงิน' }] : []),
+    ...(canAccessHrView || canViewPeriods || isAdmin ? [{ id: 'schedule-settings' as ActiveTab, label: 'ตั้งค่าเงินเดือน' }] : []),
     ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี' }] : []),
   ];
 

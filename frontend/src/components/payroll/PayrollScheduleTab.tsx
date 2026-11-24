@@ -37,7 +37,7 @@ export default function PayrollScheduleTab({
   const handleSave = () => {
     savePayrollScheduleSettings(settings);
     setIsSavedRecently(true);
-    toast.success('บันทึกการกำหนดวันตัดรอบและจ่ายเงินเรียบร้อยแล้ว');
+    toast.success('บันทึกการตั้งค่าเงินเดือนเรียบร้อยแล้ว');
     setTimeout(() => setIsSavedRecently(false), 3000);
   };
 
@@ -56,7 +56,7 @@ export default function PayrollScheduleTab({
             <CalendarClock className="w-6 h-6" />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">กำหนดวันตัดรอบและจ่ายเงิน</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">ตั้งค่าเงินเดือน</h2>
             <span className="text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
               นำไปใช้สร้างรอบอัตโนมัติ
             </span>
@@ -80,7 +80,7 @@ export default function PayrollScheduleTab({
               onClick={handleSave}
               icon={isSavedRecently ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
             >
-              {isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการกำหนดวัน'}
+              {isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการตั้งค่า'}
             </Button>
           </div>
         )}
