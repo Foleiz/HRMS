@@ -2170,7 +2170,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                                   {/* Scope Pills พร้อมตัวชี้ (Pointer) และ Highlight บนปุ่มขอบเขตสิทธิ์เป้าหมาย */}
                                   {!isDashboardCat && (
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
                                       {SCOPES_CONFIG.map((scope) => {
                                         const isScopeBlocked = isEssCat && scope.key !== 'self';
                                         const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
