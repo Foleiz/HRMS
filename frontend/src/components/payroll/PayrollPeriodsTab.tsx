@@ -8,7 +8,6 @@ import {
   Trash2,
   Search,
   CheckCircle2,
-  Users,
   Clock,
 } from 'lucide-react';
 import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
@@ -165,32 +164,19 @@ export default function PayrollPeriodsTab({
       inProgressSubtext = parts.join(' · ');
     }
 
-    // พนักงานที่มีสิทธิ์รับเงินเดือน (Active Payroll Employees)
-    const activePeriod = filteredPeriods.find(
-      (p) => p.year === currentRealYear && p.month === currentRealMonth
-    ) || (filteredPeriods.length > 0 ? filteredPeriods[0] : null);
-
-    const targetEmpCount =
-      activePeriod && (activePeriod.employeeCount != null || activePeriod.totalEmployees != null)
-        ? (activePeriod.employeeCount ?? activePeriod.totalEmployees ?? 0)
-        : overview?.totalEmployeesCount && overview.totalEmployeesCount > 0
-          ? overview.totalEmployeesCount
-          : 0;
-
     return {
       totalPeriodsCount,
       completedPeriodsCount,
       completedPercent,
       inProgressPeriodsCount,
       inProgressSubtext,
-      targetEmpCount,
     };
-  }, [filteredPeriods, currentRealYear, currentRealMonth, overview?.totalEmployeesCount]);
+  }, [filteredPeriods]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3 Summary Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: รอบเงินเดือนทั้งหมด (Solid Blue Panel) */}
         <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
@@ -244,35 +230,6 @@ export default function PayrollPeriodsTab({
           </div>
           <div className="mt-3 text-2xl font-extrabold text-amber-950 dark:text-white tracking-tight">
             {summaryStats.inProgressPeriodsCount} <span className="text-sm font-semibold text-amber-800/80 dark:text-amber-200/80">รอบ</span>
-          </div>
-        </div>
-
-        {/* Card 4: พนักงานที่มีสิทธิ์รับเงินเดือน (Solid Purple Panel) */}
-        <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <span
-                className="text-xs text-purple-700 dark:text-purple-300 font-bold block truncate"
-                title="พนักงานที่มีสิทธิ์รับเงินเดือน"
-              >
-                พนักงานที่มีสิทธิ์รับเงินเดือน
-              </span>
-              <span className="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium block truncate">
-                พนักงานสถานะปกติในระบบ
-              </span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight">
-            {summaryStats.targetEmpCount ? (
-              <>
-                {summaryStats.targetEmpCount.toLocaleString()} <span className="text-sm font-semibold text-purple-800/80 dark:text-purple-200/80">คน</span>
-              </>
-            ) : (
-              '-'
-            )}
           </div>
         </div>
       </div>
