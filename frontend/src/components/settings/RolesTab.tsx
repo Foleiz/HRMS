@@ -1823,10 +1823,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           <span>แก้ไข</span>
                         </button>
                         <span
-                          className={`px-2 py-0.5 rounded-md flex items-center gap-1 cursor-not-allowed select-none text-[11px] font-medium ${
+                          className={`flex items-center gap-1 text-[11px] font-medium cursor-not-allowed select-none opacity-40 ${
                             isSelected
-                              ? 'bg-slate-500/40 text-white/60'
-                              : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                              ? 'text-white/50'
+                              : 'text-slate-400 dark:text-slate-500'
+                          }`}
+                          title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
+                        >
                           }`}
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
@@ -1857,9 +1860,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             e.stopPropagation();
                             onDeleteRoleClick(role);
                           }}
-                          className="px-2 py-0.5 rounded-md flex items-center gap-1 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
+                          className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'text-red-200 hover:text-white'
+                              : 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+                          }`}
                         >
-                          <Trash2 className="w-3 h-3 text-white" />
+                          <Trash2 className="w-3 h-3" />
                           <span>ลบ</span>
                         </button>
                       </>
