@@ -63,6 +63,7 @@ public static class PayslipHelper
         "INC_BASE" => 0,
         "INC_POSITION" => 1,
         "INC_OT" => 2,
+        "INC_RETRO_PAY" => 3,
         "INC_BONUS" => 8,
         "INC_COMMISSION" => 9,
         _ => 5,

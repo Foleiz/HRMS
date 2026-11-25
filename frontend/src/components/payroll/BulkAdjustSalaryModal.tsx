@@ -336,7 +336,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       const isBelowMin = !isInvalidAmount && minSal != null && newNum < minSal;
       const isAboveMax = !isInvalidAmount && maxSal != null && newNum > maxSal;
       const latestFrom = emp.pendingEffectiveFrom || emp.currentEffectiveFrom || null;
-      const isDateConflict = Boolean(latestFrom && effectiveFrom && effectiveFrom <= latestFrom);
+      const isRetroactive = Boolean(latestFrom && effectiveFrom && effectiveFrom <= latestFrom);
 
       const diff = !isInvalidAmount && currentNum > 0 ? newNum - currentNum : null;
       const diffPct = diff != null && currentNum > 0 ? (diff / currentNum) * 100 : null;
@@ -345,7 +345,6 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       if (isInvalidAmount) reasons.push('ยังไม่ได้ระบุเงินเดือนใหม่ (> 0 บาท)');
       if (isBelowMin) reasons.push(`ต่ำกว่ากรอบขั้นต่ำ (฿${minSal?.toLocaleString()})`);
       if (isAboveMax) reasons.push(`เกินกรอบสูงสุด (฿${maxSal?.toLocaleString()})`);
-      if (isDateConflict) reasons.push(`วันที่มีผลต้องหลัง ${formatThaiDate(latestFrom)}`);
 
       return {
         emp,
@@ -359,7 +358,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         isAboveMax,
         isOutOfRange: isBelowMin || isAboveMax,
         latestFrom,
-        isDateConflict,
+        isRetroactive,
         reasons,
         hasError: reasons.length > 0,
         diff,
@@ -374,26 +373,25 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
   const belowMinCount = rowEvaluations.filter((r) => r.isBelowMin).length;
   const aboveMaxCount = rowEvaluations.filter((r) => r.isAboveMax).length;
   const invalidAmountCount = rowEvaluations.filter((r) => r.isInvalidAmount).length;
-  const dateConflictCount = rowEvaluations.filter((r) => r.isDateConflict).length;
+  const retroactiveCount = rowEvaluations.filter((r) => r.isRetroactive).length;
 
   const invalidReasonSummary = useMemo(() => {
     const parts: string[] = [];
     if (aboveMaxCount > 0) parts.push(`เกินกรอบสูงสุด ${aboveMaxCount} คน`);
     if (belowMinCount > 0) parts.push(`ต่ำกว่ากรอบขั้นต่ำ ${belowMinCount} คน`);
     if (invalidAmountCount > 0) parts.push(`ยังไม่ระบุยอด ${invalidAmountCount} คน`);
-    if (dateConflictCount > 0) parts.push(`วันที่มีผลซ้อน/ไม่มากกว่าเดิม ${dateConflictCount} คน`);
     return parts.join(', ');
-  }, [aboveMaxCount, belowMinCount, invalidAmountCount, dateConflictCount]);
+  }, [aboveMaxCount, belowMinCount, invalidAmountCount]);
 
   const visibleEvaluations =
     showOnlyInvalid && invalidCount > 0 ? invalidRows : rowEvaluations;
 
   const handleFixConflictingEffectiveDate = () => {
-    const conflictDates = invalidRows
-      .filter((r) => r.isDateConflict && r.latestFrom)
+    const retroDates = rowEvaluations
+      .filter((r) => r.isRetroactive && r.latestFrom)
       .map((r) => r.latestFrom!)
       .sort();
-    const maxLatest = conflictDates[conflictDates.length - 1];
+    const maxLatest = retroDates[retroDates.length - 1];
     if (!maxLatest) return;
     const [ly, lm, ld] = maxLatest.split('-').map(Number);
     if (ly && lm && ld) {
@@ -458,10 +456,6 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       } else if (firstInvalid.isAboveMax) {
         setError(
           `เงินเดือนใหม่ของ ${label} สูงกว่าเพดานสูงสุดของตำแหน่ง (สูงสุด ฿${firstInvalid.maxSal?.toLocaleString()})`
-        );
-      } else if (firstInvalid.isDateConflict) {
-        setError(
-          `วันที่มีผลของ ${label} ต้องหลังวันที่ ${formatThaiDate(firstInvalid.latestFrom)} ซึ่งเป็นวันที่มีผลล่าสุด`
         );
       }
       return;
@@ -920,6 +914,12 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                       placeholder="เลือกวันที่มีผลบังคับใช้"
                       buttonClassName="!h-10 !rounded-xl !text-sm"
                     />
+                    {retroactiveCount > 0 && (
+                      <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        มี {retroactiveCount} คนที่ปรับย้อนหลัง (ระบบจะคำนวณเงินตกเบิกให้อัตโนมัติ)
+                      </p>
+                    )}
                   </div>
 
                   {/* Reason */}
@@ -967,7 +967,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                             : `กรองดูเฉพาะที่ไม่ผ่าน (${invalidCount})`}
                         </Button>
                       )}
-                      {dateConflictCount > 0 && (
+                      {retroactiveCount > 0 && (
                         <Button
                           type="button"
                           size="sm"
@@ -1066,9 +1066,10 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                 <div className="text-[11px] text-slate-400">
                                   {emp.positionName || '-'}
                                 </div>
-                                {row.isDateConflict && (
-                                  <div className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
-                                    วันที่มีผลต้องหลัง {formatThaiDate(row.latestFrom)}
+                                {row.isRetroactive && (
+                                  <div className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    ปรับย้อนหลัง (มีเงินตกเบิก)
                                   </div>
                                 )}
                               </td>

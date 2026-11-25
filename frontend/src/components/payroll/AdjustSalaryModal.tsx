@@ -87,8 +87,9 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
   const diff = !isNaN(newSalaryNum) && currentSalaryNum > 0 ? newSalaryNum - currentSalaryNum : null;
   const diffPct = diff != null && currentSalaryNum > 0 ? (diff / currentSalaryNum) * 100 : null;
-  // วันที่มีผลต้องหลังรายการล่าสุด (รวมรายการที่ตั้งล่วงหน้า)
+  // วันที่มีผลล่าสุด
   const latestEffectiveFrom = employee.pendingEffectiveFrom || employee.currentEffectiveFrom || null;
+  const isRetroactive = Boolean(latestEffectiveFrom && effectiveFrom && effectiveFrom <= latestEffectiveFrom);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,11 +112,6 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
     if (!effectiveFrom) {
       setError('กรุณาระบุวันที่มีผลบังคับใช้');
-      return;
-    }
-
-    if (latestEffectiveFrom && effectiveFrom <= latestEffectiveFrom) {
-      setError(`วันที่มีผลต้องหลังวันที่ ${formatThaiDate(latestEffectiveFrom)} ซึ่งเป็นวันที่มีผลของเงินเดือนล่าสุด`);
       return;
     }
 
@@ -303,6 +299,17 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
               ระบบจะปิดการใช้งานเงินเดือนเดิมในวันก่อนหน้าวันที่มีผลนี้ให้อัตโนมัติ
             </p>
+            {isRetroactive && (
+              <div className="flex items-start gap-2.5 p-3 mt-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs leading-relaxed animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div>
+                  <span className="font-semibold">ปรับฐานเงินเดือนย้อนหลัง (Retroactive):</span>
+                  <p className="mt-0.5 text-amber-700 dark:text-amber-400">
+                    วันที่มีผลอยู่ในอดีต ระบบจะคำนวณส่วนต่างของรอบเงินเดือนก่อนหน้าที่จ่ายไปแล้ว และนำมาจ่ายเป็นยอด <strong>&ldquo;เงินตกเบิก&rdquo;</strong> ในรอบถัดไปให้อัตโนมัติ
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Reason */}

@@ -780,36 +780,20 @@ public class SalaryService : ISalaryService
         // Get existing salaries
         var existingSalaries = await _context.EmployeeSalaries
             .Where(s => s.EmployeeId == employeeId)
-            .OrderByDescending(s => s.EffectiveFrom)
+            .OrderBy(s => s.EffectiveFrom)
             .ToListAsync(cancellationToken);
-
-        var currentActive = existingSalaries.FirstOrDefault(s => s.EffectiveTo == null);
-
-        if (currentActive != null)
-        {
-            if (request.EffectiveFrom <= currentActive.EffectiveFrom)
-            {
-                throw new BusinessRuleException($"วันที่มีผล ({request.EffectiveFrom:yyyy-MM-dd}) ต้องมากกว่าวันที่มีผลของเงินเดือนปัจจุบัน ({currentActive.EffectiveFrom:yyyy-MM-dd})");
-            }
-
-            // Close the current active salary up to the day before
-            currentActive.EffectiveTo = request.EffectiveFrom.AddDays(-1);
-        }
 
         var operatorEmpId = request.ApprovedByEmployeeId ?? _currentUser.EmployeeId ?? 1;
 
-        var newSalary = new EmployeeSalary
-        {
-            EmployeeId = employeeId,
-            BaseSalary = request.BaseSalary,
-            EffectiveFrom = request.EffectiveFrom,
-            EffectiveTo = null,
-            Reason = request.Reason,
-            ApprovedByEmployeeId = operatorEmpId,
-            CreatedAt = DateTime.UtcNow
-        };
+        var newSalary = ApplySalaryAdjustment(
+            employeeId,
+            request.BaseSalary,
+            request.EffectiveFrom,
+            request.Reason,
+            operatorEmpId,
+            existingSalaries,
+            _context);
 
-        _context.EmployeeSalaries.Add(newSalary);
         await _context.SaveChangesAsync(cancellationToken);
 
         string? approverName = null;
@@ -895,33 +879,16 @@ public class SalaryService : ISalaryService
                 ValidateSalaryAgainstStructure(item.BaseSalary, matchingStructure, empLabel);
             }
 
-            var currentActive = existingSalaries
-                .Where(s => s.EmployeeId == item.EmployeeId && s.EffectiveTo == null)
-                .OrderByDescending(s => s.EffectiveFrom)
-                .FirstOrDefault();
+            var empSalaries = existingSalaries.Where(s => s.EmployeeId == item.EmployeeId).ToList();
+            var newSalary = ApplySalaryAdjustment(
+                item.EmployeeId,
+                item.BaseSalary,
+                request.EffectiveFrom,
+                request.Reason,
+                operatorEmpId,
+                empSalaries,
+                _context);
 
-            if (currentActive != null)
-            {
-                if (request.EffectiveFrom <= currentActive.EffectiveFrom)
-                {
-                    throw new BusinessRuleException($"วันที่มีผลของ {empLabel} ({request.EffectiveFrom:yyyy-MM-dd}) ต้องมากกว่าวันที่มีผลของเงินเดือนปัจจุบัน ({currentActive.EffectiveFrom:yyyy-MM-dd})");
-                }
-
-                currentActive.EffectiveTo = request.EffectiveFrom.AddDays(-1);
-            }
-
-            var newSalary = new EmployeeSalary
-            {
-                EmployeeId = item.EmployeeId,
-                BaseSalary = item.BaseSalary,
-                EffectiveFrom = request.EffectiveFrom,
-                EffectiveTo = null,
-                Reason = request.Reason,
-                ApprovedByEmployeeId = operatorEmpId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.EmployeeSalaries.Add(newSalary);
             createdEntries.Add((newSalary, employee, activeAssignment));
         }
 
@@ -936,6 +903,54 @@ public class SalaryService : ISalaryService
             AdjustedCount = results.Count,
             Results = results
         };
+    }
+
+    /// <summary>
+    /// ปรับโครงสร้างประวัติเงินเดือน รองรับทั้งการปรับปกติ (อนาคต/ปัจจุบัน) และการปรับย้อนหลัง (Retroactive)
+    /// - เรคคอร์ดที่เริ่มต้นในหรือหลังวันที่มีผลใหม่จะถูกแทนที่ด้วยเรคคอร์ดใหม่
+    /// - เรคคอร์ดเดิมที่คาบเกี่ยววันที่มีผลใหม่จะถูกปิด ณ วันก่อนวันที่มีผลใหม่ (EffectiveTo = effectiveFrom - 1)
+    /// </summary>
+    private static EmployeeSalary ApplySalaryAdjustment(
+        long employeeId,
+        decimal baseSalary,
+        DateOnly effectiveFrom,
+        string? reason,
+        long operatorEmpId,
+        List<EmployeeSalary> existingSalaries,
+        IHrmsDbContext context)
+    {
+        // 1. เรคคอร์ดที่เริ่มต้น ณ วันเดียวกันหรือหลังวันที่มีผลใหม่ ให้ลบออกเพื่อแทนที่ด้วยเรคคอร์ดใหม่
+        var futureOrSameRecords = existingSalaries.Where(s => s.EffectiveFrom >= effectiveFrom).ToList();
+        foreach (var rec in futureOrSameRecords)
+        {
+            context.EmployeeSalaries.Remove(rec);
+            existingSalaries.Remove(rec);
+        }
+
+        // 2. เรคคอร์ดเดิมที่ครอบคลุมวันที่มีผลใหม่ ให้ปิด EffectiveTo ถึงวันก่อนหน้า
+        var overlapping = existingSalaries
+            .Where(s => s.EffectiveFrom < effectiveFrom && (s.EffectiveTo == null || s.EffectiveTo >= effectiveFrom))
+            .OrderByDescending(s => s.EffectiveFrom)
+            .FirstOrDefault();
+        if (overlapping != null)
+        {
+            overlapping.EffectiveTo = effectiveFrom.AddDays(-1);
+        }
+
+        // 3. สร้างเรคคอร์ดเงินเดือนใหม่
+        var newSalary = new EmployeeSalary
+        {
+            EmployeeId = employeeId,
+            BaseSalary = baseSalary,
+            EffectiveFrom = effectiveFrom,
+            EffectiveTo = null,
+            Reason = reason,
+            ApprovedByEmployeeId = operatorEmpId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.EmployeeSalaries.Add(newSalary);
+        return newSalary;
     }
 
     private static SalaryStructure? FindMatchingSalaryStructure(EmployeeAssignment? activeAssignment, List<SalaryStructure> structures)
@@ -2467,6 +2482,52 @@ public class SalaryService : ISalaryService
             .ToDictionary(c => c.EmployeeId);
 
         var employeeIds = employees.Select(e => e.Id).ToList();
+
+        var retroItem = systemItems["INC_RETRO_PAY"];
+
+        // รอบเงินเดือนในอดีต (ที่สิ้นสุดก่อนรอบปัจจุบัน) เพื่อนำมาตรวจจับการปรับฐานเงินเดือนย้อนหลัง (เงินตกเบิก)
+        var pastPayrolls = await _context.Payrolls
+            .Include(p => p.Period)
+            .Include(p => p.Details)
+                .ThenInclude(d => d.PayrollItem)
+            .Where(p => employeeIds.Contains(p.EmployeeId)
+                && p.PeriodId != period.Id
+                && p.Period != null
+                && p.Period.EndDate < period.StartDate
+                && (p.Period.Status == "PAID" || p.Period.Status == "CLOSED" || p.Period.Status == "REVIEW" || p.Period.Status == "APPROVED" || p.Period.Status == "PROCESSING"))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        // ยอดเงินตกเบิกที่เคยจ่ายไปแล้วในรอบอื่นๆ (เพื่อป้องกันการคิดซ้ำ)
+        var otherPeriodRetroDetails = await _context.PayrollDetails
+            .Where(d => d.PayrollItemId == retroItem.Id && d.Payroll != null && d.Payroll.PeriodId != period.Id)
+            .Select(d => new { d.Payroll!.EmployeeId, d.CalculationSource })
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var paidRetroByEmpAndPeriod = new Dictionary<(long EmployeeId, long PastPeriodId), decimal>();
+        foreach (var r in otherPeriodRetroDetails)
+        {
+            if (string.IsNullOrWhiteSpace(r.CalculationSource)) continue;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(r.CalculationSource);
+                if (doc.RootElement.TryGetProperty("paidPeriods", out var arr) && arr.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    foreach (var elem in arr.EnumerateArray())
+                    {
+                        if (elem.TryGetProperty("periodId", out var pId) && pId.TryGetInt64(out var pastPid))
+                        {
+                            decimal amt = elem.TryGetProperty("retroAmount", out var a) && a.TryGetDecimal(out var val) ? val : 0;
+                            var key = (r.EmployeeId, pastPid);
+                            paidRetroByEmpAndPeriod[key] = paidRetroByEmpAndPeriod.GetValueOrDefault(key) + amt;
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
         var attendance = await _context.AttendanceMonthlySummaries
             .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
             .AsNoTracking()
@@ -2862,6 +2923,85 @@ public class SalaryService : ISalaryService
                 ));
             }
 
+            // ===== 4.3 เงินตกเบิกจากการปรับฐานเงินเดือนย้อนหลัง (Retroactive Salary Adjustment / Retro Pay) =====
+            var empPastPayrolls = pastPayrolls
+                .Where(p => p.EmployeeId == emp.Id && p.Period != null)
+                .OrderBy(p => p.Period!.StartDate)
+                .ToList();
+
+            var retroItemsList = new List<RetroPeriodInfo>();
+            foreach (var pastP in empPastPayrolls)
+            {
+                var pastPeriod = pastP.Period!;
+                var pastBaseDetail = pastP.Details.FirstOrDefault(d => d.PayrollItem?.ItemCode == "INC_BASE");
+                if (pastBaseDetail == null || pastBaseDetail.Amount <= 0) continue;
+
+                decimal pastPaidBase = pastBaseDetail.Amount;
+
+                // หาฐานเงินเดือนที่ถูกต้องตามประวัติเงินเดือนล่าสุด ที่ครอบคลุมช่วงรอบในอดีตนี้
+                var pastEffectiveSalary = allSalaries
+                    .Where(s => s.EmployeeId == emp.Id
+                        && s.EffectiveFrom <= pastPeriod.EndDate
+                        && (s.EffectiveTo == null || s.EffectiveTo >= pastPeriod.StartDate))
+                    .OrderByDescending(s => s.EffectiveFrom)
+                    .ThenByDescending(s => s.Id)
+                    .FirstOrDefault();
+
+                if (pastEffectiveSalary == null) continue;
+
+                // คิดสัดส่วนเหมือนรอบนั้น (หากรอบในอดีตเคยถูก prorated)
+                int pastPeriodDays = pastPeriod.EndDate.DayNumber - pastPeriod.StartDate.DayNumber + 1;
+                decimal expectedBase = pastEffectiveSalary.BaseSalary;
+                if (pastBaseDetail.Quantity.HasValue && pastBaseDetail.Quantity.Value > 0 && pastBaseDetail.Quantity.Value < pastPeriodDays)
+                {
+                    decimal pastFactor = pastBaseDetail.Quantity.Value / (decimal)pastPeriodDays;
+                    expectedBase = Math.Round(pastEffectiveSalary.BaseSalary * pastFactor, 2, MidpointRounding.AwayFromZero);
+                }
+
+                decimal alreadyCompensated = paidRetroByEmpAndPeriod.GetValueOrDefault((emp.Id, pastPeriod.Id));
+                decimal delta = expectedBase - pastPaidBase - alreadyCompensated;
+
+                if (delta > 0)
+                {
+                    retroItemsList.Add(new RetroPeriodInfo(
+                        pastPeriod.Id,
+                        pastPeriod.Year,
+                        pastPeriod.Month,
+                        delta
+                    ));
+                }
+            }
+
+            if (retroItemsList.Count > 0)
+            {
+                decimal totalRetro = retroItemsList.Sum(x => x.RetroAmount);
+                var retroSubtext = "เงินตกเบิก: ปรับฐานเงินเดือนย้อนหลัง " +
+                    string.Join(", ", retroItemsList.Select(x => $"รอบ {x.Month}/{x.Year + 543} (+{x.RetroAmount:N2} บ.)"));
+
+                var retroJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    source = "RETRO_PAY",
+                    paidPeriods = retroItemsList.Select(x => new
+                    {
+                        periodId = x.PeriodId,
+                        year = x.Year,
+                        month = x.Month,
+                        retroAmount = x.RetroAmount
+                    }),
+                    subtext = retroSubtext
+                });
+
+                lines.Add(new CalcLine(
+                    retroItem,
+                    totalRetro,
+                    null,
+                    null,
+                    retroSubtext,
+                    IsRegular: false,
+                    CalculationSource: retroJson
+                ));
+            }
+
             // ===== 5. ประกันสังคม: คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" (หักรายการหักที่ติ๊กไว้) =====
             // เงินเดือน (INC_BASE) นับเป็นค่าจ้างเสมอ ไม่ขึ้นกับการติ๊กในหน้าตั้งค่า
             long baseItemId = systemItems["INC_BASE"].Id;
@@ -2981,16 +3121,18 @@ public class SalaryService : ISalaryService
     /// <summary>บรรทัดรายได้/รายหักระหว่างคำนวณ (IsRegular = เงินได้ประจำทุกเดือน ใช้ประมาณการภาษีทั้งปี)</summary>
     private sealed record PayableClaim(long Id, long EmployeeId, long BenefitItemId, decimal Amount, string? RequestNo);
 
+    private sealed record RetroPeriodInfo(long PeriodId, int Year, int Month, decimal RetroAmount);
+
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null, string? CalculationSource = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
     /// <summary>รายการที่ลบไม่ได้: เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง</summary>
     private static readonly string[] UndeletableItemCodes = { "INC_BASE", "INC_POSITION" };
 
-    private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS", "INC_POSITION" };
+    private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS", "INC_COMMISSION", "INC_POSITION", "INC_RETRO_PAY" };
 
     /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
-    private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS", "POSITION_ALLOWANCE" };
+    private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS", "POSITION_ALLOWANCE", "RETROACTIVE_SALARY" };
 
     /// <summary>Template ที่ระบบคำนวณอัตโนมัติได้จากข้อมูลที่มี</summary>
     private static readonly string[] AutoFormulaTemplates = { "DILIGENT_ALLOWANCE", "LATE_ABSENT", "PERCENT_SALARY" };
@@ -3183,7 +3325,8 @@ public class SalaryService : ISalaryService
             ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
             ("DED_UNPAID_LEAVE", "หักวันลาไม่รับค่าจ้าง", "DEDUCTION", "FORMULA", null, true, true),
             ("INC_BONUS", "โบนัส", "EARNING", "MANUAL", null, true, false),
-            ("INC_COMMISSION", "ค่าคอมมิชชั่นตามยอดขาย", "EARNING", "FORMULA", "PERCENT_SALES", true, false)
+            ("INC_COMMISSION", "ค่าคอมมิชชั่นตามยอดขาย", "EARNING", "FORMULA", "PERCENT_SALES", true, false),
+            ("INC_RETRO_PAY", "เงินตกเบิก (ปรับฐานเงินเดือนย้อนหลัง)", "EARNING", "FORMULA", "RETROACTIVE_SALARY", true, false)
         };
 
         var allItems = await _context.PayrollItems.ToListAsync(cancellationToken);
