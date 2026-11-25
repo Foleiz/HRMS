@@ -60,7 +60,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge, TablePagination } from '@/components/ui';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
@@ -275,6 +275,8 @@ function SchedulesContent() {
   const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'list'>('list');
   const [assignmentSearch, setAssignmentSearch] = useState('');
   const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
+  const [assignmentPage, setAssignmentPage] = useState(1);
+  const [assignmentPageSize, setAssignmentPageSize] = useState(10);
   const [calendarShiftFilter, setCalendarShiftFilter] = useState<number | 'ALL'>('ALL');
   const [calendarShiftDropdownOpen, setCalendarShiftDropdownOpen] = useState(false);
   const calendarShiftDropdownRef = useRef<HTMLDivElement>(null);
@@ -478,6 +480,18 @@ function SchedulesContent() {
       return matchSearch && matchDept;
     });
   }, [assignments, assignmentSearch, assignmentDeptFilter, departments]);
+
+  // Reset assignment page on filter change
+  useEffect(() => {
+    setAssignmentPage(1);
+  }, [assignmentSearch, assignmentDeptFilter]);
+
+  const paginatedAssignments = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / assignmentPageSize));
+    const safePage = Math.min(Math.max(1, assignmentPage), totalPages);
+    const start = (safePage - 1) * assignmentPageSize;
+    return filteredAssignments.slice(start, start + assignmentPageSize);
+  }, [filteredAssignments, assignmentPage, assignmentPageSize]);
 
   // Tab 2: Filtered Shifts
   const filteredShifts = useMemo(() => {
@@ -1520,7 +1534,8 @@ function SchedulesContent() {
                   <p className="text-sm">กำลังโหลดรายการมอบหมายกะ...</p>
                 </div>
               ) : filteredAssignments.length > 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <>
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                   <table className="table-standard w-full min-w-[900px] text-xs text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-primary text-white font-semibold whitespace-nowrap">
@@ -1536,7 +1551,7 @@ function SchedulesContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                      {filteredAssignments.map((a) => {
+                      {paginatedAssignments.map((a) => {
                         const shift = shifts.find((s) => s.id === a.shiftId);
                         const workDays = shift?.workDays && shift.workDays.length > 0 ? shift.workDays : a.workDays;
                         const startTime = shift ? shift.startTime : a.startTime;
@@ -1629,6 +1644,18 @@ function SchedulesContent() {
                     </tbody>
                   </table>
                 </div>
+
+                <TablePagination
+                  total={filteredAssignments.length}
+                  page={assignmentPage}
+                  pageSize={assignmentPageSize}
+                  onPageChange={setAssignmentPage}
+                  onPageSizeChange={(newSize) => {
+                    setAssignmentPageSize(newSize);
+                    setAssignmentPage(1);
+                  }}
+                />
+              </>
               ) : (
                 <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   <p className="text-base font-semibold text-slate-600 dark:text-slate-400">ไม่พบรายการมอบหมายกะ</p>
