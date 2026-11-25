@@ -1830,9 +1830,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           }`}
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
-                          }`}
-                          title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
-                        >
                           <Trash2 className="w-3 h-3" />
                           <span>ลบ</span>
                         </span>
