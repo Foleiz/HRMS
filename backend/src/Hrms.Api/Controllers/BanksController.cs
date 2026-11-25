@@ -68,7 +68,7 @@ public class BanksController : ControllerBase
     /// ลบข้อมูลธนาคาร
     /// </summary>
     [HttpDelete("{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _bankService.DeleteAsync(id, cancellationToken);

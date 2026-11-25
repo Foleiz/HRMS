@@ -94,7 +94,7 @@ public class RolesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [RequirePermission("SETTINGS_ROLES_EDIT")]
+    [RequirePermission("SETTINGS_ROLES_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteRole(
         long id,
         CancellationToken cancellationToken)

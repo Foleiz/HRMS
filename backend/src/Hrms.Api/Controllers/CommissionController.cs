@@ -246,7 +246,11 @@ public class CommissionController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "ลบค่าคอมมิชชั่น");
+        PayrollAccess.Ensure(
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_CALC") ||
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_ITEMS") ||
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_HR"),
+            "ลบค่าคอมมิชชั่น");
         await _commissionService.DeleteCommissionRecordAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "ลบรายการค่าคอมมิชชั่นสำเร็จ"));
     }

@@ -96,7 +96,7 @@ public class EmployeeTypesController : ControllerBase
     /// ลบหรือปิดการใช้งานประเภทพนักงาน / สัญญาจ้าง
     /// </summary>
     [HttpDelete("{id:long}")]
-    [RequirePermission("EMP_TYPE_EDIT")]
+    [RequirePermission("EMP_TYPE_DELETE")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)

@@ -89,7 +89,7 @@ public class LeavePoliciesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("LEAVE_POLICY_EDIT")]
+    [RequirePermission("LEAVE_POLICY_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _policyService.DeleteAsync(id, cancellationToken);

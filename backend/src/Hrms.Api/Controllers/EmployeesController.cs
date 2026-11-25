@@ -27,6 +27,7 @@ public class EmployeesController : ControllerBase
     /// ดึงรายชื่อพนักงานทั้งหมด (กรองตามสิทธิ์ Data Scope และคำค้นหา)
     /// </summary>
     [HttpGet]
+    [RequirePermission("EMP_PROFILE_VIEW,EMP_VIEW,PAYROLL_VIEW,PAYROLL_CALC_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<List<EmployeeDto>>>> GetAll(
@@ -41,6 +42,7 @@ public class EmployeesController : ControllerBase
     /// ดึงรหัสพนักงานลำดับถัดไปที่ระบบสร้างให้อัตโนมัติ (เช่น EMP0001, EMP0011)
     /// </summary>
     [HttpGet("next-code")]
+    [RequirePermission("EMP_PROFILE_CREATE,EMP_PROFILE_EDIT,EMP_CREATE,EMP_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<string>>> GetNextCode(CancellationToken cancellationToken)
     {
@@ -66,6 +68,7 @@ public class EmployeesController : ControllerBase
     /// เพิ่มข้อมูลพนักงานใหม่ (เข้ารหัสข้อมูลบัตรประชาชนและประกันสังคมตาม PDPA)
     /// </summary>
     [HttpPost]
+    [RequirePermission("EMP_PROFILE_CREATE,EMP_CREATE")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -139,7 +142,7 @@ public class EmployeesController : ControllerBase
     /// ลบข้อมูลพนักงาน
     /// </summary>
     [HttpDelete("{id:long}")]
-    [RequirePermission("EMP_PROFILE_DELETE,EMP_DELETE,EMP_MANAGE")]
+    [RequirePermission("EMP_PROFILE_DELETE,EMP_DELETE")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
@@ -155,6 +158,7 @@ public class EmployeesController : ControllerBase
     /// status ที่รองรับ: ACTIVE, INACTIVE
     /// </summary>
     [HttpPatch("{id:long}/status")]
+    [RequirePermission("EMP_PROFILE_EDIT,EMP_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

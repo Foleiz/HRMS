@@ -68,7 +68,7 @@ public class DocumentTypesController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         long id,
         CancellationToken cancellationToken)

@@ -105,7 +105,7 @@ public class WorkCalendarController : ControllerBase
     }
 
     [HttpDelete("holidays/{id}")]
-    [RequirePermission("WORK_CALENDAR_EDIT")]
+    [RequirePermission("WORK_CALENDAR_DELETE")]
     public async Task<IActionResult> DeleteHoliday(long id)
     {
         var success = await _workCalendarService.DeleteHolidayAsync(id);

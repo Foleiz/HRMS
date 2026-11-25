@@ -31,6 +31,7 @@ public class EmployeeDocumentService : IEmployeeDocumentService
     private bool HasDocView => _currentUser.HasPermission("EMP_DOC_VIEW") || _currentUser.HasPermission("EMP_DOC");
     private bool HasDocCreate => _currentUser.HasPermission("EMP_DOC_CREATE") || _currentUser.HasPermission("EMP_DOC");
     private bool HasDocEdit => _currentUser.HasPermission("EMP_DOC_EDIT") || _currentUser.HasPermission("EMP_DOC");
+    private bool HasDocDelete => _currentUser.HasPermission("EMP_DOC_DELETE") || _currentUser.HasPermission("EMP_DOC");
 
     public async Task<List<EmployeeDocumentDto>> GetByEmployeeAsync(long employeeId, CancellationToken cancellationToken = default)
     {
@@ -144,10 +145,10 @@ public class EmployeeDocumentService : IEmployeeDocumentService
         bool isOwnUpload = me.HasValue && doc.EmployeeId == me.Value && doc.UploadedByEmployeeId == me.Value && doc.SourceGeneralRequestId == null;
         if (!isOwnUpload)
         {
-            if (!HasDocEdit)
+            if (!HasDocDelete)
                 throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารในแฟ้มพนักงาน");
 
-            if (!await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
+            if (!await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_DELETE", cancellationToken))
                 throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารของพนักงานท่านนี้");
         }
 

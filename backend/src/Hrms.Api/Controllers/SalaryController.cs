@@ -513,7 +513,11 @@ public class SalaryController : ControllerBase
         long detailId,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        PayrollAccess.Ensure(
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_CALC") ||
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_HR") ||
+            PayrollAccess.CanDelete(_currentUser, "PAYROLL_ITEMS"),
+            "ลบรายการปรับปรุงเงินเดือน");
         var result = await _salaryService.DeletePayrollAdjustmentAsync(id, detailId, cancellationToken);
         return Ok(ApiResponse<List<PayrollDetailItemDto>>.Ok(result, "ลบรายการและคำนวณเงินเดือนใหม่สำเร็จ"));
     }

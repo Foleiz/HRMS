@@ -158,97 +158,94 @@ public class CurrentUserService : ICurrentUserService
 
     public string GetDataScope(string permission)
     {
-        var permsToCheck = new List<string> { permission };
-        if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
+        if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
+            permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
         {
-            var prefix = permission[..^8];
-            permsToCheck.Add($"{prefix}_EDIT");
-            permsToCheck.Add($"{prefix}_VIEW");
+            return HasPermission(permission) ? "ORGANIZATION" : "NONE";
         }
-        else if (permission.EndsWith("_EDIT", StringComparison.OrdinalIgnoreCase))
-        {
-            var prefix = permission[..^5];
-            permsToCheck.Add($"{prefix}_VIEW");
-        }
-        else if (permission.EndsWith("_CREATE", StringComparison.OrdinalIgnoreCase))
-        {
-            var prefix = permission[..^7];
-            permsToCheck.Add($"{prefix}_VIEW");
-        }
+
+        // 1. ตรวจสอบ Scope ของสิทธิ์การกระทำนั้นโดยตรงก่อน (ไม่นำ _VIEW มาปนกับ _EDIT / _CREATE / _DELETE)
+        var primaryPerms = new List<string> { permission };
 
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(permission, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("EMP_PROFILE_VIEW");
-            permsToCheck.Add("EMP_VIEW");
+            primaryPerms.Add("EMP_PROFILE_VIEW");
+            primaryPerms.Add("EMP_VIEW");
         }
         else if (string.Equals(permission, "EMP_EDIT", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "EMP_MANAGE", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "EMP_PROFILE_EDIT", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("EMP_PROFILE_EDIT");
-            permsToCheck.Add("EMP_PROFILE_VIEW");
-            permsToCheck.Add("EMP_EDIT");
-            permsToCheck.Add("EMP_MANAGE");
+            primaryPerms.Add("EMP_PROFILE_EDIT");
+            primaryPerms.Add("EMP_EDIT");
+            primaryPerms.Add("EMP_MANAGE");
+        }
+        else if (string.Equals(permission, "EMP_DELETE", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "EMP_PROFILE_DELETE", StringComparison.OrdinalIgnoreCase))
+        {
+            primaryPerms.Add("EMP_PROFILE_DELETE");
+            primaryPerms.Add("EMP_DELETE");
+        }
+        else if (string.Equals(permission, "EMP_CREATE", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(permission, "EMP_PROFILE_CREATE", StringComparison.OrdinalIgnoreCase))
+        {
+            primaryPerms.Add("EMP_PROFILE_CREATE");
+            primaryPerms.Add("EMP_CREATE");
         }
         else if (string.Equals(permission, "TIME_DAILY_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "ATTENDANCE_DAILY_VIEW", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("TIME_DAILY_VIEW");
-            permsToCheck.Add("ATTENDANCE_DAILY_VIEW");
+            primaryPerms.Add("TIME_DAILY_VIEW");
+            primaryPerms.Add("ATTENDANCE_DAILY_VIEW");
         }
         else if (string.Equals(permission, "LEAVE_REQUEST_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "APPROVAL_LEAVE_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "APPROVAL_LEAVE", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("APPROVAL_LEAVE_VIEW");
-            permsToCheck.Add("LEAVE_REQUEST_VIEW");
+            primaryPerms.Add("APPROVAL_LEAVE_VIEW");
+            primaryPerms.Add("LEAVE_REQUEST_VIEW");
         }
         else if (string.Equals(permission, "LEAVE_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "LEAVE_BALANCE_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "LEAVE_BALANCE", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("LEAVE_BALANCE_VIEW");
-            permsToCheck.Add("LEAVE_VIEW");
+            primaryPerms.Add("LEAVE_BALANCE_VIEW");
+            primaryPerms.Add("LEAVE_VIEW");
         }
         else if (string.Equals(permission, "BENEFIT_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "BENEFIT_BALANCE_VIEW", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("BENEFIT_VIEW");
-            permsToCheck.Add("BENEFIT_BALANCE_VIEW");
+            primaryPerms.Add("BENEFIT_VIEW");
+            primaryPerms.Add("BENEFIT_BALANCE_VIEW");
         }
         else if (string.Equals(permission, "ORG_CHART_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "ORG_CHART", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("ORG_CHART_VIEW");
-            permsToCheck.Add("ORG_CHART");
+            primaryPerms.Add("ORG_CHART_VIEW");
+            primaryPerms.Add("ORG_CHART");
         }
         else if (string.Equals(permission, "REPORT_HEADCOUNT_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "REPORT_HEADCOUNT", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("REPORT_HEADCOUNT_VIEW");
-            permsToCheck.Add("REPORT_HEADCOUNT");
+            primaryPerms.Add("REPORT_HEADCOUNT_VIEW");
+            primaryPerms.Add("REPORT_HEADCOUNT");
         }
         else if (string.Equals(permission, "REPORT_ATT_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "REPORT_ATT", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("REPORT_ATT_VIEW");
-            permsToCheck.Add("REPORT_ATT");
+            primaryPerms.Add("REPORT_ATT_VIEW");
+            primaryPerms.Add("REPORT_ATT");
         }
         else if (string.Equals(permission, "REPORT_LEAVE_VIEW", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(permission, "REPORT_LEAVE", StringComparison.OrdinalIgnoreCase))
         {
-            permsToCheck.Add("REPORT_LEAVE_VIEW");
-            permsToCheck.Add("REPORT_LEAVE");
-        }
-        else if (permission.StartsWith("PAYROLL", StringComparison.OrdinalIgnoreCase) ||
-                 permission.StartsWith("APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase))
-        {
-            return "ORGANIZATION";
+            primaryPerms.Add("REPORT_LEAVE_VIEW");
+            primaryPerms.Add("REPORT_LEAVE");
         }
 
         var scopes = new List<string>();
-        foreach (var perm in permsToCheck)
+        foreach (var perm in primaryPerms.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var found = User?.FindAll($"scope:{perm}").Select(c => c.Value);
             if (found != null)
@@ -257,11 +254,50 @@ public class CurrentUserService : ICurrentUserService
             }
         }
 
+        // 2. หากไม่พบ Scope ของ action นั้นโดยตรง แต่ผู้ใช้มีสิทธิ์นั้นจริงๆ จึงค่อย fallback
+        if (scopes.Count == 0 && HasPermission(permission))
+        {
+            var fallbackPerms = new List<string>();
+            if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix = permission[..^8];
+                fallbackPerms.Add($"{prefix}_EDIT");
+                fallbackPerms.Add($"{prefix}_VIEW");
+            }
+            else if (permission.EndsWith("_EDIT", StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix = permission[..^5];
+                fallbackPerms.Add($"{prefix}_VIEW");
+            }
+            else if (permission.EndsWith("_CREATE", StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix = permission[..^7];
+                fallbackPerms.Add($"{prefix}_VIEW");
+            }
+            else if (permission.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix = permission[..^7];
+                fallbackPerms.Add($"{prefix}_VIEW");
+            }
+
+            foreach (var perm in fallbackPerms)
+            {
+                var found = User?.FindAll($"scope:{perm}").Select(c => c.Value);
+                if (found != null)
+                {
+                    scopes.AddRange(found);
+                }
+            }
+        }
+
         if (scopes.Count == 0)
         {
-            if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER"))
+            if ((HasRole("ADMIN") || HasRole("SYSTEM_SUPER")) &&
+                permission.StartsWith("SETTINGS_ROLES", StringComparison.OrdinalIgnoreCase))
+            {
                 return "ORGANIZATION";
-            return "SELF";
+            }
+            return HasPermission(permission) ? "SELF" : "NONE";
         }
 
         // เลือก scope ที่มีลำดับสูงสุด (กว้างสุด)

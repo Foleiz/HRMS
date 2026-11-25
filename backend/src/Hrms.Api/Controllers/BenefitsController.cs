@@ -86,7 +86,7 @@ public class BenefitsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [RequirePermission("ORG_BENEFIT_EDIT")]
+    [RequirePermission("ORG_BENEFIT_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _benefitService.DeleteAsync(id, cancellationToken);
@@ -177,7 +177,7 @@ public class BenefitsController : ControllerBase
     /// ยกเลิก/ลบรายการเบิกสวัสดิการ
     /// </summary>
     [HttpDelete("claims/{claimId:long}")]
-    [RequirePermission("BENEFIT_BALANCE_EDIT,ORG_BENEFIT_EDIT")]
+    [RequirePermission("BENEFIT_BALANCE_DELETE,ORG_BENEFIT_DELETE")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteClaim(

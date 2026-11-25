@@ -37,7 +37,10 @@ public class DataScopeService : IDataScopeService
     public bool HasScope(string permissionCode, string minScope)
     {
         string userScope = GetScope(permissionCode);
-        int userRank = ScopeHierarchy.TryGetValue(userScope, out int uRank) ? uRank : 0;
+        if (string.Equals(userScope, "NONE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        int userRank = ScopeHierarchy.TryGetValue(userScope, out int uRank) ? uRank : -1;
         int minRank = ScopeHierarchy.TryGetValue(minScope, out int mRank) ? mRank : 0;
 
         return userRank >= minRank;
@@ -45,13 +48,25 @@ public class DataScopeService : IDataScopeService
 
     public async Task<bool> CanAccessEmployeeAsync(long targetEmployeeId, string permissionCode, CancellationToken ct = default)
     {
-        // หากเป็นข้อมูลของตัวเอง เข้าถึงได้เสมอ
+        string scope = GetScope(permissionCode);
+
+        bool isWriteOrDelete = permissionCode.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase) ||
+                               permissionCode.EndsWith("_EDIT", StringComparison.OrdinalIgnoreCase) ||
+                               permissionCode.EndsWith("_CREATE", StringComparison.OrdinalIgnoreCase) ||
+                               permissionCode.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase);
+
+        if (string.Equals(scope, "NONE", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!isWriteOrDelete && _currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == targetEmployeeId)
+                return true;
+            return false;
+        }
+
         if (_currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == targetEmployeeId)
         {
             return true;
         }
 
-        string scope = GetScope(permissionCode);
         if (string.Equals(scope, "ORGANIZATION", StringComparison.OrdinalIgnoreCase))
         {
             return true;

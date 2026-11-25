@@ -101,7 +101,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("divisions/{id}")]
-    [RequirePermission("ORG_STRUCT_EDIT")]
+    [RequirePermission("ORG_STRUCT_DELETE")]
     public async Task<IActionResult> DeleteDivision(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDivisionAsync(id, cancellationToken);
@@ -141,7 +141,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("departments/{id}")]
-    [RequirePermission("ORG_STRUCT_EDIT")]
+    [RequirePermission("ORG_STRUCT_DELETE")]
     public async Task<IActionResult> DeleteDepartment(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteDepartmentAsync(id, cancellationToken);
@@ -181,7 +181,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("teams/{id}")]
-    [RequirePermission("ORG_STRUCT_EDIT")]
+    [RequirePermission("ORG_STRUCT_DELETE")]
     public async Task<IActionResult> DeleteTeam(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteTeamAsync(id, cancellationToken);
@@ -221,7 +221,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("positions/{id}")]
-    [RequirePermission("ORG_POS_EDIT")]
+    [RequirePermission("ORG_POS_DELETE")]
     public async Task<IActionResult> DeletePosition(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeletePositionAsync(id, cancellationToken);
@@ -261,7 +261,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpDelete("levels/{id}")]
-    [RequirePermission("ORG_POS_EDIT")]
+    [RequirePermission("ORG_POS_DELETE")]
     public async Task<IActionResult> DeleteLevel(long id, CancellationToken cancellationToken)
     {
         await _orgService.DeleteEmployeeLevelAsync(id, cancellationToken);

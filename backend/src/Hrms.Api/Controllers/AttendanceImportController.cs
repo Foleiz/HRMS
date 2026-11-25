@@ -241,7 +241,7 @@ public class AttendanceImportController : ControllerBase
     /// ยกเลิกชุดข้อมูลนำเข้า (Revert) — ไม่ลบถาวร: คืนสถานะวันทำงาน, เก็บคำขอแก้ไขเวลา, คำนวณสรุปรายเดือนใหม่, ห้ามถ้างวดเงินเดือนล็อกแล้ว
     /// </summary>
     [HttpDelete("batches/{id}")]
-    [RequirePermission("TIME_IMPORT_EDIT")]
+    [RequirePermission("TIME_IMPORT_DELETE,TIME_IMPORT_EDIT")]
     public async Task<IActionResult> RevertBatch(long id, CancellationToken cancellationToken)
     {
         try
@@ -277,7 +277,7 @@ public class AttendanceImportController : ControllerBase
     /// สั่งจับคู่ข้อมูลเวลาจากไฟล์ที่เคยหาพนักงานไม่เจอใหม่
     /// </summary>
     [HttpPost("rematch")]
-    [AllowAnonymous]
+    [RequirePermission("TIME_IMPORT_EDIT,TIME_IMPORT_CREATE,EMP_PROFILE_EDIT,EMP_PROFILE_CREATE")]
     public async Task<IActionResult> Rematch(
         [FromQuery] long? employeeId = null,
         CancellationToken cancellationToken = default)

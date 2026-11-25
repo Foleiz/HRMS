@@ -932,7 +932,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_PROFILE_DELETE") && !_currentUserService.HasPermission("EMP_DELETE") && !_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_DELETE") && !_currentUserService.HasPermission("EMP_DELETE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงาน");
         }
@@ -959,8 +959,12 @@ public class EmployeeService : IEmployeeService
     /// <summary>เปลี่ยนสถานะการจ้างงาน — ACTIVE, INACTIVE</summary>
     public async Task<EmployeeDto> UpdateStatusAsync(long id, string status, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_EDIT"))
             throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนสถานะพนักงาน");
+
+        bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(id, "EMP_PROFILE_EDIT", cancellationToken);
+        if (!canAccess)
+            throw new ForbiddenException("ขอบเขตสิทธิ์ของคุณไม่ครอบคลุมการเปลี่ยนสถานะพนักงานท่านนี้");
 
         var allowedStatuses = new[] { "ACTIVE", "INACTIVE" };
         var normalized = status?.ToUpper().Trim() ?? string.Empty;

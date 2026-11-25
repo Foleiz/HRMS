@@ -31,6 +31,7 @@ public class AnnouncementsController : ControllerBase
     /// ดึงรายการประกาศ (พร้อมตัวกรองและการแบ่งหน้า)
     /// </summary>
     [HttpGet]
+    [RequirePermission("ANNOUNCEMENTS_VIEW,ANNOUNCEMENTS_GENERAL_VIEW,ANNOUNCEMENTS_ACTIVITY_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AnnouncementDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PagedResult<AnnouncementDto>>>> GetAnnouncements(
         [FromQuery] AnnouncementFilterParams filter,
@@ -131,7 +132,7 @@ public class AnnouncementsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("ANNOUNCEMENTS_EDIT,ANNOUNCEMENTS_GENERAL_EDIT,ANNOUNCEMENTS_ACTIVITY_EDIT")]
+    [RequirePermission("ANNOUNCEMENTS_DELETE,ANNOUNCEMENTS_GENERAL_DELETE,ANNOUNCEMENTS_ACTIVITY_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(
         long id,
         CancellationToken cancellationToken)

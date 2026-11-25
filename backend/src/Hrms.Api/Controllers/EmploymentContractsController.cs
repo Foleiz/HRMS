@@ -168,7 +168,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [RequirePermission("EMP_CONTRACT_EDIT")]
+    [RequirePermission("EMP_CONTRACT_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(
         long id,
         CancellationToken cancellationToken)
@@ -220,7 +220,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpDelete("{id:long}/document")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [RequirePermission("EMP_CONTRACT_EDIT")]
+    [RequirePermission("EMP_CONTRACT_DELETE,EMP_CONTRACT_EDIT")]
     public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> DeleteDocument(
         long id,
         CancellationToken cancellationToken)
@@ -256,7 +256,7 @@ public class EmploymentContractsController : ControllerBase
     [HttpDelete("{id:long}/documents/{documentId:long}")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [RequirePermission("EMP_CONTRACT_EDIT")]
+    [RequirePermission("EMP_CONTRACT_DELETE,EMP_CONTRACT_EDIT")]
     public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> DeleteDocumentById(
         long id,
         long documentId,

@@ -58,7 +58,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("nationalities/{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteNationality(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteNationalityAsync(id, cancellationToken);
@@ -104,7 +104,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("religions/{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteReligion(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteReligionAsync(id, cancellationToken);
@@ -150,7 +150,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("marital-statuses/{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteMaritalStatus(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteMaritalStatusAsync(id, cancellationToken);
@@ -184,7 +184,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("genders/{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteGender(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteGenderAsync(id, cancellationToken);
@@ -218,7 +218,7 @@ public class LookupsController : ControllerBase
     }
 
     [HttpDelete("certificate-types/{id:long}")]
-    [RequirePermission("MASTER_DATA_EDIT")]
+    [RequirePermission("MASTER_DATA_DELETE")]
     public async Task<ActionResult<ApiResponse<object>>> DeleteCertificateType(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteCertificateTypeAsync(id, cancellationToken);

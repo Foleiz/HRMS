@@ -105,7 +105,7 @@ public class ApprovalFlowsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("SETTINGS_ROLES_EDIT")]
+    [RequirePermission("SETTINGS_ROLES_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _flowService.DeleteAsync(id, cancellationToken);

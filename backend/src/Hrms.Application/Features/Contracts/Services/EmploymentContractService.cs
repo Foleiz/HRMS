@@ -726,6 +726,11 @@ public class EmploymentContractService : IEmploymentContractService
             throw new NotFoundException("สัญญาจ้างงาน", id);
         }
 
+        if (!await _dataScopeService.CanAccessEmployeeAsync(contract.EmployeeId, "EMP_CONTRACT_DELETE", cancellationToken))
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบสัญญาจ้างของพนักงานท่านนี้");
+        }
+
         _context.EmploymentContracts.Remove(contract);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
@@ -736,10 +741,17 @@ public class EmploymentContractService : IEmploymentContractService
         long? documentId = null,
         CancellationToken cancellationToken = default)
     {
-        var exists = await _context.EmploymentContracts.AsNoTracking().AnyAsync(c => c.Id == id, cancellationToken);
-        if (!exists)
+        var contract = await _context.EmploymentContracts.AsNoTracking()
+            .Select(c => new { c.Id, c.EmployeeId })
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (contract == null)
         {
             throw new NotFoundException("สัญญาจ้างงาน", id);
+        }
+
+        if (!await _dataScopeService.CanAccessEmployeeAsync(contract.EmployeeId, "EMP_CONTRACT_VIEW", cancellationToken))
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดเอกสารสัญญาจ้างของพนักงานท่านนี้");
         }
 
         var query = _context.EmploymentContractDocuments.AsNoTracking().Where(d => d.ContractId == id);

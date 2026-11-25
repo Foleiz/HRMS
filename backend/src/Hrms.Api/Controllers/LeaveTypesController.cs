@@ -94,7 +94,7 @@ public class LeaveTypesController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("LEAVE_TYPE_EDIT")]
+    [RequirePermission("LEAVE_TYPE_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id, CancellationToken cancellationToken)
     {
         var result = await _leaveTypeService.DeleteAsync(id, cancellationToken);

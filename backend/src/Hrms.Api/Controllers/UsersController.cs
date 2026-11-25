@@ -118,7 +118,7 @@ public class UsersController : ControllerBase
 
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [RequirePermission("SETTINGS_USERS_EDIT")]
+    [RequirePermission("SETTINGS_USERS_DELETE")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteUser(
         long id,
         CancellationToken cancellationToken)
