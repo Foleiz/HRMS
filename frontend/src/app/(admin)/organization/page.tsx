@@ -136,16 +136,20 @@ function OrganizationPageContent() {
 
   const canCreateStruct = hasPermission('ORG_STRUCT_CREATE') || isSuper;
   const canEditStruct = hasPermission('ORG_STRUCT_EDIT') || isSuper;
+  const canDeleteStruct = hasPermission('ORG_STRUCT_DELETE') || isSuper;
   const canCreatePos = hasPermission('ORG_POS_CREATE') || isSuper;
   const canEditPos = hasPermission('ORG_POS_EDIT') || isSuper;
+  const canDeletePos = hasPermission('ORG_POS_DELETE') || isSuper;
   // กรอบเงินเดือนในแท็บระดับพนักงาน — เห็น/แก้เฉพาะคนที่มีสิทธิ์โครงสร้างเงินเดือน
   const canViewSalaryBand =
     hasPermission('PAYROLL_STRUCTURE_VIEW') || hasPermission('PAYROLL_STRUCTURE_CREATE') || hasPermission('PAYROLL_STRUCTURE_EDIT') || isSuper;
   const canEditSalaryBand = hasPermission('PAYROLL_STRUCTURE_CREATE') || hasPermission('PAYROLL_STRUCTURE_EDIT') || isSuper;
   const canCreateBenefit = hasPermission('ORG_BENEFIT_CREATE') || isSuper;
   const canEditBenefit = hasPermission('ORG_BENEFIT_EDIT') || isSuper;
+  const canDeleteBenefit = hasPermission('ORG_BENEFIT_DELETE') || isSuper;
   const canCreateCompany = hasPermission('ORG_COMP_CREATE') || isSuper;
   const canEditCompany = hasPermission('ORG_COMP_EDIT') || isSuper;
+  const canDeleteCompany = hasPermission('ORG_COMP_DELETE') || isSuper;
 
   const defaultTab: TabType = canViewStruct
     ? 'divisions'
@@ -1215,10 +1219,10 @@ function OrganizationPageContent() {
                           <ActiveStatus active={div.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {canEditStruct ? (
+                          {canEditStruct || canDeleteStruct ? (
                             <RowActions>
-                              <RowActionButton action="edit" onClick={() => handleOpenDivisionModal(div)} />
-                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')} />
+                              {canEditStruct && <RowActionButton action="edit" onClick={() => handleOpenDivisionModal(div)} />}
+                              {canDeleteStruct && <RowActionButton action="delete" onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')} />}
                             </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
@@ -1299,10 +1303,10 @@ function OrganizationPageContent() {
                           <ActiveStatus active={dept.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {canEditStruct ? (
+                          {canEditStruct || canDeleteStruct ? (
                             <RowActions>
-                              <RowActionButton action="edit" onClick={() => handleOpenDeptModal(dept)} />
-                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')} />
+                              {canEditStruct && <RowActionButton action="edit" onClick={() => handleOpenDeptModal(dept)} />}
+                              {canDeleteStruct && <RowActionButton action="delete" onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')} />}
                             </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
@@ -1395,10 +1399,14 @@ function OrganizationPageContent() {
                           <ActiveStatus active={team.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <RowActions>
-                            <RowActionButton action="edit" onClick={() => handleOpenTeamModal(team)} />
-                            <RowActionButton action="delete" onClick={() => handleConfirmDelete(team.id, team.teamName, 'team')} />
-                          </RowActions>
+                          {canEditStruct || canDeleteStruct ? (
+                            <RowActions>
+                              {canEditStruct && <RowActionButton action="edit" onClick={() => handleOpenTeamModal(team)} />}
+                              {canDeleteStruct && <RowActionButton action="delete" onClick={() => handleConfirmDelete(team.id, team.teamName, 'team')} />}
+                            </RowActions>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1494,10 +1502,10 @@ function OrganizationPageContent() {
                           <ActiveStatus active={pos.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {canEditPos ? (
+                          {canEditPos || canDeletePos ? (
                             <RowActions>
-                              <RowActionButton action="edit" onClick={() => handleOpenPosModal(pos)} />
-                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')} />
+                              {canEditPos && <RowActionButton action="edit" onClick={() => handleOpenPosModal(pos)} />}
+                              {canDeletePos && <RowActionButton action="delete" onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')} />}
                             </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
@@ -1581,10 +1589,10 @@ function OrganizationPageContent() {
                           <ActiveStatus active={lvl.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {canEditPos ? (
+                          {canEditPos || canDeletePos ? (
                             <RowActions>
-                              <RowActionButton action="edit" onClick={() => handleOpenLevelModal(lvl)} />
-                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')} />
+                              {canEditPos && <RowActionButton action="edit" onClick={() => handleOpenLevelModal(lvl)} />}
+                              {canDeletePos && <RowActionButton action="delete" onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')} />}
                             </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
@@ -1735,17 +1743,19 @@ function OrganizationPageContent() {
                             <ActiveStatus active={ben.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดใช้งาน" />
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {canEditBenefit ? (
+                            {canEditBenefit || canDeleteBenefit ? (
                               <div className="flex items-center justify-end gap-1">
-                                <RowActionButton action="edit" onClick={() => handleOpenBenefitModal(ben)} />
-                                <span title={deleteBlock ?? 'ลบ'} className="inline-flex">
-                                  <RowActionButton
-                                    action="delete"
-                                    title={deleteBlock ?? undefined}
-                                    disabled={!!deleteBlock}
-                                    onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
-                                  />
-                                </span>
+                                {canEditBenefit && <RowActionButton action="edit" onClick={() => handleOpenBenefitModal(ben)} />}
+                                {canDeleteBenefit && (
+                                  <span title={deleteBlock ?? 'ลบ'} className="inline-flex">
+                                    <RowActionButton
+                                      action="delete"
+                                      title={deleteBlock ?? undefined}
+                                      disabled={!!deleteBlock}
+                                      onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
+                                    />
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
@@ -2136,22 +2146,24 @@ function OrganizationPageContent() {
                           <ActiveStatus active={acc.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ระงับการใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {canEditCompany ? (
+                          {canEditCompany || canDeleteCompany ? (
                             <RowActions>
-                              <RowActionButton action="edit" onClick={() => handleOpenBankAccountModal(acc)} />
-                              {acc.isPrimaryPayrollAccount ? (
-                                <span
-                                  className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
-                                  title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
-                                >
-                                  <PowerOff className="w-4 h-4" />
-                                </span>
-                              ) : (
-                                <RowActionButton
-                                  action="delete"
-                                  onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
-                                  title="ปิดใช้งานบัญชี"
-                                />
+                              {canEditCompany && <RowActionButton action="edit" onClick={() => handleOpenBankAccountModal(acc)} />}
+                              {canDeleteCompany && (
+                                acc.isPrimaryPayrollAccount ? (
+                                  <span
+                                    className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                                    title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
+                                  >
+                                    <PowerOff className="w-4 h-4" />
+                                  </span>
+                                ) : (
+                                  <RowActionButton
+                                    action="delete"
+                                    onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
+                                    title="ปิดใช้งานบัญชี"
+                                  />
+                                )
                               )}
                             </RowActions>
                           ) : (

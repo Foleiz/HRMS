@@ -100,14 +100,6 @@ public class CurrentUserService : ICurrentUserService
                 return true;
         }
 
-        // สิทธิ์ *_DELETE ถ้าไม่มีใน role ให้ fallback ไปที่ *_EDIT ของโมดูลเดียวกัน
-        if (permission.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase))
-        {
-            var editEquivalent = $"{permission[..^7]}_EDIT";
-            if (perms.Any(p => string.Equals(p, editEquivalent, StringComparison.OrdinalIgnoreCase)))
-                return true;
-        }
-
         // สิทธิ์ *_EXPORT ให้ใช้ *_VIEW ของโมดูลเดียวกัน
         if (permission.EndsWith("_EXPORT", StringComparison.OrdinalIgnoreCase))
         {
@@ -170,12 +162,6 @@ public class CurrentUserService : ICurrentUserService
         if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
         {
             var prefix = permission[..^8];
-            permsToCheck.Add($"{prefix}_EDIT");
-            permsToCheck.Add($"{prefix}_VIEW");
-        }
-        else if (permission.EndsWith("_DELETE", StringComparison.OrdinalIgnoreCase))
-        {
-            var prefix = permission[..^7];
             permsToCheck.Add($"{prefix}_EDIT");
             permsToCheck.Add($"{prefix}_VIEW");
         }

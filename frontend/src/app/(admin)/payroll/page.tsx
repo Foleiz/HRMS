@@ -322,10 +322,12 @@ export default function PayrollPage() {
   const canViewStructures = hasPermission('PAYROLL_STRUCTURE_VIEW') || isAdmin;
   const canCreateStructure = hasPermission('PAYROLL_STRUCTURE_CREATE') || isAdmin;
   const canEditStructure = hasPermission('PAYROLL_STRUCTURE_EDIT') || isAdmin;
+  const canDeleteStructure = hasPermission('PAYROLL_STRUCTURE_DELETE') || isAdmin;
 
   const canViewItems = hasPermission('PAYROLL_ITEMS_VIEW') || isAdmin;
   const canCreateItem = hasPermission('PAYROLL_ITEMS_CREATE') || isAdmin;
   const canEditItem = hasPermission('PAYROLL_ITEMS_EDIT') || isAdmin;
+  const canDeleteItem = hasPermission('PAYROLL_ITEMS_DELETE') || isAdmin;
 
   const canAdjustSalary =
     hasPermission('PAYROLL_CALC_EDIT') ||
@@ -343,6 +345,7 @@ export default function PayrollPage() {
     isAdmin;
 
   const canViewPeriods = hasPermission('PAYROLL_PERIOD_VIEW');
+  const canDeletePeriod = hasPermission('PAYROLL_PERIOD_DELETE') || isAdmin;
 
   const canViewOverview =
     hasPermission('PAYROLL_VIEW') ||
@@ -2469,31 +2472,33 @@ export default function PayrollPage() {
                               )}
                             </td>
                             <td className="py-4 px-5 text-right whitespace-nowrap">
-                              {canEditStructure ? (
+                              {(canEditStructure || canDeleteStructure) ? (
                                 <div className="flex items-center justify-end gap-1.5">
                                   {/* ปุ่มลัดแก้ไขตรง (Quick Edit) */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenEditStructure(s);
-                                    }}
-                                    title="แก้ไขโครงสร้างเงินเดือน"
-                                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5 text-amber-500" />
-                                  </button>
+                                  {canEditStructure && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditStructure(s);
+                                      }}
+                                      title="แก้ไขโครงสร้างเงินเดือน"
+                                      className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5 text-amber-500" />
+                                    </button>
+                                  )}
 
                                   {/* ปุ่ม Option Dropdown 3 จุด */}
                                   <ActionDropdown
                                     menuClassName="w-28"
                                     items={[
-                                      {
+                                      ...(canEditStructure ? [{
                                         label: 'แก้ไข',
                                         icon: <Edit2 className="w-3.5 h-3.5 text-amber-500" />,
                                         onClick: () => handleOpenEditStructure(s),
-                                      },
-                                      {
+                                      }] : []),
+                                      ...(canDeleteStructure ? [{
                                         label: 'ลบ',
                                         icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
                                         danger: true,
@@ -2501,7 +2506,7 @@ export default function PayrollPage() {
                                           setStructureToDelete(s);
                                           setDeleteConfirmOpen(true);
                                         },
-                                      },
+                                      }] : []),
                                     ]}
                                   />
                                 </div>
@@ -2985,10 +2990,10 @@ export default function PayrollPage() {
                             <ActiveStatus active={isItemActive} />
                           </td>
                           <td className="py-3.5 px-5 text-center">
-                            {canEditItem ? (
+                            {(canEditItem || canDeleteItem) ? (
                               <RowActions>
-                                <RowActionButton action="edit" onClick={() => handleOpenEditItem(item)} />
-                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && !isAutoPullModuleItem && item.calculationType !== 'FORMULA' && (
+                                {canEditItem && <RowActionButton action="edit" onClick={() => handleOpenEditItem(item)} />}
+                                {canDeleteItem && !UNDELETABLE_ITEM_CODES.includes(item.itemCode) && !isAutoPullModuleItem && item.calculationType !== 'FORMULA' && (
                                   <RowActionButton
                                     action="delete"
                                     onClick={() => {
@@ -3093,6 +3098,7 @@ export default function PayrollPage() {
           isCreating={isCreatingPeriod}
           canAccessHrView={canAccessHrView}
           canViewProcess={canViewProcess}
+          canDeletePeriod={canDeletePeriod}
           onNavigateToScheduleSettings={() => setActiveTab('schedule-settings')}
         />
       )}
@@ -4148,7 +4154,7 @@ export default function PayrollPage() {
                     <>
                       {processSubTab === 'HR' && (canAccessHrView || isAdmin) && (
                         <>
-                          {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                          {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && canDeletePeriod && (
                             <button
                               type="button"
                               onClick={() => setDeletePeriodConfirmOpen(true)}
@@ -6478,7 +6484,7 @@ export default function PayrollPage() {
                                     เปิดดู
                                   </Button>
                                 )}
-                                {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
+                                {(p.status === 'DRAFT' || p.status === 'REVIEW') && canDeletePeriod && (
                                   <button
                                     type="button"
                                     onClick={() => {

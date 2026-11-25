@@ -932,9 +932,16 @@ public class EmployeeService : IEmployeeService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserService.HasPermission("EMP_PROFILE_EDIT") && !_currentUserService.HasPermission("EMP_MANAGE"))
+        if (!_currentUserService.HasPermission("EMP_PROFILE_DELETE") && !_currentUserService.HasPermission("EMP_DELETE") && !_currentUserService.HasPermission("EMP_MANAGE"))
         {
             throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงาน");
+        }
+
+        // ตรวจสอบ Data Scope สำหรับการลบข้อมูลพนักงาน
+        bool canAccess = await _dataScopeService.CanAccessEmployeeAsync(id, "EMP_PROFILE_DELETE", cancellationToken);
+        if (!canAccess)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบข้อมูลพนักงานนอกขอบเขตข้อมูลที่ได้รับมอบหมาย");
         }
 
         string idStr = id.ToString();

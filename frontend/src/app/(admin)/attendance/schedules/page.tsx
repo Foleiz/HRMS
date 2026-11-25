@@ -191,9 +191,11 @@ function SchedulesContent() {
   const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
   const canCreateSchedule = hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
   const canEditSchedule = hasPermission('TIME_SCHEDULE_EDIT') || isSuper;
-  // ไม่มีสิทธิ์ TIME_SHIFT_* ในระบบ — backend (ShiftsController) ใช้ TIME_SCHEDULE_CREATE / EDIT
+  const canDeleteSchedule = hasPermission('TIME_SCHEDULE_DELETE') || isSuper;
+  // ไม่มีสิทธิ์ TIME_SHIFT_* ในระบบ — backend (ShiftsController) ใช้ TIME_SCHEDULE_CREATE / EDIT / DELETE
   const canCreateShift = canCreateSchedule;
   const canEditShift = canEditSchedule;
+  const canDeleteShift = canDeleteSchedule;
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
@@ -1844,6 +1846,8 @@ function SchedulesContent() {
                             icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
                             onClick: () => openShiftEdit(shift),
                           },
+                        ] : []),
+                        ...(canDeleteShift ? [
                           {
                             label: 'ลบข้อมูลกะ',
                             icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
@@ -1941,6 +1945,8 @@ function SchedulesContent() {
                                   icon: <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 dark:text-slate-400" />,
                                   onClick: () => openShiftEdit(s),
                                 },
+                              ] : []),
+                              ...(canDeleteShift ? [
                                 {
                                   label: 'ลบข้อมูลกะ',
                                   icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,

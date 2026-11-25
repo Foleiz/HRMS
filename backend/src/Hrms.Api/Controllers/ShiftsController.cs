@@ -94,7 +94,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [RequirePermission("TIME_SCHEDULE_EDIT")]
+    [RequirePermission("TIME_SCHEDULE_DELETE")]
     public async Task<IActionResult> DeleteShift(long id)
     {
         var success = await _shiftService.DeleteShiftAsync(id);

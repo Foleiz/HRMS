@@ -684,6 +684,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
   const canCreateEmp = hasPermission('EMP_PROFILE_CREATE');
   const canEditEmp = hasPermission('EMP_PROFILE_EDIT');
+  const canDeleteEmp = hasPermission('EMP_PROFILE_DELETE');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW');
   const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
   const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
@@ -1365,7 +1366,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                               )}
 
                               {/* 5. ลบข้อมูล */}
-                              {canEditEmp && (
+                              {canDeleteEmp && (
                                 <button
                                   type="button"
                                   onClick={() => {

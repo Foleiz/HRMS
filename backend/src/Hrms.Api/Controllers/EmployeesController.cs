@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Employees.DTOs;
@@ -138,6 +139,7 @@ public class EmployeesController : ControllerBase
     /// ลบข้อมูลพนักงาน
     /// </summary>
     [HttpDelete("{id:long}")]
+    [RequirePermission("EMP_PROFILE_DELETE,EMP_DELETE,EMP_MANAGE")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(

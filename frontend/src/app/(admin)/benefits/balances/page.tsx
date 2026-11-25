@@ -39,6 +39,7 @@ export default function EmployeeBenefitBalancesPage() {
   const isSuper = false;
   const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasPermission('BENEFIT_BALANCE_CREATE') || isSuper;
+  const canDeleteClaim = hasPermission('BENEFIT_BALANCE_DELETE') || isSuper;
   const canViewClaims = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
@@ -519,7 +520,7 @@ export default function EmployeeBenefitBalancesPage() {
                           })()}
                         </div>
 
-                        {canEdit && (claim.status || 'APPROVED') !== 'APPROVED' && (
+                        {canDeleteClaim && (claim.status || 'APPROVED') !== 'APPROVED' && (
                           <button
                             onClick={() => handleDeleteClaim(claim.id)}
                             disabled={deletingClaimId === claim.id}

@@ -84,6 +84,10 @@ public static class PayrollAccess
     public static bool CanManage(ICurrentUserService u, string prefix) =>
         IsHr(u) || u.HasPermission($"{prefix}_CREATE") || u.HasPermission($"{prefix}_EDIT");
 
+    /// <summary>ลบข้อมูลเฉพาะหมวด (ต้องมีสิทธิ์ {PREFIX}_DELETE หรือเป็น Admin)</summary>
+    public static bool CanDelete(ICurrentUserService u, string prefix) =>
+        u.HasRole("ADMIN") || u.HasRole("SYSTEM_SUPER") || u.HasPermission($"{prefix}_DELETE");
+
     public static void Ensure(bool allowed, string action)
     {
         if (!allowed)

@@ -136,7 +136,7 @@ public class EmployeeShiftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [RequirePermission("TIME_SCHEDULE_EDIT")]
+    [RequirePermission("TIME_SCHEDULE_DELETE")]
     public async Task<IActionResult> DeleteAssignment(long id)
     {
         var success = await _service.DeleteAssignmentAsync(id);

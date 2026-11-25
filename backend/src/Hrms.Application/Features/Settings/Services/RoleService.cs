@@ -651,14 +651,12 @@ public class RoleService : IRoleService
                 return false;
             }
 
-            bool hasAnyDeleteScope = activeScopes.Any(s => s.PermissionCode.EndsWith("_DELETE"));
-
             var selfPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "SELF"),
                 Create = HasScope(createCode, "SELF"),
                 Edit = HasScope(editCode, "SELF") || HasScope(approveCode, "SELF"),
-                Delete = HasScope(deleteCode, "SELF") || (!hasAnyDeleteScope && HasScope(editCode, "SELF")),
+                Delete = HasScope(deleteCode, "SELF"),
                 Approve = HasScope(approveCode, "SELF") || HasScope(editCode, "SELF")
             };
 
@@ -667,7 +665,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "TEAM"),
                 Create = HasScope(createCode, "TEAM"),
                 Edit = HasScope(editCode, "TEAM") || HasScope(approveCode, "TEAM"),
-                Delete = HasScope(deleteCode, "TEAM") || (!hasAnyDeleteScope && HasScope(editCode, "TEAM")),
+                Delete = HasScope(deleteCode, "TEAM"),
                 Approve = HasScope(approveCode, "TEAM") || HasScope(editCode, "TEAM")
             };
 
@@ -676,7 +674,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "DEPARTMENT"),
                 Create = HasScope(createCode, "DEPARTMENT"),
                 Edit = HasScope(editCode, "DEPARTMENT") || HasScope(approveCode, "DEPARTMENT"),
-                Delete = HasScope(deleteCode, "DEPARTMENT") || (!hasAnyDeleteScope && HasScope(editCode, "DEPARTMENT")),
+                Delete = HasScope(deleteCode, "DEPARTMENT"),
                 Approve = HasScope(approveCode, "DEPARTMENT") || HasScope(editCode, "DEPARTMENT")
             };
 
@@ -685,7 +683,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "DIVISION"),
                 Create = HasScope(createCode, "DIVISION"),
                 Edit = HasScope(editCode, "DIVISION") || HasScope(approveCode, "DIVISION"),
-                Delete = HasScope(deleteCode, "DIVISION") || (!hasAnyDeleteScope && HasScope(editCode, "DIVISION")),
+                Delete = HasScope(deleteCode, "DIVISION"),
                 Approve = HasScope(approveCode, "DIVISION") || HasScope(editCode, "DIVISION")
             };
 
@@ -694,7 +692,7 @@ public class RoleService : IRoleService
                 View = HasScope(viewCode, "ORGANIZATION"),
                 Create = HasScope(createCode, "ORGANIZATION"),
                 Edit = HasScope(editCode, "ORGANIZATION") || HasScope(approveCode, "ORGANIZATION"),
-                Delete = HasScope(deleteCode, "ORGANIZATION") || (!hasAnyDeleteScope && HasScope(editCode, "ORGANIZATION")),
+                Delete = HasScope(deleteCode, "ORGANIZATION"),
                 Approve = HasScope(approveCode, "ORGANIZATION") || HasScope(editCode, "ORGANIZATION")
             };
 

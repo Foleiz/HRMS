@@ -102,7 +102,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_STRUCTURE"), "จัดการโครงสร้างเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.CanDelete(_currentUser, "PAYROLL_STRUCTURE"), "ลบโครงสร้างเงินเดือน");
         await _salaryService.DeleteStructureAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบโครงสร้างเงินเดือนสำเร็จ"));
     }
@@ -365,7 +365,7 @@ public class SalaryController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_ITEMS"), "จัดการรายการรายได้/รายหัก");
+        PayrollAccess.Ensure(PayrollAccess.CanDelete(_currentUser, "PAYROLL_ITEMS"), "ลบรายการได้/รายหัก");
         await _salaryService.DeletePayrollItemAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบรายการสำเร็จ"));
     }
@@ -543,7 +543,7 @@ public class SalaryController : ControllerBase
         [FromQuery] bool force = false,
         CancellationToken cancellationToken = default)
     {
-        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        PayrollAccess.Ensure(PayrollAccess.CanDelete(_currentUser, "PAYROLL_PERIOD"), "ลบรอบเงินเดือน");
         await _salaryService.DeletePayrollPeriodAsync(id, force, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบรอบเงินเดือนสำเร็จ"));
     }

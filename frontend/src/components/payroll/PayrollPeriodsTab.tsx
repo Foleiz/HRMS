@@ -33,6 +33,7 @@ interface PayrollPeriodsTabProps {
   isCreating?: boolean;
   canAccessHrView: boolean;
   canViewProcess: boolean;
+  canDeletePeriod?: boolean;
   onNavigateToScheduleSettings?: () => void;
 }
 
@@ -51,6 +52,7 @@ export default function PayrollPeriodsTab({
   isCreating,
   canAccessHrView,
   canViewProcess,
+  canDeletePeriod = false,
   onNavigateToScheduleSettings,
 }: PayrollPeriodsTabProps) {
   const [yearFilter, setYearFilter] = useState<string>(String(selectedYear));
@@ -407,7 +409,7 @@ export default function PayrollPeriodsTab({
                               เปิดดู
                             </Button>
                           )}
-                          {canAccessHrView && (() => {
+                          {canDeletePeriod && (() => {
                             // แสดงถังขยะทุกรอบ แต่ลบได้เฉพาะรอบที่ยังไม่อนุมัติ (ร่าง / รอตรวจสอบ)
                             const deletable = p.status === 'DRAFT' || p.status === 'REVIEW';
                             return (

@@ -216,10 +216,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const editEq = `${permission.slice(0, -8)}_EDIT`;
       if (user.permissions?.includes(editEq)) return true;
     }
-    if (permission.endsWith('_DELETE')) {
-      const editEq = `${permission.slice(0, -7)}_EDIT`;
-      if (user.permissions?.includes(editEq)) return true;
-    }
     if (permission.endsWith('_EXPORT')) {
       const viewEq = `${permission.slice(0, -7)}_VIEW`;
       if (user.permissions?.includes(viewEq)) return true;
