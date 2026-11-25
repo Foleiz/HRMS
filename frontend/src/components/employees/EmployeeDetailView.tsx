@@ -608,7 +608,7 @@ export default function EmployeeDetailView({
                     type="button"
                     onClick={handleDeleteAvatar}
                     disabled={isUploadingAvatar}
-                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-600 text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-red-700 hover:scale-110 transition-all cursor-pointer z-20"
                     title="ลบรูปโปรไฟล์"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1260,7 +1260,7 @@ export default function EmployeeDetailView({
                       type="button"
                       onClick={handleDeleteSignature}
                       disabled={isUploadingSig}
-                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       ลบลายเซ็น

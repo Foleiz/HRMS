@@ -190,6 +190,9 @@ select:disabled {
 */
 html.dark {
   color-scheme: dark;
+  --color-primary: #1A3A75;
+  --color-primary-hover: #234B94;
+  --color-primary-soft: #172F4F;
   --viz-s1: #3987e5;
   --viz-s2: #d95926;
   --viz-s3: #199e70;
@@ -207,6 +210,36 @@ html.dark body {
 .theme-light {
   color-scheme: light;
   color: #1E293B;
+}
+
+.theme-light,
+[data-stat-card],
+.stat-panel {
+  --color-primary: #0B2046;
+  --color-primary-hover: #112d5e;
+  --color-primary-soft: #eff4ff;
+}
+
+/* ตัวอักษรและเส้นขอบสีกรม (text-primary / border-primary / ring-primary) ในโหมดมืด — ปรับเป็นฟ้าสว่างอ่านชัดโดยไม่ทับ dark:* ที่ระบุเฉพาะจุด */
+html.dark .text-primary:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:text-"]) {
+  color: #84A9EC;
+}
+html.dark .hover\:text-primary:hover:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:hover:text-"]),
+html.dark .hover\:text-primary-hover:hover:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:hover:text-"]),
+html.dark .group:hover .group-hover\:text-primary:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:group-hover:text-"]) {
+  color: #93C5FD;
+}
+html.dark .border-primary:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:border-"]) {
+  border-color: #2E5CB8;
+}
+html.dark .hover\:border-primary:hover:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:hover:border-"]),
+html.dark .focus\:border-primary:focus:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:focus:border-"]),
+html.dark .focus-visible\:border-primary:focus-visible:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:focus-visible:border-"]) {
+  border-color: #3B82F6;
+}
+html.dark .ring-primary:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:ring-"]),
+html.dark .focus\:ring-primary:focus:not(.theme-light, .theme-light *, [data-stat-card], [data-stat-card] *, .stat-panel, .stat-panel *, [class*="dark:focus:ring-"]) {
+  --tw-ring-color: #3974E0;
 }
 
 /* การ์ดสถิติสีพาสเทลบนแดชบอร์ด ([data-stat-card], .stat-panel) คงสีเดิมในโหมดมืด — ยกเว้นไว้เหมือน .theme-light
@@ -285,6 +318,9 @@ html.dark .table-standard.table-standard > thead > tr > th {
   background-color: #1A3A75 !important;
   color: #F1F5F9 !important;
 }
+html.dark .table-standard.table-standard > thead > tr:not(:first-child) > th {
+  background-color: #21468A !important;
+}
 
 /* ขนาด/ระยะหัวตารางมาตรฐาน (เท่ากันทุกตาราง ตามหน้าจัดการฝ่าย) */
 .table-standard.table-standard > thead > tr > th {
@@ -329,6 +365,7 @@ html.dark .table-standard.table-standard > thead > tr > th {
 /* เงา/ความสว่างของปุ่ม — อยู่นอก layer เพื่อชนะ shadow-* ที่ใส่ไว้ในปุ่ม (ทำงานเฉพาะตอนชี้/กด) */
 /* ปุ่มหลัก (พื้นสีเข้ม) — ชี้แล้วลอยขึ้นเล็กน้อยพร้อมเงา */
 :where(button, a):where(
+    [class*="bg-primary"],
     [class*="bg-[#0B2046]"],
     [class*="bg-[#0b2046]"],
     [class*="bg-blue-600"],
@@ -344,6 +381,7 @@ html.dark .table-standard.table-standard > thead > tr > th {
 }
 
 :where(button, a):where(
+    [class*="bg-primary"],
     [class*="bg-[#0B2046]"],
     [class*="bg-[#0b2046]"],
     [class*="bg-blue-600"],

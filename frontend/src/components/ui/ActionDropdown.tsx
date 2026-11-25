@@ -14,6 +14,7 @@ export interface ActionDropdownItem {
   href?: string;
   disabled?: boolean;
   danger?: boolean;
+  solidDanger?: boolean;
   className?: string;
   /** เส้นคั่นอย่างเดียว (ไม่แสดงเป็นเมนู) — ใช้เป็นรายการแยก { divider: true, label: '' } */
   divider?: boolean;
@@ -242,14 +243,18 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
                     closeMenu();
                     item.onClick?.(e);
                   }}
-                  className={`w-full px-3.5 py-2 text-left flex items-center gap-2.5 transition-colors font-medium ${
+                  className={`${
+                    item.solidDanger
+                      ? 'w-[calc(100%-0.75rem)] mx-1.5 my-0.5 px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs'
+                      : `w-full px-3.5 py-2 ${
+                          item.danger
+                            ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
+                        }`
+                  } text-left flex items-center gap-2.5 transition-colors font-medium ${
                     item.disabled
                       ? 'opacity-40 cursor-not-allowed hover:bg-transparent'
                       : 'cursor-pointer'
-                  } ${
-                    item.danger
-                      ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                   } ${item.className || ''}`}
                 >
                   {item.icon}

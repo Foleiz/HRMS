@@ -368,7 +368,7 @@ export default function CreateTransferModal({
                 <button
                   type="button"
                   onClick={removeFile}
-                  className="text-slate-400 dark:text-slate-500 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                  className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                   title="ลบไฟล์"
                 >
                   <Trash2 className="w-4 h-4" />

@@ -745,8 +745,9 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
       items.push({
         label: 'ลบประกาศ',
-        icon: <Trash2 className="w-4 h-4" />,
+        icon: <Trash2 className="w-4 h-4 text-white" />,
         danger: true,
+        solidDanger: true,
         onClick: () => handleDelete(a),
       });
     }

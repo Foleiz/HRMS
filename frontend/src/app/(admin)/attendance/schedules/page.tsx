@@ -1850,8 +1850,9 @@ function SchedulesContent() {
                         ...(canDeleteShift ? [
                           {
                             label: 'ลบข้อมูลกะ',
-                            icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                            icon: <Trash2 className="w-4 h-4 text-white shrink-0" />,
                             danger: true,
+                            solidDanger: true,
                             onClick: () => {
                               setItemToDelete({
                                 type: 'shift',
@@ -1949,8 +1950,9 @@ function SchedulesContent() {
                               ...(canDeleteShift ? [
                                 {
                                   label: 'ลบข้อมูลกะ',
-                                  icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                                  icon: <Trash2 className="w-4 h-4 text-white shrink-0" />,
                                   danger: true,
+                                  solidDanger: true,
                                   onClick: () => {
                                     setItemToDelete({
                                       type: 'shift',

@@ -742,7 +742,7 @@ function WorkCalendarPageContent() {
                               <button
                                 onClick={() => handleConfirmDelete(h)}
                                 title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
+                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

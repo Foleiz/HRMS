@@ -421,9 +421,9 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRemoveRoleCard(index)}
-                            className="flex items-center gap-1 text-[11px] font-medium text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg flex items-center gap-1 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5 text-white" />
                             <span>ลบ</span>
                           </button>
                         )}

@@ -515,7 +515,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                           type="button"
                                           title="เอาออก"
                                           onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                                          className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-400 hover:text-rose-600"
+                                          className="p-1 rounded bg-red-600 hover:bg-red-700 text-white cursor-pointer transition-colors"
                                         >
                                           <Trash2 className="w-3 h-3" />
                                         </button>

@@ -547,7 +547,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                               <button
                                 onClick={() => setDeleteConfirmId(item.id)}
                                 disabled={(item.assignedTypesCount || 0) > 0}
-                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-25 disabled:hover:bg-transparent"
+                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-35 disabled:hover:bg-red-600"
                                 title={
                                   (item.assignedTypesCount || 0) > 0
                                     ? 'ไม่สามารถลบได้เนื่องจากถูกผูกในสัญญาจ้าง'

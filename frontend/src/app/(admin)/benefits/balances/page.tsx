@@ -524,13 +524,13 @@ export default function EmployeeBenefitBalancesPage() {
                           <button
                             onClick={() => handleDeleteClaim(claim.id)}
                             disabled={deletingClaimId === claim.id}
-                            className="p-2 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                            className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                             title="ยกเลิก/ลบรายการเบิกนี้"
                           >
                             {deletingClaimId === claim.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+                              <Loader2 className="w-4 h-4 animate-spin text-white" />
                             ) : (
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4 text-white" />
                             )}
                           </button>
                         )}

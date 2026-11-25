@@ -328,7 +328,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                               type="button"
                               title="ลบขั้นนี้"
                               onClick={() => handleRemoveBracket(idx)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                              className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

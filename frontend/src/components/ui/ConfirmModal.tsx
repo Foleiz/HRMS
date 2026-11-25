@@ -53,13 +53,13 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         return {
           icon: <Trash2 className="w-6 h-6 text-rose-600 dark:text-rose-400" />,
           bg: 'bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50',
-          confirmBtn: 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs',
+          confirmBtn: 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs',
         };
       case 'error':
         return {
           icon: <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />,
           bg: 'bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50',
-          confirmBtn: 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs',
+          confirmBtn: 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs',
         };
       case 'warning':
         return {
@@ -77,14 +77,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         return {
           icon: <Info className="w-6 h-6 text-primary dark:text-blue-400" />,
           bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
-          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-primary-hover text-white shadow-xs',
         };
       case 'question':
       default:
         return {
           icon: <HelpCircle className="w-6 h-6 text-primary dark:text-blue-400" />,
           bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
-          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-primary-hover text-white shadow-xs',
         };
     }
   };

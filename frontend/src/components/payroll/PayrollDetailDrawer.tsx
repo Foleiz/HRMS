@@ -258,10 +258,10 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   <Button
                     fullWidth
                     size="sm"
-                    variant="secondary"
+                    variant="primary"
                     onClick={() => openAddForm('EARNING')}
-                    icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
-                    className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-emerald-300 dark:border-emerald-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                    className="mt-2"
                   >
                     เพิ่มรายการได้
                   </Button>
@@ -312,10 +312,10 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   <Button
                     fullWidth
                     size="sm"
-                    variant="secondary"
+                    variant="primary"
                     onClick={() => openAddForm('DEDUCTION')}
-                    icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
-                    className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-rose-300 dark:border-rose-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                    className="mt-2"
                   >
                     เพิ่มรายการหัก
                   </Button>
@@ -323,9 +323,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
               </div>
 
               {/* เงินเดือนสุทธิ */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:px-5 sm:py-4.5 flex items-center justify-between bg-white dark:bg-slate-800 shadow-sm">
-                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ</span>
-                <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums tracking-tight">
+              <div className="rounded-2xl p-4 sm:px-5 sm:py-4.5 flex items-center justify-between bg-primary border border-primary/80 dark:border-white/10 shadow-md">
+                <span className="text-xs sm:text-sm font-semibold text-white/90">เงินเดือนสุทธิ</span>
+                <span className="text-base sm:text-lg font-bold text-white font-mono tabular-nums tracking-tight">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                     : '-'}
@@ -495,7 +495,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       await handleDelete(editingItem.id);
                       closeEditForm();
                     }}
-                    className="py-1.5 px-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="py-1.5 px-3 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     ลบรายการ
