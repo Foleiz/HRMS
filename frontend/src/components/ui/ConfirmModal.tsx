@@ -77,14 +77,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         return {
           icon: <Info className="w-6 h-6 text-primary dark:text-blue-400" />,
           bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
-          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-primary-hover text-white shadow-xs',
         };
       case 'question':
       default:
         return {
           icon: <HelpCircle className="w-6 h-6 text-primary dark:text-blue-400" />,
           bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
-          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-primary-hover text-white shadow-xs',
         };
     }
   };

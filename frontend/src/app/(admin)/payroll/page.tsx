@@ -4374,7 +4374,7 @@ export default function PayrollPage() {
                               type="button"
                               onClick={handleAdvancePeriodStatus}
                               disabled={isAdvancingStatus}
-                              className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {isAdvancingStatus ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
