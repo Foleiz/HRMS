@@ -53,16 +53,21 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   type = 'button',
   ...rest
-}) => (
-  <button
-    type={type}
-    disabled={disabled || loading}
-    className={`inline-flex items-center justify-center rounded-xl font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-      VARIANT[variant]
-    } ${variant === 'ghost' ? 'px-0 h-auto' : SIZE[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
-    {...rest}
-  >
-    {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
-    {children}
-  </button>
-);
+}) => {
+  const isBlockedDanger = Boolean(disabled && !loading && (variant === 'danger' || variant === 'soft-danger'));
+  return (
+    <button
+      type={type}
+      disabled={disabled || loading}
+      className={`inline-flex items-center justify-center rounded-xl font-medium transition-all cursor-pointer disabled:cursor-not-allowed ${
+        isBlockedDanger
+          ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-100'
+          : `disabled:opacity-50 ${VARIANT[variant]}`
+      } ${variant === 'ghost' ? 'px-0 h-auto' : SIZE[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...rest}
+    >
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
+      {children}
+    </button>
+  );
+};

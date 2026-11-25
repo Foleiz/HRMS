@@ -2151,12 +2151,12 @@ function OrganizationPageContent() {
                               {canEditCompany && <RowActionButton action="edit" onClick={() => handleOpenBankAccountModal(acc)} />}
                               {canDeleteCompany && (
                                 acc.isPrimaryPayrollAccount ? (
-                                  <span
-                                    className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                                  <RowActionButton
+                                    action="delete"
+                                    disabled
+                                    onClick={() => {}}
                                     title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
-                                  >
-                                    <PowerOff className="w-4 h-4" />
-                                  </span>
+                                  />
                                 ) : (
                                   <RowActionButton
                                     action="delete"

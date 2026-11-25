@@ -223,15 +223,23 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
                 <div className="flex-1">
                   <NumberInput value={t} onChange={(v) => setTier(i, v)} prefix="฿" placeholder="0" />
                 </div>
-                <button
-                  type="button"
-                  title="ลบขั้นนี้"
-                  disabled={tiers.length === 1}
-                  onClick={() => set({ tiers: tiers.filter((_, idx) => idx !== i) })}
-                  className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+                <span
+                  className="inline-flex"
+                  title={tiers.length === 1 ? 'ต้องมีอย่างน้อย 1 ขั้น' : 'ลบขั้นนี้'}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                  <button
+                    type="button"
+                    disabled={tiers.length === 1}
+                    onClick={() => set({ tiers: tiers.filter((_, idx) => idx !== i) })}
+                    className={`p-2 rounded-lg transition-colors ${
+                      tiers.length === 1
+                        ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-100 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white shadow-2xs cursor-pointer'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </span>
               </div>
             ))}
             <button

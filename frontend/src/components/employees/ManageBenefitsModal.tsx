@@ -543,20 +543,32 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                           <div className="flex items-center justify-end gap-1.5">
                             <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
 
-                            {!item.isStatutory && (
-                              <button
-                                onClick={() => setDeleteConfirmId(item.id)}
-                                disabled={(item.assignedTypesCount || 0) > 0}
-                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-35 disabled:hover:bg-red-600"
-                                title={
-                                  (item.assignedTypesCount || 0) > 0
-                                    ? 'ไม่สามารถลบได้เนื่องจากถูกผูกในสัญญาจ้าง'
-                                    : 'ลบ'
-                                }
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            {!item.isStatutory && (() => {
+                              const isDeleteBlocked = (item.assignedTypesCount || 0) > 0;
+                              return (
+                                <span
+                                  className="inline-flex"
+                                  title={
+                                    isDeleteBlocked
+                                      ? 'ไม่สามารถลบได้เนื่องจากถูกผูกในสัญญาจ้าง'
+                                      : 'ลบ'
+                                  }
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => !isDeleteBlocked && setDeleteConfirmId(item.id)}
+                                    disabled={isDeleteBlocked}
+                                    className={`p-1.5 rounded-lg transition-colors ${
+                                      isDeleteBlocked
+                                        ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-100 cursor-not-allowed'
+                                        : 'bg-red-600 hover:bg-red-700 text-white shadow-2xs cursor-pointer'
+                                    }`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </span>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>

@@ -413,20 +413,24 @@ export default function PayrollPeriodsTab({
                             // แสดงถังขยะทุกรอบ แต่ลบได้เฉพาะรอบที่ยังไม่อนุมัติ (ร่าง / รอตรวจสอบ)
                             const deletable = p.status === 'DRAFT' || p.status === 'REVIEW';
                             return (
-                              <button
-                                type="button"
-                                onClick={() => deletable && onDeletePeriod(p)}
-                                disabled={!deletable}
-                                aria-disabled={!deletable}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  deletable
-                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-2xs cursor-pointer'
-                                    : 'bg-red-600 text-white opacity-35 cursor-not-allowed'
-                                }`}
+                              <span
+                                className="inline-flex"
                                 title={deletable ? 'ลบรอบนี้' : 'ลบไม่ได้ — รอบนี้อนุมัติหรือปิดรอบแล้ว'}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deletable && onDeletePeriod(p)}
+                                  disabled={!deletable}
+                                  aria-disabled={!deletable}
+                                  className={`p-1.5 rounded-lg transition-colors ${
+                                    deletable
+                                      ? 'bg-red-600 hover:bg-red-700 text-white shadow-2xs cursor-pointer'
+                                      : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-100 cursor-not-allowed'
+                                  }`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </span>
                             );
                           })()}
                         </div>

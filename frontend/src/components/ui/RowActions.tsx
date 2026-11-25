@@ -43,10 +43,10 @@ export const RowActionButton: React.FC<{
 }> = ({ action, onClick, title, disabled, loading }) => {
   const { icon: Icon, title: defaultTitle, cls } = STYLE[action];
   const isDisabled = disabled || loading;
-  return (
+  const btn = (
     <button
       type="button"
-      title={title ?? defaultTitle}
+      title={isDisabled ? undefined : (title ?? defaultTitle)}
       disabled={isDisabled}
       onClick={(e) => {
         e.stopPropagation();
@@ -55,7 +55,7 @@ export const RowActionButton: React.FC<{
       className={`p-1.5 rounded-lg transition-colors ${
         isDisabled
           ? action === 'delete'
-            ? 'bg-red-600 text-white opacity-40 cursor-not-allowed'
+            ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-100 cursor-not-allowed'
             : action === 'edit'
               ? 'bg-yellow-600 text-white opacity-40 cursor-not-allowed'
               : 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
@@ -64,6 +64,13 @@ export const RowActionButton: React.FC<{
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
     </button>
+  );
+  return isDisabled ? (
+    <span className="inline-flex cursor-not-allowed" title={title ?? defaultTitle}>
+      {btn}
+    </span>
+  ) : (
+    btn
   );
 };
 
