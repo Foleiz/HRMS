@@ -1744,7 +1744,7 @@ function OrganizationPageContent() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             {canEditBenefit || canDeleteBenefit ? (
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
                                 {canEditBenefit && <RowActionButton action="edit" onClick={() => handleOpenBenefitModal(ben)} />}
                                 {canDeleteBenefit && (
                                   <span title={deleteBlock ?? 'ลบ'} className="inline-flex">

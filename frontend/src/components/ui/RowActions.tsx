@@ -14,7 +14,7 @@ const STYLE = {
   edit: {
     icon: Edit2,
     title: 'แก้ไข',
-    cls: 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-300 hover:bg-slate-100 dark:hover:bg-slate-800',
+    cls: 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-2xs',
   },
   delete: {
     icon: Trash2,
@@ -56,7 +56,9 @@ export const RowActionButton: React.FC<{
         isDisabled
           ? action === 'delete'
             ? 'bg-red-600 text-white opacity-40 cursor-not-allowed'
-            : 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
+            : action === 'edit'
+              ? 'bg-yellow-600 text-white opacity-40 cursor-not-allowed'
+              : 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
           : `cursor-pointer ${cls}`
       }`}
     >
@@ -66,5 +68,5 @@ export const RowActionButton: React.FC<{
 };
 
 export const RowActions: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="inline-flex items-center gap-1">{children}</div>
+  <div className="inline-flex items-center gap-1.5">{children}</div>
 );

@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Plus,
   UserCog,
+  Trash2,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
@@ -1121,9 +1122,10 @@ export default function EditEmployeeModal({
                         <button
                           type="button"
                           onClick={() => handleRemoveFamilyMember(activeFamilyIndex)}
-                          className="text-[11px] text-rose-500 hover:underline ml-auto cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs ml-auto flex items-center gap-1 transition-colors cursor-pointer"
                         >
-                          ลบสมาชิกคนที่ {activeFamilyIndex + 1}
+                          <Trash2 className="w-3 h-3 text-white" />
+                          ลบ
                         </button>
                       )}
                     </div>

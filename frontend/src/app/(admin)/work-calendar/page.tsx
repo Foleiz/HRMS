@@ -731,13 +731,13 @@ function WorkCalendarPageContent() {
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditCalendar ? (
-                            <div className="inline-flex items-center gap-1">
+                            <div className="inline-flex items-center gap-1.5">
                               <button
                                 onClick={() => handleOpenEditModal(h)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                className="p-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-4 h-4 text-white" />
                               </button>
                               <button
                                 onClick={() => handleConfirmDelete(h)}
