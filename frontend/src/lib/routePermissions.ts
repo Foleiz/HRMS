@@ -135,7 +135,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/attendance/schedules',
     title: 'การจัดตารางงาน',
-    requiredPermissions: ['TIME_SCHEDULE_VIEW'],
+    requiredPermissions: ['TIME_SCHEDULE_VIEW', 'TIME_SHIFT_VIEW'],
   },
   {
     matchPrefix: '/leave',

@@ -94,7 +94,8 @@ public class RoleService : IRoleService
         new("TIME_IMPORT", "นำเข้าไฟล์บันทึกเวลา", "TIME_IMPORT", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
 
         // 10. การจัดตารางงาน (ATTENDANCE_SCHEDULE)
-        new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
+        new("TIME_SCHEDULE", "มอบหมายกะให้พนักงาน", "TIME_SCHEDULE", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
+        new("TIME_SHIFT", "กะการทำงาน", "TIME_SHIFT", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
 
         // 11. สิทธิ์การลา (LEAVE)
         new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "สิทธิ์การลา", "LEAVE"),
@@ -516,6 +517,14 @@ public class RoleService : IRoleService
                 {
                     await _dbContext.SaveChangesAsync(cancellationToken);
                 }
+            }
+
+            // 5. Data migration for time_schedule: replicate TIME_SCHEDULE_* to TIME_SHIFT_* for existing roles
+            var hasShiftPerms = await _dbContext.RolePermissions
+                .AnyAsync(rp => rp.Permission.PermissionCode.StartsWith("TIME_SHIFT_"), cancellationToken);
+            if (!hasShiftPerms)
+            {
+                await MigrateRolePermissionsByPrefixAsync(new[] { "TIME_SCHEDULE_" }, "TIME_SHIFT", removeSource: false, cancellationToken);
             }
 
             _permissionsInitialized = true;

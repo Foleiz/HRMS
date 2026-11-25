@@ -355,7 +355,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
     steps: [
       {
         step: 1,
-        targetModuleCode: 'TIME_SCHEDULE',
+        targetModuleCode: 'TIME_SHIFT',
         label: '1. กะการทำงาน',
         route: '/attendance/schedules?tab=shifts',
         badge: 'รอบเวลาและรูปแบบกะ',

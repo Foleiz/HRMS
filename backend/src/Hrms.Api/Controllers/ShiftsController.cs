@@ -27,6 +27,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("TIME_SHIFT_VIEW,TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetShifts([FromQuery] string? status)
     {
         var result = await _shiftService.GetAllShiftsAsync(status);
@@ -34,6 +35,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpGet("next-code")]
+    [RequirePermission("TIME_SHIFT_CREATE,TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> GetNextCode()
     {
         var code = await _shiftService.GetNextShiftCodeAsync();
@@ -41,6 +43,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission("TIME_SHIFT_VIEW,TIME_SCHEDULE_VIEW")]
     public async Task<IActionResult> GetShift(long id)
     {
         var result = await _shiftService.GetShiftByIdAsync(id);
@@ -52,7 +55,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPost]
-    [RequirePermission("TIME_SCHEDULE_CREATE")]
+    [RequirePermission("TIME_SHIFT_CREATE,TIME_SCHEDULE_CREATE")]
     public async Task<IActionResult> CreateShift([FromBody] CreateShiftRequest request)
     {
         try
@@ -71,7 +74,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [RequirePermission("TIME_SCHEDULE_EDIT")]
+    [RequirePermission("TIME_SHIFT_EDIT,TIME_SCHEDULE_EDIT")]
     public async Task<IActionResult> UpdateShift(long id, [FromBody] UpdateShiftRequest request)
     {
         try
@@ -94,7 +97,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [RequirePermission("TIME_SCHEDULE_DELETE")]
+    [RequirePermission("TIME_SHIFT_DELETE,TIME_SCHEDULE_DELETE")]
     public async Task<IActionResult> DeleteShift(long id)
     {
         var success = await _shiftService.DeleteShiftAsync(id);

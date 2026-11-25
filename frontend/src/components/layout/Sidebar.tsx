@@ -368,10 +368,11 @@ const menuGroups: MenuGroup[] = [
         icon: CalendarRange,
         requiredPermissions: [
           'TIME_SCHEDULE_VIEW',
+          'TIME_SHIFT_VIEW',
         ],
         children: [
           { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', icon: CalendarRange, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
-          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', icon: Sunrise, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
+          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', icon: Sunrise, requiredPermissions: ['TIME_SHIFT_VIEW'] },
         ],
       },
       {

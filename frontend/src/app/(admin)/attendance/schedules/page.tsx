@@ -188,21 +188,24 @@ function SchedulesContent() {
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
   const isSuper = false;
-  const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
+  const canViewSchedule = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
   const canCreateSchedule = hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
   const canEditSchedule = hasPermission('TIME_SCHEDULE_EDIT') || isSuper;
   const canDeleteSchedule = hasPermission('TIME_SCHEDULE_DELETE') || isSuper;
-  // ไม่มีสิทธิ์ TIME_SHIFT_* ในระบบ — backend (ShiftsController) ใช้ TIME_SCHEDULE_CREATE / EDIT / DELETE
-  const canCreateShift = canCreateSchedule;
-  const canEditShift = canEditSchedule;
-  const canDeleteShift = canDeleteSchedule;
+
+  const canViewShift = hasPermission('TIME_SHIFT_VIEW') || hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
+  const canCreateShift = hasPermission('TIME_SHIFT_CREATE') || hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
+  const canEditShift = hasPermission('TIME_SHIFT_EDIT') || hasPermission('TIME_SCHEDULE_EDIT') || isSuper;
+  const canDeleteShift = hasPermission('TIME_SHIFT_DELETE') || hasPermission('TIME_SCHEDULE_DELETE') || isSuper;
+
+  const canViewSchedules = canViewSchedule || canViewShift;
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
   // -------------------------------------------------------------
-  const initialTab = (searchParams.get('tab') as TabKey) || 'roster';
+  const initialTab = (searchParams.get('tab') as TabKey) || (canViewSchedule ? 'roster' : 'shifts');
   const [activeTab, setActiveTab] = useState<TabKey>(
-    ['roster', 'shifts'].includes(initialTab) ? initialTab : 'roster'
+    ['roster', 'shifts'].includes(initialTab) ? initialTab : (canViewSchedule ? 'roster' : 'shifts')
   );
 
   useEffect(() => {
@@ -211,6 +214,14 @@ function SchedulesContent() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!canViewSchedule && canViewShift && activeTab === 'roster') {
+      setActiveTab('shifts');
+    } else if (!canViewShift && canViewSchedule && activeTab === 'shifts') {
+      setActiveTab('roster');
+    }
+  }, [canViewSchedule, canViewShift, activeTab]);
 
   if (!canViewSchedules) {
     return (
