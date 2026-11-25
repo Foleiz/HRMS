@@ -373,6 +373,7 @@ html.dark .table-standard.table-standard > thead > tr:not(:first-child) > th {
     [class*="bg-rose-600"],
     [class*="bg-red-600"],
     [class*="bg-amber-500"],
+    [class*="bg-yellow-600"],
     [class*="bg-indigo-600"]
   ):not(:disabled):not([aria-disabled="true"]):not(.no-press):hover {
   transform: translateY(-1px);
@@ -389,6 +390,7 @@ html.dark .table-standard.table-standard > thead > tr:not(:first-child) > th {
     [class*="bg-rose-600"],
     [class*="bg-red-600"],
     [class*="bg-amber-500"],
+    [class*="bg-yellow-600"],
     [class*="bg-indigo-600"]
   ):not(:disabled):not([aria-disabled="true"]):not(.no-press):active {
   transform: translateY(0) scale(0.97);
