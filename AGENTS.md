@@ -14,8 +14,9 @@
    - Production Build: `npm run build` ใน `frontend/`
    - Automated Integration Tests ตามฟีเจอร์นั้นๆ
 4. **Merge กลับเข้าสู่ `master` เฉพาะเมื่อได้รับการอนุมัติหรือคำสั่งจากผู้ใช้ (USER) โดยตรงเท่านั้น**:
-   - **ห้าม Merge หรือ Push ขึ้น branch `master` โดยเด็ดขาด** จนกว่าผู้ใช้จะสั่งคำสั่งให้ Merge ชัดเจน
-   - เมื่อได้รับการยืนยันจากผู้ใช้:
+   - **ห้าม Merge หรือ Push ขึ้น branch `master` (และ `syaco/main`) โดยเด็ดขาด** จนกว่าผู้ใช้จะสั่งคำสั่งให้ Merge ชัดเจน
+   - เมื่อได้รับการยืนยันจากผู้ใช้ ให้อัปขึ้น **ทั้ง 2 Remote พร้อมกันเสมอ**:
      - `git checkout master`
      - `git merge <branch-name>`
-     - `git push origin master`
+     - `git push origin master` (อัปขึ้น https://github.com/Foleiz/HRMS.git)
+     - `git push syaco master:main` (อัปขึ้น https://github.com/SyaCo-Co-Ltd/Hrm-Project.git)
