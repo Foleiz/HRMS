@@ -841,8 +841,9 @@ export default function DocumentHistoryPage() {
       if (hasDelete) {
         items.push({
           label: 'ลบ',
-          icon: <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />,
+          icon: <Trash2 className="w-4 h-4 text-white shrink-0" />,
           danger: true,
+          solidDanger: true,
           onClick: () => handleDelete(doc),
         });
       }

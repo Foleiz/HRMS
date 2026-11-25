@@ -1824,14 +1824,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           <span>แก้ไข</span>
                         </button>
                         <span
-                          className={`flex items-center gap-1 cursor-not-allowed select-none text-[11px] ${
-                            isSelected
-                              ? 'text-white/40'
-                              : 'text-slate-300 dark:text-slate-600'
-                          }`}
+                          className="px-2 py-0.5 rounded-md flex items-center gap-1 cursor-not-allowed select-none text-[11px] bg-red-600 text-white opacity-40"
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3 text-white" />
                           <span>ลบ</span>
                         </span>
                       </>
@@ -1858,13 +1854,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             e.stopPropagation();
                             onDeleteRoleClick(role);
                           }}
-                          className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'text-white hover:text-white/80'
-                              : 'text-rose-500 hover:text-rose-700'
-                          }`}
+                          className="px-2 py-0.5 rounded-md flex items-center gap-1 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3 text-white" />
                           <span>ลบ</span>
                         </button>
                       </>

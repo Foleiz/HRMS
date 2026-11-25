@@ -228,7 +228,7 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
                   title="ลบขั้นนี้"
                   disabled={tiers.length === 1}
                   onClick={() => set({ tiers: tiers.filter((_, idx) => idx !== i) })}
-                  className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

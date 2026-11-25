@@ -418,8 +418,8 @@ export default function PayrollPeriodsTab({
                                 aria-disabled={!deletable}
                                 className={`p-1.5 rounded-lg transition-colors ${
                                   deletable
-                                    ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer'
-                                    : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-2xs cursor-pointer'
+                                    : 'bg-red-600 text-white opacity-35 cursor-not-allowed'
                                 }`}
                                 title={deletable ? 'ลบรอบนี้' : 'ลบไม่ได้ — รอบนี้อนุมัติหรือปิดรอบแล้ว'}
                               >

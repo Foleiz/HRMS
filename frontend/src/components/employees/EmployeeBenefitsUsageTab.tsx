@@ -673,7 +673,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                               type="button"
                               onClick={() => handleDeleteClaim(c.id)}
                               disabled={deletingClaimId === c.id}
-                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                               title="ยกเลิก/ลบรายการนี้"
                             >
                               {deletingClaimId === c.id ? (
@@ -798,7 +798,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                                 type="button"
                                 onClick={() => handleDeleteClaim(c.id)}
                                 disabled={deletingClaimId === c.id}
-                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                                 title="ยกเลิก/ลบรายการนี้"
                               >
                                 {deletingClaimId === c.id ? (

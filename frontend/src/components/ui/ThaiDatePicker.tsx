@@ -550,9 +550,9 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
                 onChange('');
                 closeAll();
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" /> ล้าง
+              <Trash2 className="w-3.5 h-3.5 text-white" /> ล้าง
             </button>
           </div>
         </div>,
@@ -1013,9 +1013,9 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
                 onChange('', '');
                 closeAll();
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" /> ล้าง
+              <Trash2 className="w-3.5 h-3.5 text-white" /> ล้าง
             </button>
           </div>
         </div>,

@@ -1832,9 +1832,10 @@ function DailyAttendanceContent() {
                                       { divider: true, label: '' },
                                       {
                                         label: 'ยกเลิกชุดข้อมูล',
-                                        icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                                        icon: <Trash2 className="w-4 h-4 text-white shrink-0" />,
                                         onClick: () => handleOpenRevertModal(batch),
                                         danger: true,
+                                        solidDanger: true,
                                       },
                                     ]
                                   : []),

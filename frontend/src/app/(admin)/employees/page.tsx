@@ -1366,17 +1366,19 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
 
                               {/* 5. ลบข้อมูล */}
                               {canEditEmp && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleDelete(emp.id, emp.fullName);
-                                    close();
-                                  }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-100 font-medium cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                  <span>ลบข้อมูล</span>
-                                </button>
+                                <div className="px-1.5 pt-1 mt-0.5 border-t border-slate-100 dark:border-slate-700/60">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleDelete(emp.id, emp.fullName);
+                                      close();
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white shadow-2xs transition-colors font-medium cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-white" />
+                                    <span>ลบข้อมูล</span>
+                                  </button>
+                                </div>
                               )}
                             </>
                           )}

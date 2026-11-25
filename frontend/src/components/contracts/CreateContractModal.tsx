@@ -346,7 +346,7 @@ export default function CreateContractModal({
                 <button
                   type="button"
                   onClick={handleRemoveFile}
-                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
+                  className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                   title="ลบไฟล์แนบ"
                 >
                   <Trash2 className="w-4 h-4" />

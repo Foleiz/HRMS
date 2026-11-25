@@ -2495,8 +2495,9 @@ export default function PayrollPage() {
                                       },
                                       {
                                         label: 'ลบ',
-                                        icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                        icon: <Trash2 className="w-3.5 h-3.5 text-white" />,
                                         danger: true,
+                                        solidDanger: true,
                                         onClick: () => {
                                           setStructureToDelete(s);
                                           setDeleteConfirmOpen(true);
@@ -4153,10 +4154,10 @@ export default function PayrollPage() {
                               type="button"
                               onClick={() => setDeletePeriodConfirmOpen(true)}
                               disabled={!selectedPeriod || isDeletingPeriod}
-                              className="h-9 inline-flex items-center gap-1.5 px-3 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                              className="h-9 inline-flex items-center gap-1.5 px-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                               title="ลบรอบเงินเดือนนี้ออกจากระบบ"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                              <Trash2 className="w-3.5 h-3.5 text-white" />
                               <span>ลบรอบ</span>
                             </button>
                           )}
@@ -6485,7 +6486,7 @@ export default function PayrollPage() {
                                       setSelectedPeriod(p);
                                       setDeletePeriodConfirmOpen(true);
                                     }}
-                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition-colors cursor-pointer"
                                     title="ลบรอบนี้"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />

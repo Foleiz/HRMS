@@ -2254,8 +2254,9 @@ export default function CommissionTab() {
                                         },
                                         {
                                           label: 'ลบรายการ',
-                                          icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                          icon: <Trash2 className="w-3.5 h-3.5 text-white" />,
                                           danger: true,
+                                          solidDanger: true,
                                           onClick: async () => {
                                             await handleDeleteRecord(r);
                                             // Refresh modal

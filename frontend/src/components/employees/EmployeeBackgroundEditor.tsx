@@ -146,7 +146,7 @@ export default function EmployeeBackgroundEditor({
               <button
                 type="button"
                 onClick={() => handleRemoveEducation(safeEduIndex)}
-                className="text-[11px] text-rose-500 hover:underline ml-auto flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs ml-auto flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" />
                 ลบวุฒิการศึกษาลำดับที่ {safeEduIndex + 1}
@@ -315,7 +315,7 @@ export default function EmployeeBackgroundEditor({
               <button
                 type="button"
                 onClick={() => handleRemoveWorkExperience(safeWorkIndex)}
-                className="text-[11px] text-rose-500 hover:underline ml-auto flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white shadow-2xs ml-auto flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" />
                 ลบประวัติการทำงานลำดับที่ {safeWorkIndex + 1}

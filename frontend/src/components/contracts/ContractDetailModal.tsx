@@ -335,7 +335,7 @@ export default function ContractDetailModal({
   const fileMenu = (doc: ContractDocument): ActionDropdownItem[] => [
     { id: 'download', label: 'ดาวน์โหลดไฟล์แนบ', icon: <Download className="w-4 h-4" />, onClick: () => handleDownload(doc) },
     ...(canEditDocument
-      ? [{ id: 'delete', label: 'ลบไฟล์', icon: <Trash2 className="w-4 h-4" />, onClick: () => handleDelete(doc), danger: true }]
+      ? [{ id: 'delete', label: 'ลบไฟล์', icon: <Trash2 className="w-4 h-4 text-white" />, onClick: () => handleDelete(doc), danger: true, solidDanger: true }]
       : []),
   ];
 

@@ -19,7 +19,7 @@ const STYLE = {
   delete: {
     icon: Trash2,
     title: 'ลบ',
-    cls: 'text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30',
+    cls: 'bg-red-600 hover:bg-red-700 text-white shadow-2xs',
   },
   view: {
     icon: Eye,
@@ -54,7 +54,9 @@ export const RowActionButton: React.FC<{
       }}
       className={`p-1.5 rounded-lg transition-colors ${
         isDisabled
-          ? 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
+          ? action === 'delete'
+            ? 'bg-red-600 text-white opacity-40 cursor-not-allowed'
+            : 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
           : `cursor-pointer ${cls}`
       }`}
     >

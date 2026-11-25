@@ -495,7 +495,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       await handleDelete(editingItem.id);
                       closeEditForm();
                     }}
-                    className="py-1.5 px-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    className="py-1.5 px-3 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     ลบรายการ
