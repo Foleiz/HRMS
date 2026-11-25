@@ -1823,10 +1823,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           <span>แก้ไข</span>
                         </button>
                         <span
-                          className="px-2 py-0.5 rounded-md flex items-center gap-1 cursor-not-allowed select-none text-[11px] bg-red-600 text-white opacity-40"
+                          className={`px-2 py-0.5 rounded-md flex items-center gap-1 cursor-not-allowed select-none text-[11px] font-medium ${
+                            isSelected
+                              ? 'bg-slate-500/40 text-white/60'
+                              : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          }`}
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
-                          <Trash2 className="w-3 h-3 text-white" />
+                          <Trash2 className="w-3 h-3" />
                           <span>ลบ</span>
                         </span>
                       </>
