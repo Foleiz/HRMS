@@ -732,32 +732,6 @@ public class RoleService : IRoleService
                 else selfPerms.Approve = true;
             }
 
-            bool isPayrollModule = mod.Code.StartsWith("PAYROLL_", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(mod.Code, "APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase);
-
-            if (isPayrollModule)
-            {
-                // บังคับขอบเขตข้อมูลของหมวดเงินเดือนเป็น ORGANIZATION ทั้งหมด
-                bool hasView = selfPerms.View || teamPerms.View || deptPerms.View || divPerms.View || orgPerms.View;
-                bool hasCreate = selfPerms.Create || teamPerms.Create || deptPerms.Create || divPerms.Create || orgPerms.Create;
-                bool hasEdit = selfPerms.Edit || teamPerms.Edit || deptPerms.Edit || divPerms.Edit || orgPerms.Edit;
-                bool hasDelete = selfPerms.Delete || teamPerms.Delete || deptPerms.Delete || divPerms.Delete || orgPerms.Delete;
-                bool hasApprove = selfPerms.Approve || teamPerms.Approve || deptPerms.Approve || divPerms.Approve || orgPerms.Approve;
-
-                orgPerms = new ScopeActionPermissionsDto
-                {
-                    View = hasView,
-                    Create = hasCreate,
-                    Edit = hasEdit,
-                    Delete = hasDelete,
-                    Approve = hasApprove
-                };
-                selfPerms = new ScopeActionPermissionsDto();
-                teamPerms = new ScopeActionPermissionsDto();
-                deptPerms = new ScopeActionPermissionsDto();
-                divPerms = new ScopeActionPermissionsDto();
-            }
-
             moduleDtos.Add(new ModulePermissionScopeDto
             {
                 ModuleCode = mod.Code,
@@ -1012,42 +986,6 @@ public class RoleService : IRoleService
                 ("DIVISION", mod.Division),
                 ("ORGANIZATION", mod.Organization)
             };
-
-            bool isPayrollModule = mod.ModuleCode.StartsWith("PAYROLL_", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(mod.ModuleCode, "APPROVAL_PAYROLL", StringComparison.OrdinalIgnoreCase);
-
-            if (isPayrollModule)
-            {
-                // สำหรับหมวดเงินเดือน หากมีการเปิดสิทธิ์ ขอบเขตข้อมูลจะถูกบังคับเป็น ORGANIZATION ทั้งหมด
-                bool anyCreate = scopeList.Any(s => s.Perms?.Create == true);
-                bool anyEdit = scopeList.Any(s => s.Perms?.Edit == true || s.Perms?.Approve == true);
-                bool anyDelete = scopeList.Any(s => s.Perms?.Delete == true);
-                bool anyView = scopeList.Any(s => s.Perms?.View == true) || anyCreate || anyEdit || anyDelete;
-
-                if (anyView)
-                {
-                    AddPerm(viewCode);
-                    AddDataScope(viewCode, "ORGANIZATION");
-                }
-                if (anyCreate)
-                {
-                    AddPerm(createCode);
-                    AddDataScope(createCode, "ORGANIZATION");
-                }
-                if (anyEdit)
-                {
-                    AddPerm(editCode);
-                    AddDataScope(editCode, "ORGANIZATION");
-                    AddPerm(approveCode);
-                    AddDataScope(approveCode, "ORGANIZATION");
-                }
-                if (anyDelete)
-                {
-                    AddPerm(deleteCode);
-                    AddDataScope(deleteCode, "ORGANIZATION");
-                }
-                continue;
-            }
 
             foreach (var (scopeName, perms) in scopeList)
             {
