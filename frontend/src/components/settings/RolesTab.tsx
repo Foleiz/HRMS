@@ -1823,9 +1823,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           <span>แก้ไข</span>
                         </button>
                         <span
-                          className={`flex items-center gap-1 text-[11px] font-medium cursor-not-allowed select-none opacity-40 ${
+                          className={`flex items-center gap-1 text-[11px] font-medium cursor-not-allowed select-none ${
                             isSelected
-                              ? 'text-white/50'
+                              ? 'text-white/70'
                               : 'text-slate-400 dark:text-slate-500'
                           }`}
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
@@ -1859,7 +1859,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           }}
                           className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
                             isSelected
-                              ? 'text-red-200 hover:text-white'
+                              ? 'text-white hover:text-white/80'
                               : 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
                           }`}
                         >
