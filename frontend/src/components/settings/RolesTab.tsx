@@ -1255,6 +1255,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       prev.map((m) => {
         const isCurrentModDashboard =
           m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD';
+        const isCurrentModPayroll =
+          m.categoryCode === 'PAYROLL' || m.groupName === 'PAYROLL' || m.moduleCode.startsWith('PAYROLL_');
 
         if (m.moduleCode !== moduleCode) return m;
 
@@ -1272,7 +1274,22 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             organization: { ...empty },
           };
         } else {
-          // Turn ON (default: self view = true)
+          // Turn ON (default: self view = true, or organization for payroll)
+          if (isCurrentModDashboard) {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          if (isCurrentModPayroll) {
+            return {
+              ...m,
+              canView: true,
+              organization: { view: true, create: false, edit: false, approve: false },
+              dataScope: 'ORGANIZATION',
+            };
+          }
           return {
             ...m,
             self: { view: true, create: false, edit: false, approve: false },
@@ -1417,6 +1434,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           };
         } else {
           // Turn all on
+          if (isDashboardCat) {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+          if (catCode === 'PAYROLL') {
+            return {
+              ...m,
+              canView: true,
+              organization: { view: true, create: false, edit: false, approve: false },
+              dataScope: 'ORGANIZATION',
+            };
+          }
           return {
             ...m,
             self: { view: true, create: false, edit: false, approve: false },
@@ -2237,6 +2269,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
                             const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
+                            const isPayrollCat = cat.code === 'PAYROLL' || mod.moduleCode.startsWith('PAYROLL_');
                             const isRowHighlighted = highlightTarget?.moduleCode === mod.moduleCode;
                             const isToggleHighlighted =
                               isRowHighlighted && (highlightTarget.actionType === 'toggle' || isDashboardCat);
@@ -2299,7 +2332,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                   {!isDashboardCat && (
                                     <div className="flex items-center gap-1 shrink-0 flex-nowrap">
                                       {SCOPES_CONFIG.map((scope) => {
-                                        const isScopeBlocked = isEssCat && scope.key !== 'self';
+                                        const isScopeBlocked =
+                                          (isEssCat && scope.key !== 'self') ||
+                                          (isPayrollCat && scope.key !== 'organization');
                                         const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
                                         const count = isScopeBlocked ? 0 : getScopeActiveCount(mod, scope.key);
                                         const isScopeActive = count > 0;
@@ -2315,8 +2350,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                             type="button"
                                             disabled={isButtonDisabled}
                                             title={
-                                              isScopeBlocked
+                                              isEssCat && scope.key !== 'self'
                                                 ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
+                                                : isPayrollCat && scope.key !== 'organization'
+                                                ? 'หมวดเงินเดือนใช้งานได้เฉพาะขอบเขต "องค์กร" (Organization Only)'
                                                 : undefined
                                             }
                                             onClick={(e) => {
