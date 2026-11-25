@@ -1,0 +1,21 @@
+# ตารางที่เก็บ "ข้อมูล" ไว้ตอนขึ้น production (ข้อมูลตั้งต้น/สิทธิ์/lookup) -- ตารางอื่นเก็บเฉพาะโครงสร้าง
+bank
+certificate_type
+document_type
+employee_type
+employee_level
+gender_type
+leave_type
+marital_status_type
+nationality
+religion
+permission
+role
+role_permission
+role_data_scope
+tax_bracket
+social_security_rate
+leave_policy
+benefit_item
+employee_type_benefit
+payroll_item
