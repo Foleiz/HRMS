@@ -450,6 +450,55 @@ using (var scope = app.Services.CreateScope())
                 CONSTRAINT uq_role_permission_scope UNIQUE (role_id, permission_id, data_visibility_scope)
             );
             CREATE INDEX IF NOT EXISTS idx_role_data_scope_role_id ON hrms.role_data_scope(role_id);
+
+            -- ตั้งค่ารอบเงินเดือนแยกตามประเภทสัญญา/ประเภทพนักงาน (Payroll Schedule Config per Employee Type)
+            CREATE TABLE IF NOT EXISTS hrms.payroll_schedule_config (
+                id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                employee_type_id bigint NOT NULL REFERENCES hrms.employee_type(id) ON DELETE CASCADE,
+                pay_cycle varchar(20) NOT NULL DEFAULT 'MONTHLY',
+                start_day_type varchar(20) NOT NULL DEFAULT 'FIRST_DAY',
+                start_day integer NOT NULL DEFAULT 1,
+                end_day_type varchar(20) NOT NULL DEFAULT 'LAST_DAY',
+                end_day integer NOT NULL DEFAULT 31,
+                payment_day integer NOT NULL DEFAULT 29,
+                semi_monthly_first_cutoff_day integer NOT NULL DEFAULT 15,
+                semi_monthly_first_pay_day integer NOT NULL DEFAULT 15,
+                semi_monthly_second_pay_day integer NOT NULL DEFAULT 31,
+                weekly_start_day_of_week integer NOT NULL DEFAULT 1,
+                weekly_pay_offset_days integer NOT NULL DEFAULT 3,
+                adjust_weekend boolean NOT NULL DEFAULT true,
+                claim_cutoff_type varchar(20) NOT NULL DEFAULT 'CUSTOM_DAY',
+                claim_cutoff_day integer NOT NULL DEFAULT 25,
+                default_payment_method varchar(30) NOT NULL DEFAULT 'BANK_BATCH',
+                note text NULL,
+                updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uq_payroll_schedule_config_emp_type UNIQUE (employee_type_id)
+            );
+
+            -- รองรับรอบเงินเดือนแยกตามประเภทสัญญาและหลายงวดต่อเดือน (รายเดือน/รายปักษ์/รายสัปดาห์)
+            ALTER TABLE hrms.payroll_period ADD COLUMN IF NOT EXISTS employee_type_id bigint NULL REFERENCES hrms.employee_type(id) ON DELETE SET NULL;
+            ALTER TABLE hrms.payroll_period ADD COLUMN IF NOT EXISTS pay_cycle varchar(20) NOT NULL DEFAULT 'MONTHLY';
+            ALTER TABLE hrms.payroll_period ADD COLUMN IF NOT EXISTS period_sequence integer NOT NULL DEFAULT 1;
+            ALTER TABLE hrms.payroll_period ADD COLUMN IF NOT EXISTS period_name varchar(150) NULL;
+            CREATE INDEX IF NOT EXISTS idx_payroll_period_emp_type ON hrms.payroll_period(employee_type_id, year, month);
+
+            -- ลบ UNIQUE(year, month) เดิม เพื่อให้ 1 เดือนสร้างได้หลายรอบ (แยกตามประเภทสัญญาหรืองวดย่อย)
+            DO $$
+            DECLARE
+                c_name text;
+            BEGIN
+                SELECT con.conname INTO c_name
+                FROM pg_constraint con
+                JOIN pg_class rel ON rel.oid = con.conrelid
+                JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+                WHERE nsp.nspname = 'hrms'
+                  AND rel.relname = 'payroll_period'
+                  AND con.contype = 'u'
+                  AND pg_get_constraintdef(con.oid) = 'UNIQUE (year, month)';
+                IF c_name IS NOT NULL THEN
+                    EXECUTE format('ALTER TABLE hrms.payroll_period DROP CONSTRAINT %I', c_name);
+                END IF;
+            END $$;
         ");
 
         // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot

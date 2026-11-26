@@ -161,6 +161,22 @@ export const salaryService = {
     return res.data.data;
   },
 
+  async getPayrollScheduleConfigs(): Promise<import('@/types/payroll').PayrollScheduleConfig[]> {
+    const res = await apiClient.get<ApiResponse<import('@/types/payroll').PayrollScheduleConfig[]>>('/salary/schedule-configs');
+    return res.data.data;
+  },
+
+  async upsertPayrollScheduleConfig(
+    employeeTypeId: number,
+    payload: import('@/types/payroll').UpsertPayrollScheduleConfigPayload
+  ): Promise<import('@/types/payroll').PayrollScheduleConfig> {
+    const res = await apiClient.put<ApiResponse<import('@/types/payroll').PayrollScheduleConfig>>(
+      `/salary/schedule-configs/${employeeTypeId}`,
+      payload
+    );
+    return res.data.data;
+  },
+
   async getPayrollPeriodById(id: number): Promise<PayrollPeriod> {
     const res = await apiClient.get<ApiResponse<PayrollPeriod>>(`/salary/periods/${id}`);
     return res.data.data;
@@ -196,7 +212,18 @@ export const salaryService = {
     return { records: res.data.data, message: res.data.message };
   },
 
-  async createPayrollPeriod(payload: { year: number; month: number; periodName?: string; startDate: string; endDate: string; paymentDate?: string; claimCutoffDate?: string }): Promise<PayrollPeriod> {
+  async createPayrollPeriod(payload: {
+    year: number;
+    month: number;
+    employeeTypeId?: number | null;
+    payCycle?: string;
+    periodSequence?: number;
+    periodName?: string;
+    startDate: string;
+    endDate: string;
+    paymentDate?: string;
+    claimCutoffDate?: string;
+  }): Promise<PayrollPeriod> {
     const res = await apiClient.post<ApiResponse<PayrollPeriod>>('/salary/periods', payload);
     return res.data.data;
   },

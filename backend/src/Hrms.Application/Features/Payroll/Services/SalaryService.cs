@@ -1441,6 +1441,8 @@ public class SalaryService : ISalaryService
         var rows = await source.AsNoTracking()
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
+            .ThenByDescending(p => p.PeriodSequence)
+            .ThenByDescending(p => p.Id)
             .Select(p => new
             {
                 Period = new PayrollPeriod
@@ -1448,6 +1450,17 @@ public class SalaryService : ISalaryService
                     Id = p.Id,
                     Year = p.Year,
                     Month = p.Month,
+                    EmployeeTypeId = p.EmployeeTypeId,
+                    PayCycle = p.PayCycle,
+                    PeriodSequence = p.PeriodSequence,
+                    PeriodName = p.PeriodName,
+                    EmployeeType = p.EmployeeType == null ? null : new EmployeeType
+                    {
+                        Id = p.EmployeeType.Id,
+                        TypeCode = p.EmployeeType.TypeCode,
+                        TypeName = p.EmployeeType.TypeName,
+                        WageType = p.EmployeeType.WageType
+                    },
                     StartDate = p.StartDate,
                     EndDate = p.EndDate,
                     PaymentDate = p.PaymentDate,
@@ -1553,10 +1566,11 @@ public class SalaryService : ISalaryService
         if (period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
         {
             var windows = await LoadEmploymentWindowsAsync(activeEmployees, cancellationToken);
+            var empTypeCycleMap = await LoadEmployeeTypePayCycleMapAsync(cancellationToken);
 
             // นำ payroll ของพนักงานที่ไม่มีสัญญาจ้าง หรือไม่อยู่ในรอบนี้แล้วออก
             var ineligiblePayrolls = payrolls
-                .Where(p => { var emp = p.Employee ?? activeEmployees.FirstOrDefault(e => e.Id == p.EmployeeId); return emp == null || !IsEligibleForPeriod(emp, windows.TryGetValue(p.EmployeeId, out var w) ? w : new EmploymentWindow(null, null), period); })
+                .Where(p => { var emp = p.Employee ?? activeEmployees.FirstOrDefault(e => e.Id == p.EmployeeId); return emp == null || !IsEligibleForPeriod(emp, windows.TryGetValue(p.EmployeeId, out var w) ? w : new EmploymentWindow(null, null), period, empTypeCycleMap); })
                 .ToList();
 
             if (ineligiblePayrolls.Any())
@@ -1574,7 +1588,7 @@ public class SalaryService : ISalaryService
             var existingEmployeeIds = payrolls.Select(p => p.EmployeeId).ToHashSet();
             var missingEmployees = activeEmployees.Where(e => !existingEmployeeIds.Contains(e.Id)).ToList();
             missingEmployees = missingEmployees
-                .Where(e => IsEligibleForPeriod(e, windows.TryGetValue(e.Id, out var w) ? w : new EmploymentWindow(null, null), period))
+                .Where(e => IsEligibleForPeriod(e, windows.TryGetValue(e.Id, out var w) ? w : new EmploymentWindow(null, null), period, empTypeCycleMap))
                 .ToList();
 
             if (missingEmployees.Any())
@@ -2248,13 +2262,6 @@ public class SalaryService : ISalaryService
         if (request.Month < 1 || request.Month > 12)
             throw new BusinessRuleException("เดือนต้องอยู่ระหว่าง 1 ถึง 12");
 
-        var exists = await _context.PayrollPeriods.AnyAsync(p => p.Year == request.Year && p.Month == request.Month, cancellationToken);
-        if (exists)
-        {
-            var thaiMonth = request.Month >= 1 && request.Month <= 12 ? ThaiMonths[request.Month] : request.Month.ToString();
-            throw new BusinessRuleException($"รอบเงินเดือนประจำเดือน {thaiMonth} {request.Year + 543} มีอยู่ในระบบแล้ว");
-        }
-
         if (!DateOnly.TryParse(request.StartDate, out var startDate))
             throw new BusinessRuleException("รูปแบบวันเริ่มต้นคำนวณไม่ถูกต้อง");
 
@@ -2263,6 +2270,63 @@ public class SalaryService : ISalaryService
 
         if (endDate < startDate)
             throw new BusinessRuleException("วันสิ้นสุดคำนวณต้องไม่ก่อนวันเริ่มต้นคำนวณ");
+
+        EmployeeType? empType = null;
+        string payCycle = string.IsNullOrWhiteSpace(request.PayCycle) ? "MONTHLY" : request.PayCycle.Trim().ToUpperInvariant();
+        if (payCycle != "MONTHLY" && payCycle != "SEMI_MONTHLY" && payCycle != "WEEKLY")
+            throw new BusinessRuleException("รูปแบบรอบการจ่ายไม่ถูกต้อง (รองรับ MONTHLY, SEMI_MONTHLY, WEEKLY)");
+
+        if (request.EmployeeTypeId.HasValue)
+        {
+            empType = await _context.EmployeeTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == request.EmployeeTypeId.Value, cancellationToken)
+                ?? throw new NotFoundException("EmployeeType", request.EmployeeTypeId.Value);
+
+            if (string.IsNullOrWhiteSpace(request.PayCycle))
+            {
+                var cfg = await _context.PayrollScheduleConfigs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.EmployeeTypeId == empType.Id, cancellationToken);
+                if (cfg != null) payCycle = cfg.PayCycle;
+            }
+        }
+
+        // ตรวจสอบช่วงวันที่ซ้อนทับ:
+        // - ถ้าระบุ EmployeeTypeId → ตรวจซ้อนทับภายใน EmployeeTypeId เดียวกัน
+        // - ถ้าเป็นรอบกลุ่มตามความถี่ (EmployeeTypeId == null) → ตรวจซ้อนทับภายใน PayCycle เดียวกัน
+        var overlapping = await _context.PayrollPeriods
+            .AsNoTracking()
+            .Where(p => p.EmployeeTypeId == request.EmployeeTypeId
+                && (request.EmployeeTypeId != null || p.PayCycle == payCycle)
+                && p.StartDate <= endDate && p.EndDate >= startDate)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (overlapping != null)
+        {
+            var cycleLabel = payCycle switch
+            {
+                "SEMI_MONTHLY" => "รายปักษ์",
+                "WEEKLY" => "รายสัปดาห์",
+                _ => "รายเดือน"
+            };
+            var groupLabel = empType != null ? $"สำหรับ \"{empType.TypeName}\"" : $"กลุ่ม{cycleLabel}";
+            throw new BusinessRuleException(
+                $"รอบเงินเดือน{groupLabel} มีช่วงวันที่ซ้อนทับกับรอบที่มีอยู่แล้ว ({overlapping.StartDate:dd/MM/yyyy} – {overlapping.EndDate:dd/MM/yyyy})");
+        }
+
+        int periodSequence = request.PeriodSequence.GetValueOrDefault(1);
+        if (periodSequence <= 0)
+        {
+            var maxSeq = await _context.PayrollPeriods
+                .AsNoTracking()
+                .Where(p => p.Year == request.Year && p.Month == request.Month
+                    && p.EmployeeTypeId == request.EmployeeTypeId
+                    && (request.EmployeeTypeId != null || p.PayCycle == payCycle))
+                .Select(p => (int?)p.PeriodSequence)
+                .MaxAsync(cancellationToken) ?? 0;
+            periodSequence = maxSeq + 1;
+        }
 
         DateOnly? paymentDate = null;
         if (!string.IsNullOrWhiteSpace(request.PaymentDate))
@@ -2275,10 +2339,18 @@ public class SalaryService : ISalaryService
 
         var claimCutoffDate = ParseClaimCutoff(request.ClaimCutoffDate, startDate, paymentDate ?? endDate);
 
+        var thaiMonth = request.Month >= 1 && request.Month <= 12 ? ThaiMonths[request.Month] : request.Month.ToString();
+        string defaultPeriodName = BuildDefaultPeriodName(request.Year, request.Month, empType?.TypeName, payCycle, periodSequence);
+        string periodName = string.IsNullOrWhiteSpace(request.PeriodName) ? defaultPeriodName : request.PeriodName.Trim();
+
         var period = new Domain.Entities.PayrollPeriod
         {
             Year = request.Year,
             Month = request.Month,
+            EmployeeTypeId = request.EmployeeTypeId,
+            PayCycle = payCycle,
+            PeriodSequence = periodSequence,
+            PeriodName = periodName,
             StartDate = startDate,
             EndDate = endDate,
             PaymentDate = paymentDate,
@@ -2289,7 +2361,30 @@ public class SalaryService : ISalaryService
         _context.PayrollPeriods.Add(period);
         await _context.SaveChangesAsync(cancellationToken);
 
+        period.EmployeeType = empType;
         return MapPeriodToDto(period);
+    }
+
+    private static string BuildDefaultPeriodName(int year, int month, string? employeeTypeName, string payCycle, int periodSequence)
+    {
+        var thaiMonth = month >= 1 && month <= 12 ? ThaiMonths[month] : month.ToString();
+        var baseLabel = $"{thaiMonth} {year + 543}";
+        if (!string.IsNullOrWhiteSpace(employeeTypeName))
+        {
+            var seqSuffix = payCycle switch
+            {
+                "WEEKLY" => $" สัปดาห์ที่ {periodSequence}",
+                "SEMI_MONTHLY" => $" งวดที่ {periodSequence}",
+                _ => string.Empty
+            };
+            return $"{baseLabel} — {employeeTypeName}{seqSuffix}";
+        }
+        return payCycle switch
+        {
+            "WEEKLY" => $"{baseLabel} (รายสัปดาห์ สัปดาห์ที่ {periodSequence})",
+            "SEMI_MONTHLY" => $"{baseLabel} (รายปักษ์ งวดที่ {periodSequence})",
+            _ => baseLabel
+        };
     }
 
     public async Task<List<PayrollRecordDto>> CalculatePayrollForPeriodAsync(long periodId, CancellationToken cancellationToken = default)
@@ -2528,31 +2623,78 @@ public class SalaryService : ISalaryService
             catch { }
         }
 
-        var attendance = await _context.AttendanceMonthlySummaries
-            .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
+        bool isSubMonthlyPeriod = !string.Equals(period.PayCycle, "MONTHLY", StringComparison.OrdinalIgnoreCase) || periodDays < 25;
 
-        if (attendance.Count == 0)
+        List<AttendanceMonthlySummary> attendance;
+        if (isSubMonthlyPeriod)
         {
-            var hasDailies = await _context.AttendanceDailies
-                .AnyAsync(a => a.WorkDate >= period.StartDate && a.WorkDate <= period.EndDate, cancellationToken);
-            if (hasDailies)
+            // รอบรายปักษ์/รายสัปดาห์: ดึงเวลาเข้างานและ OT เฉพาะช่วง StartDate–EndDate ของงวดนี้โดยตรง
+            var dailies = await _context.AttendanceDailies
+                .AsNoTracking()
+                .Where(a => a.WorkDate >= period.StartDate && a.WorkDate <= period.EndDate && employeeIds.Contains(a.EmployeeId))
+                .ToListAsync(cancellationToken);
+
+            attendance = dailies
+                .GroupBy(d => d.EmployeeId)
+                .Select(g => new AttendanceMonthlySummary
+                {
+                    EmployeeId = g.Key,
+                    Year = period.Year,
+                    Month = period.Month,
+                    TotalActualWorkDays = g.Count(x => !x.IsAbsent && (x.WorkedMinutes > 0 || x.ActualIn.HasValue || x.Status == "PRESENT" || x.Status == "LATE")),
+                    TotalWorkedMinutes = g.Sum(x => x.WorkedMinutes),
+                    TotalLateMinutes = g.Sum(x => x.LateMinutes),
+                    TotalAbsentDays = g.Count(x => x.IsAbsent),
+                    TotalOvertimeHours = Math.Round(
+                        g.Sum(x => x.WorkedMinutes > 480 ? (decimal)(x.WorkedMinutes - 480) / 60m : 0m),
+                        2, MidpointRounding.AwayFromZero)
+                })
+                .ToList();
+        }
+        else
+        {
+            attendance = await _context.AttendanceMonthlySummaries
+                .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            if (attendance.Count == 0)
             {
-                try
+                var hasDailies = await _context.AttendanceDailies
+                    .AnyAsync(a => a.WorkDate >= period.StartDate && a.WorkDate <= period.EndDate, cancellationToken);
+                if (hasDailies)
                 {
-                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(period.Year, period.Month, cancellationToken);
-                    attendance = await _context.AttendanceMonthlySummaries
-                        .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
-                        .AsNoTracking()
-                        .ToListAsync(cancellationToken);
-                }
-                catch
-                {
-                    // Fallback gracefully if summary calculation encounters an edge case
+                    try
+                    {
+                        await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(period.Year, period.Month, cancellationToken);
+                        attendance = await _context.AttendanceMonthlySummaries
+                            .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
+                            .AsNoTracking()
+                            .ToListAsync(cancellationToken);
+                    }
+                    catch
+                    {
+                        // Fallback gracefully if summary calculation encounters an edge case
+                    }
                 }
             }
         }
+
+        // ยอดประกันสังคมที่หักไปแล้วในงวดอื่นของเดือนเดียวกัน (สำหรับงวดรายปักษ์/รายสัปดาห์ เพื่อไม่ให้หักเกินเพดานรายเดือน)
+        var ssoItemId = systemItems["DED_SSO"].Id;
+        var priorMonthSsoByEmp = await _context.PayrollDetails
+            .AsNoTracking()
+            .Where(d => d.PayrollItemId == ssoItemId
+                && d.Payroll != null
+                && d.Payroll.Period != null
+                && d.Payroll.PeriodId != period.Id
+                && d.Payroll.Period.Year == period.Year
+                && d.Payroll.Period.Month == period.Month
+                && employeeIds.Contains(d.Payroll.EmployeeId))
+            .GroupBy(d => d.Payroll!.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, TotalSso = g.Sum(x => x.Amount) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.TotalSso, cancellationToken);
 
         var periodStartDt = DateTime.SpecifyKind(period.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
         var periodEndDt = DateTime.SpecifyKind(period.EndDate.AddDays(1).ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
@@ -2566,8 +2708,9 @@ public class SalaryService : ISalaryService
         var unpaidLeaves = approvedLeaves
             .Where(r => r.LeaveType != null && !r.LeaveType.IsPaidLeave)
             .ToList();
-
-        int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
+        var paidLeaves = approvedLeaves
+            .Where(r => r.LeaveType != null && r.LeaveType.IsPaidLeave)
+            .ToList();
 
         // วันทำงานตามปฏิทินบริษัท (ไม่นับวันหยุดประจำสัปดาห์/วันหยุดบริษัท) — ใช้แทนวันตามปฏิทินเมื่อไม่มีข้อมูลเวลา
         var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
@@ -2586,11 +2729,12 @@ public class SalaryService : ISalaryService
         }
         var noAttendanceNames = new List<string>();
         var eligibleIds = new HashSet<long>();
+        var empTypeCycleMap = await LoadEmployeeTypePayCycleMapAsync(cancellationToken);
 
         foreach (var emp in employees)
         {
             var window = windows.TryGetValue(emp.Id, out var w) ? w : new EmploymentWindow(null, null);
-            if (!IsEligibleForPeriod(emp, window, period))
+            if (!IsEligibleForPeriod(emp, window, period, empTypeCycleMap))
                 continue;
 
             eligibleIds.Add(emp.Id);
@@ -2643,24 +2787,80 @@ public class SalaryService : ISalaryService
                 continue;
             }
 
-            // ===== 1. เงินเดือน (คิดตามสัดส่วนวันทำงานจริง สำหรับพนักงานเข้าใหม่/ลาออกระหว่างรอบ) =====
+            // ===== 1. เงินเดือน / ค่าแรงรายวัน =====
             var workStart = window.Start.HasValue && window.Start.Value > period.StartDate ? window.Start.Value : period.StartDate;
             var workEnd = window.End.HasValue && window.End.Value < period.EndDate ? window.End.Value : period.EndDate;
             int workedDays = Math.Max(0, workEnd.DayNumber - workStart.DayNumber + 1);
             bool isProrated = workedDays < periodDays;
             decimal factor = isProrated ? (decimal)workedDays / periodDays : 1m;
-            decimal baseSalary = isProrated ? Math.Round(fullSalary * factor, 2, MidpointRounding.AwayFromZero) : fullSalary;
-            decimal dailyRate = fullSalary / 30m;
-            decimal hourlyRate = dailyRate / 8m;
 
-            var lines = new List<CalcLine>
+            var empAttendance = attendance.FirstOrDefault(a => a.EmployeeId == emp.Id);
+            if (empAttendance == null || (empAttendance.TotalActualWorkDays <= 0 && empAttendance.TotalWorkedMinutes <= 0))
+                noAttendanceNames.Add($"{emp.FirstName} {emp.LastName}".Trim());
+
+            string effectiveWageType = (curAssign?.EmployeeType?.WageType ?? curAssign?.WageType ?? "MONTHLY").ToUpperInvariant();
+            bool isDailyWage = effectiveWageType == "DAILY";
+            bool isHourlyWage = effectiveWageType == "HOURLY";
+
+            decimal dailyRate;
+            decimal hourlyRate;
+            decimal baseSalary;
+            List<CalcLine> lines;
+
+            if (isDailyWage)
             {
-                new(systemItems["INC_BASE"], baseSalary, isProrated ? (decimal?)workedDays : null, isProrated ? (decimal?)fullSalary : null,
-                    isProrated
-                        ? $"เงินเดือนประจำ (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จากเงินเดือนเต็ม {fullSalary:N2} บาท)"
-                        : "เงินเดือนประจำ",
-                    IsRegular: true)
-            };
+                // พนักงานรายวัน: fullSalary คืออัตราค่าแรงต่อวัน (บาท/วัน)
+                dailyRate = fullSalary;
+                hourlyRate = dailyRate / 8m;
+
+                decimal actualWorkedDays = empAttendance?.TotalActualWorkDays ?? 0;
+                decimal paidLeaveDays = CalculateUnpaidLeaveDays(paidLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
+                int holidaysInWindow = companyHolidays.Count(h => h >= workStart && h <= workEnd);
+                decimal payableDays = actualWorkedDays + paidLeaveDays + holidaysInWindow;
+
+                baseSalary = Math.Round(payableDays * dailyRate, 2, MidpointRounding.AwayFromZero);
+                var dailySubtext = $"ค่าแรงรายวัน ({payableDays:0.##} วัน x {dailyRate:N2} บาท/วัน" +
+                    (paidLeaveDays > 0 || holidaysInWindow > 0
+                        ? $" — มาทำงาน {actualWorkedDays:0.##} วัน" +
+                          (paidLeaveDays > 0 ? $", ลาได้รับค่าจ้าง {paidLeaveDays:0.##} วัน" : string.Empty) +
+                          (holidaysInWindow > 0 ? $", วันหยุดนักขัตฤกษ์ {holidaysInWindow} วัน" : string.Empty)
+                        : string.Empty) + ")";
+
+                lines = new List<CalcLine>
+                {
+                    new(systemItems["INC_BASE"], baseSalary, payableDays, dailyRate, dailySubtext, IsRegular: true)
+                };
+            }
+            else if (isHourlyWage)
+            {
+                // พนักงานพาร์ทไทม์รายชั่วโมง: fullSalary คืออัตราค่าจ้างต่อชั่วโมง (บาท/ชม.)
+                hourlyRate = fullSalary;
+                dailyRate = hourlyRate * 8m;
+
+                decimal workedHours = Math.Round((empAttendance?.TotalWorkedMinutes ?? 0) / 60m, 2, MidpointRounding.AwayFromZero);
+                baseSalary = Math.Round(workedHours * hourlyRate, 2, MidpointRounding.AwayFromZero);
+
+                lines = new List<CalcLine>
+                {
+                    new(systemItems["INC_BASE"], baseSalary, workedHours, hourlyRate,
+                        $"ค่าจ้างรายชั่วโมง ({workedHours:0.##} ชม. x {hourlyRate:N2} บาท/ชม.)", IsRegular: true)
+                };
+            }
+            else
+            {
+                baseSalary = isProrated ? Math.Round(fullSalary * factor, 2, MidpointRounding.AwayFromZero) : fullSalary;
+                dailyRate = fullSalary / 30m;
+                hourlyRate = dailyRate / 8m;
+
+                lines = new List<CalcLine>
+                {
+                    new(systemItems["INC_BASE"], baseSalary, isProrated ? (decimal?)workedDays : null, isProrated ? (decimal?)fullSalary : null,
+                        isProrated
+                            ? $"เงินเดือนประจำ (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จากเงินเดือนเต็ม {fullSalary:N2} บาท)"
+                            : "เงินเดือนประจำ",
+                        IsRegular: true)
+                };
+            }
 
             // ===== 1.1 เงินประจำตำแหน่ง: ค่าตำแหน่งในกรอบโครงสร้างเงินเดือนของตำแหน่ง/ระดับ (คิดสัดส่วนเหมือนเงินเดือน)
             // ปิดได้โดยปิดใช้งานรายการ "เงินประจำตำแหน่ง" ในหน้ารายการได้-หัก
@@ -2685,14 +2885,10 @@ public class SalaryService : ISalaryService
                 }
             }
 
-            var empAttendance = attendance.FirstOrDefault(a => a.EmployeeId == emp.Id);
-            if (empAttendance == null || (empAttendance.TotalActualWorkDays <= 0 && empAttendance.TotalWorkedMinutes <= 0))
-                noAttendanceNames.Add($"{emp.FirstName} {emp.LastName}".Trim());
-
-            // ===== 2. หักวันลาไม่รับค่าจ้าง (เฉพาะวันลาที่อนุมัติแล้ว และอยู่ในช่วงที่ทำงานในรอบนี้) =====
+            // ===== 2. หักวันลาไม่รับค่าจ้าง (เฉพาะพนักงานรายเดือน — รายวัน/รายชั่วโมงไม่ได้จ่ายวันที่ไม่มาทำงานอยู่แล้ว) =====
             decimal unpaidDays = CalculateUnpaidLeaveDays(unpaidLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
             decimal periodLeaveDays = CalculateUnpaidLeaveDays(approvedLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
-            if (unpaidDays > 0)
+            if (!isDailyWage && !isHourlyWage && unpaidDays > 0)
             {
                 decimal unpaidDailyRate = fullSalary / unpaidDivisor;
                 decimal unpaidAmount = Math.Min(baseSalary, Math.Round(unpaidDailyRate * unpaidDays, 2, MidpointRounding.AwayFromZero));
@@ -2704,7 +2900,11 @@ public class SalaryService : ISalaryService
             bool hasOt = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasOvertime;
             if (hasOt && empAttendance != null && empAttendance.TotalOvertimeHours > 0)
             {
-                decimal otRate = Math.Round(fullSalary / otDays / otHours * otMultiplier, 4);
+                decimal otRate = isHourlyWage
+                    ? Math.Round(hourlyRate * otMultiplier, 4)
+                    : isDailyWage
+                    ? Math.Round(dailyRate / otHours * otMultiplier, 4)
+                    : Math.Round(fullSalary / otDays / otHours * otMultiplier, 4);
                 decimal otAmount = Math.Round(empAttendance.TotalOvertimeHours * otRate, 2, MidpointRounding.AwayFromZero);
                 if (otAmount > 0)
                 {
@@ -3009,7 +3209,11 @@ public class SalaryService : ISalaryService
                 lines.Where(l => l.Item.ItemType == "EARNING" && (l.Item.Id == baseItemId || l.Item.IsSocialSecurityCalculated)).Sum(l => l.Amount)
                 - lines.Where(l => l.Item.ItemType == "DEDUCTION" && l.Item.IsSocialSecurityCalculated).Sum(l => l.Amount));
             bool hasSso = curAssign?.EmployeeType == null || curAssign.EmployeeType.HasSocialSecurity;
-            decimal ssoAmount = hasSso ? CalculateSsoContribution(ssoWage, ssoRate.EmployeePercent, ssoRate) : 0;
+            decimal rawSsoAmount = hasSso ? CalculateSsoContribution(ssoWage, ssoRate.EmployeePercent, ssoRate) : 0;
+            decimal priorSsoThisMonth = priorMonthSsoByEmp.GetValueOrDefault(emp.Id, 0m);
+            decimal maxMonthlySso = Math.Round(ssoRate.MaxWage * (ssoRate.EmployeePercent / 100m), 2, MidpointRounding.AwayFromZero);
+            decimal remainingSsoCap = Math.Max(0m, maxMonthlySso - priorSsoThisMonth);
+            decimal ssoAmount = Math.Min(rawSsoAmount, remainingSsoCap);
 
             // กองทุนสำรองเลี้ยงชีพ: เฉพาะประเภทพนักงานที่มีสิทธิ์ตามสัญญาจ้าง
             if (curAssign?.EmployeeType != null && !curAssign.EmployeeType.HasProvidentFund)
@@ -3581,7 +3785,39 @@ public class SalaryService : ISalaryService
         return result;
     }
 
-    private static bool IsEligibleForPeriod(Employee emp, EmploymentWindow window, PayrollPeriod period)
+    private async Task<Dictionary<long, string>> LoadEmployeeTypePayCycleMapAsync(CancellationToken cancellationToken)
+    {
+        var types = await _context.EmployeeTypes
+            .AsNoTracking()
+            .Select(t => new { t.Id, t.WageType })
+            .ToListAsync(cancellationToken);
+
+        var configs = await _context.PayrollScheduleConfigs
+            .AsNoTracking()
+            .ToDictionaryAsync(c => c.EmployeeTypeId, c => c.PayCycle, cancellationToken);
+
+        var map = new Dictionary<long, string>();
+        foreach (var t in types)
+        {
+            if (configs.TryGetValue(t.Id, out var configuredCycle) && !string.IsNullOrWhiteSpace(configuredCycle))
+            {
+                map[t.Id] = configuredCycle.Trim().ToUpperInvariant();
+            }
+            else
+            {
+                map[t.Id] = string.Equals(t.WageType, "DAILY", StringComparison.OrdinalIgnoreCase)
+                    ? "SEMI_MONTHLY"
+                    : "MONTHLY";
+            }
+        }
+        return map;
+    }
+
+    private static bool IsEligibleForPeriod(
+        Employee emp,
+        EmploymentWindow window,
+        PayrollPeriod period,
+        Dictionary<long, string>? empTypeCycleMap = null)
     {
         // 1. ต้องมีสัญญาจ้างงาน (ถ้า window.Start เป็น null แสดงว่าไม่มีสัญญาจ้าง)
         if (!window.Start.HasValue) return false;
@@ -3595,6 +3831,27 @@ public class SalaryService : ISalaryService
         // 4. พนักงานที่ปิดสถานะแล้ว (INACTIVE) โดยไม่ทราบวันออก จะไม่ถูกนำมาคิดเงินเดือน
         bool isActive = string.Equals(emp.EmploymentStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase);
         if (!isActive && !window.End.HasValue) return false;
+
+        // 5. การจับคู่พนักงานตามประเภทสัญญา หรือกลุ่มรอบการจ่าย (PayCycle)
+        var curAssign = emp.Assignments?.FirstOrDefault(a => a.IsCurrent)
+            ?? emp.Assignments?.OrderByDescending(a => a.EffectiveFrom).FirstOrDefault();
+
+        if (period.EmployeeTypeId.HasValue)
+        {
+            if (curAssign == null || curAssign.EmployeeTypeId != period.EmployeeTypeId.Value)
+                return false;
+        }
+        else if (empTypeCycleMap != null)
+        {
+            var periodCycle = string.IsNullOrWhiteSpace(period.PayCycle)
+                ? "MONTHLY"
+                : period.PayCycle.Trim().ToUpperInvariant();
+            var empCycle = curAssign?.EmployeeTypeId != null && empTypeCycleMap.TryGetValue(curAssign.EmployeeTypeId.Value, out var c)
+                ? c
+                : "MONTHLY";
+            if (!string.Equals(empCycle, periodCycle, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
 
         return true;
     }
@@ -4833,12 +5090,22 @@ public class SalaryService : ISalaryService
         var payableRecords = payrolls.Where(IsPayableRecord).ToList();
         bool canConfirm = payableRecords.Count > 0;
 
+        var resolvedPeriodName = !string.IsNullOrWhiteSpace(period.PeriodName)
+            ? period.PeriodName
+            : BuildDefaultPeriodName(period.Year, period.Month, period.EmployeeType?.TypeName, period.PayCycle ?? "MONTHLY", period.PeriodSequence);
+
         return new PayrollPeriodDto
         {
             Id = period.Id,
             Year = period.Year,
             Month = period.Month,
-            PeriodName = $"{ThaiMonths[period.Month <= 12 ? period.Month : 1]} {period.Year + 543}",
+            EmployeeTypeId = period.EmployeeTypeId,
+            EmployeeTypeCode = period.EmployeeType?.TypeCode,
+            EmployeeTypeName = period.EmployeeType?.TypeName,
+            WageType = period.EmployeeType?.WageType,
+            PayCycle = string.IsNullOrWhiteSpace(period.PayCycle) ? "MONTHLY" : period.PayCycle,
+            PeriodSequence = period.PeriodSequence > 0 ? period.PeriodSequence : 1,
+            PeriodName = resolvedPeriodName,
             StartDate = period.StartDate.ToString("yyyy-MM-dd"),
             EndDate = period.EndDate.ToString("yyyy-MM-dd"),
             PaymentDate = period.PaymentDate?.ToString("yyyy-MM-dd"),
@@ -4864,6 +5131,135 @@ public class SalaryService : ISalaryService
             CanConfirmPayment = canConfirm,
         };
     }
+
+    #region Payroll Schedule Config per Employee Type
+
+    public async Task<List<PayrollScheduleConfigDto>> GetPayrollScheduleConfigsAsync(CancellationToken cancellationToken = default)
+    {
+        var empTypes = await _context.EmployeeTypes
+            .AsNoTracking()
+            .Where(t => t.Status == "ACTIVE")
+            .OrderBy(t => t.Id)
+            .ToListAsync(cancellationToken);
+
+        var configs = await _context.PayrollScheduleConfigs
+            .AsNoTracking()
+            .ToDictionaryAsync(c => c.EmployeeTypeId, cancellationToken);
+
+        return empTypes.Select(t =>
+        {
+            if (configs.TryGetValue(t.Id, out var cfg))
+            {
+                return MapScheduleConfigToDto(cfg, t, isConfigured: true);
+            }
+
+            // ค่าเริ่มต้นตาม WageType ของประเภทสัญญา
+            var isDaily = string.Equals(t.WageType, "DAILY", StringComparison.OrdinalIgnoreCase);
+            return new PayrollScheduleConfigDto
+            {
+                Id = 0,
+                EmployeeTypeId = t.Id,
+                EmployeeTypeCode = t.TypeCode,
+                EmployeeTypeName = t.TypeName,
+                WageType = t.WageType,
+                PayCycle = isDaily ? "SEMI_MONTHLY" : "MONTHLY",
+                StartDayType = "FIRST_DAY",
+                StartDay = 1,
+                EndDayType = "LAST_DAY",
+                EndDay = 31,
+                PaymentDay = 29,
+                SemiMonthlyFirstCutoffDay = 15,
+                SemiMonthlyFirstPayDay = 15,
+                SemiMonthlySecondPayDay = 31,
+                WeeklyStartDayOfWeek = 1,
+                WeeklyPayOffsetDays = 3,
+                AdjustWeekend = true,
+                ClaimCutoffType = "CUSTOM_DAY",
+                ClaimCutoffDay = 25,
+                DefaultPaymentMethod = "BANK_BATCH",
+                Note = isDaily
+                    ? "ค่าเริ่มต้นสำหรับพนักงานรายวัน: ตัดรอบรายปักษ์ (1-15 และ 16-สิ้นเดือน)"
+                    : "กำหนดรอบการคำนวณตั้งแต่วันที่ 1 ถึงสิ้นเดือน และจ่ายเงินเดือนทุกวันที่ 29 ของเดือน",
+                IsConfigured = false
+            };
+        }).ToList();
+    }
+
+    public async Task<PayrollScheduleConfigDto> UpsertPayrollScheduleConfigAsync(
+        long employeeTypeId,
+        UpsertPayrollScheduleConfigRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var empType = await _context.EmployeeTypes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == employeeTypeId, cancellationToken)
+            ?? throw new NotFoundException("EmployeeType", employeeTypeId);
+
+        var payCycle = string.IsNullOrWhiteSpace(request.PayCycle)
+            ? "MONTHLY"
+            : request.PayCycle.Trim().ToUpperInvariant();
+        if (payCycle != "MONTHLY" && payCycle != "SEMI_MONTHLY" && payCycle != "WEEKLY")
+            throw new BusinessRuleException("รูปแบบความถี่รอบจ่ายไม่ถูกต้อง (MONTHLY, SEMI_MONTHLY, WEEKLY)");
+
+        var cfg = await _context.PayrollScheduleConfigs
+            .FirstOrDefaultAsync(c => c.EmployeeTypeId == employeeTypeId, cancellationToken);
+
+        if (cfg == null)
+        {
+            cfg = new PayrollScheduleConfig { EmployeeTypeId = employeeTypeId };
+            _context.PayrollScheduleConfigs.Add(cfg);
+        }
+
+        cfg.PayCycle = payCycle;
+        cfg.StartDayType = request.StartDayType == "CUSTOM_DAY" ? "CUSTOM_DAY" : "FIRST_DAY";
+        cfg.StartDay = Math.Clamp(request.StartDay, 1, 31);
+        cfg.EndDayType = request.EndDayType == "CUSTOM_DAY" ? "CUSTOM_DAY" : "LAST_DAY";
+        cfg.EndDay = Math.Clamp(request.EndDay, 1, 31);
+        cfg.PaymentDay = Math.Clamp(request.PaymentDay, 1, 31);
+        cfg.SemiMonthlyFirstCutoffDay = Math.Clamp(request.SemiMonthlyFirstCutoffDay, 10, 20);
+        cfg.SemiMonthlyFirstPayDay = Math.Clamp(request.SemiMonthlyFirstPayDay, 1, 31);
+        cfg.SemiMonthlySecondPayDay = Math.Clamp(request.SemiMonthlySecondPayDay, 1, 31);
+        cfg.WeeklyStartDayOfWeek = Math.Clamp(request.WeeklyStartDayOfWeek, 0, 6);
+        cfg.WeeklyPayOffsetDays = Math.Clamp(request.WeeklyPayOffsetDays, 0, 14);
+        cfg.AdjustWeekend = request.AdjustWeekend;
+        cfg.ClaimCutoffType = request.ClaimCutoffType == "SAME_AS_PAYMENT" ? "SAME_AS_PAYMENT" : "CUSTOM_DAY";
+        cfg.ClaimCutoffDay = Math.Clamp(request.ClaimCutoffDay, 1, 31);
+        cfg.DefaultPaymentMethod = request.DefaultPaymentMethod == "DIRECT_TRANSFER" ? "DIRECT_TRANSFER" : "BANK_BATCH";
+        cfg.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        cfg.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapScheduleConfigToDto(cfg, empType, isConfigured: true);
+    }
+
+    private static PayrollScheduleConfigDto MapScheduleConfigToDto(PayrollScheduleConfig cfg, EmployeeType empType, bool isConfigured) => new()
+    {
+        Id = cfg.Id,
+        EmployeeTypeId = empType.Id,
+        EmployeeTypeCode = empType.TypeCode,
+        EmployeeTypeName = empType.TypeName,
+        WageType = empType.WageType,
+        PayCycle = cfg.PayCycle,
+        StartDayType = cfg.StartDayType,
+        StartDay = cfg.StartDay,
+        EndDayType = cfg.EndDayType,
+        EndDay = cfg.EndDay,
+        PaymentDay = cfg.PaymentDay,
+        SemiMonthlyFirstCutoffDay = cfg.SemiMonthlyFirstCutoffDay,
+        SemiMonthlyFirstPayDay = cfg.SemiMonthlyFirstPayDay,
+        SemiMonthlySecondPayDay = cfg.SemiMonthlySecondPayDay,
+        WeeklyStartDayOfWeek = cfg.WeeklyStartDayOfWeek,
+        WeeklyPayOffsetDays = cfg.WeeklyPayOffsetDays,
+        AdjustWeekend = cfg.AdjustWeekend,
+        ClaimCutoffType = cfg.ClaimCutoffType,
+        ClaimCutoffDay = cfg.ClaimCutoffDay,
+        DefaultPaymentMethod = cfg.DefaultPaymentMethod,
+        Note = cfg.Note,
+        IsConfigured = isConfigured
+    };
+
+    #endregion
 
     #endregion
 }

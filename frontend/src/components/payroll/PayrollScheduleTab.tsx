@@ -1,20 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CalendarClock,
   Save,
   CheckCircle2,
-  RotateCcw,
   Building2,
-  Banknote,
   CreditCard,
+  Loader2,
+  Briefcase,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
 import {
-  PayrollScheduleSettings,
-  DEFAULT_PAYROLL_SCHEDULE_SETTINGS,
-  getPayrollScheduleSettings,
-  savePayrollScheduleSettings,
+  PayrollScheduleConfig,
+  PayCycleType,
+  UpsertPayrollScheduleConfigPayload,
+} from '@/types/payroll';
+import { salaryService } from '@/services/salaryService';
+import {
+  generatePeriodSlotsForConfig,
+  PAY_CYCLE_LABELS,
+  WAGE_TYPE_LABELS,
+  THAI_MONTH_NAMES,
 } from '@/services/payrollScheduleService';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
@@ -23,389 +31,562 @@ interface PayrollScheduleTabProps {
   canEdit?: boolean;
 }
 
-export default function PayrollScheduleTab({
-  canEdit = true,
-}: PayrollScheduleTabProps) {
+const formatThaiSlash = (iso: string) => {
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
+};
+
+const getCycleBadgeStyle = (cycle: string, isSelected: boolean) => {
+  if (isSelected) return 'bg-white/20 text-white border-white/25';
+  if (cycle === 'WEEKLY') {
+    return 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60';
+  }
+  if (cycle === 'SEMI_MONTHLY') {
+    return 'bg-indigo-50 text-indigo-700 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60';
+  }
+  return 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60';
+};
+
+export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTabProps) {
   const toast = useToast();
-  const [settings, setSettings] = useState<PayrollScheduleSettings>(DEFAULT_PAYROLL_SCHEDULE_SETTINGS);
-  const [isSavedRecently, setIsSavedRecently] = useState<boolean>(false);
+  const [configs, setConfigs] = useState<PayrollScheduleConfig[]>([]);
+  const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<PayrollScheduleConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavedRecently, setIsSavedRecently] = useState(false);
+
+  const loadConfigs = async (preserveTypeId?: number | null) => {
+    try {
+      setIsLoading(true);
+      const data = await salaryService.getPayrollScheduleConfigs();
+      setConfigs(data || []);
+      if (data && data.length > 0) {
+        const targetId = preserveTypeId ?? selectedTypeId ?? data[0].employeeTypeId;
+        const found = data.find((c) => c.employeeTypeId === targetId) ?? data[0];
+        setSelectedTypeId(found.employeeTypeId);
+        setDraft({ ...found });
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'ไม่สามารถโหลดการตั้งค่ารอบเงินเดือนได้');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setSettings(getPayrollScheduleSettings());
+    loadConfigs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = () => {
-    savePayrollScheduleSettings(settings);
-    setIsSavedRecently(true);
-    toast.success('บันทึกการตั้งค่าเงินเดือนเรียบร้อยแล้ว');
-    setTimeout(() => setIsSavedRecently(false), 3000);
+  const handleSelectType = (cfg: PayrollScheduleConfig) => {
+    setSelectedTypeId(cfg.employeeTypeId);
+    setDraft({ ...cfg });
+    setIsSavedRecently(false);
   };
 
-  const handleReset = () => {
-    setSettings(DEFAULT_PAYROLL_SCHEDULE_SETTINGS);
-    savePayrollScheduleSettings(DEFAULT_PAYROLL_SCHEDULE_SETTINGS);
-    toast.success('รีเซ็ตการตั้งค่าเป็นค่าเริ่มต้นของระบบแล้ว');
+  const handleSave = async () => {
+    if (!draft || !canEdit) return;
+    try {
+      setIsSaving(true);
+      const payload: UpsertPayrollScheduleConfigPayload = {
+        payCycle: draft.payCycle,
+        startDayType: draft.startDayType,
+        startDay: draft.startDay,
+        endDayType: draft.endDayType,
+        endDay: draft.endDay,
+        paymentDay: draft.paymentDay,
+        semiMonthlyFirstCutoffDay: draft.semiMonthlyFirstCutoffDay,
+        semiMonthlyFirstPayDay: draft.semiMonthlyFirstPayDay,
+        semiMonthlySecondPayDay: draft.semiMonthlySecondPayDay,
+        weeklyStartDayOfWeek: draft.weeklyStartDayOfWeek,
+        weeklyPayOffsetDays: draft.weeklyPayOffsetDays,
+        adjustWeekend: draft.adjustWeekend,
+        claimCutoffType: draft.claimCutoffType,
+        claimCutoffDay: draft.claimCutoffDay,
+        defaultPaymentMethod: draft.defaultPaymentMethod,
+        note: draft.note ?? null,
+      };
+      const updated = await salaryService.upsertPayrollScheduleConfig(draft.employeeTypeId, payload);
+      setConfigs((prev) => prev.map((c) => (c.employeeTypeId === updated.employeeTypeId ? updated : c)));
+      setDraft({ ...updated });
+      setIsSavedRecently(true);
+      toast.success(`บันทึกการตั้งค่ารอบเงินเดือนสำหรับ "${updated.employeeTypeName}" เรียบร้อยแล้ว`);
+      setTimeout(() => setIsSavedRecently(false), 3000);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'ไม่สามารถบันทึกการตั้งค่าได้');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const now = new Date();
+  const previewYear = now.getFullYear();
+  const previewMonth = now.getMonth() + 1;
+
+  const previewSlots = useMemo(() => {
+    if (!draft) return [];
+    return generatePeriodSlotsForConfig(previewYear, previewMonth, {
+      ...draft,
+      employeeTypeName: undefined,
+    });
+  }, [draft, previewYear, previewMonth]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-12 flex items-center justify-center gap-3 text-slate-500">
+        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+        <span className="text-sm font-medium">กำลังโหลดการตั้งค่ารอบเงินเดือน...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Banner & Header */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs">
-            <CalendarClock className="w-6 h-6" />
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">ตั้งค่าเงินเดือน</h2>
-            <span className="text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
-              นำไปใช้สร้างรอบอัตโนมัติ
-            </span>
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-200">
+      {/* Left Sidebar: Compact List of Contract / Employee Types */}
+      <aside className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
+        <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-primary" />
+            ประเภทสัญญาจ้าง
+          </span>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+            {configs.length}
+          </span>
         </div>
 
-        {canEdit && (
-          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleReset}
-              icon={<RotateCcw className="w-3.5 h-3.5" />}
-              title="รีเซ็ตกลับเป็นค่าเริ่มต้น"
-            >
-              รีเซ็ตค่าเริ่มต้น
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleSave}
-              icon={isSavedRecently ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
-            >
-              {isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการตั้งค่า'}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Card 1: ช่วงเวลาคำนวณรอบเงินเดือน (Calculation Window) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                1
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">ช่วงเวลาคำนวณประจำรอบ</h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">วันเริ่มต้นและวันสิ้นสุดของงวดคำนวณ</p>
-              </div>
-            </div>
-
-            {/* วันเริ่มคำนวณ */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันเริ่มคำนวณ</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="startDayType"
-                    checked={settings.startDayType === 'FIRST_DAY'}
-                    onChange={() => setSettings({ ...settings, startDayType: 'FIRST_DAY' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div>
-                    <span className="font-semibold">ทุกวันที่ 1 ของเดือน</span>
-                    <p className="text-[11px] text-slate-400">คำนวณตั้งแต่วันแรกของแต่ละเดือน (เช่น 01/xx/2569)</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="startDayType"
-                    checked={settings.startDayType === 'CUSTOM_DAY'}
-                    onChange={() => setSettings({ ...settings, startDayType: 'CUSTOM_DAY' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">กำหนดวันที่เริ่มต้นเอง</span>
-                      {settings.startDayType === 'CUSTOM_DAY' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-slate-500">วันที่</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={28}
-                            value={settings.startDay}
-                            onChange={(e) => setSettings({ ...settings, startDay: Number(e.target.value) || 1 })}
-                            className="w-16 px-2 py-1 text-center font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* วันสิ้นสุดคำนวณ */}
-            <div className="space-y-2 pt-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันสิ้นสุดคำนวณ</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="endDayType"
-                    checked={settings.endDayType === 'LAST_DAY'}
-                    onChange={() => setSettings({ ...settings, endDayType: 'LAST_DAY' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div>
-                    <span className="font-semibold">วันสิ้นเดือนของแต่ละเดือน</span>
-                    <p className="text-[11px] text-slate-400">ระบบปรับตามจริง เช่น 28, 29, 30 หรือ 31</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="endDayType"
-                    checked={settings.endDayType === 'CUSTOM_DAY'}
-                    onChange={() => setSettings({ ...settings, endDayType: 'CUSTOM_DAY' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">กำหนดวันที่สิ้นสุดเอง</span>
-                      {settings.endDayType === 'CUSTOM_DAY' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-slate-500">วันที่</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={31}
-                            value={settings.endDay}
-                            onChange={(e) => setSettings({ ...settings, endDay: Number(e.target.value) || 30 })}
-                            className="w-16 px-2 py-1 text-center font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: วันกำหนดจ่ายเงินเดือน (Payment Date) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
-                2
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">วันกำหนดจ่ายเงินเดือน</h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">วันที่โอนจ่ายเงินเดือนให้พนักงานในแต่ละเดือน</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันที่กำหนดจ่ายประจำเดือน</label>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ทุกวันที่:</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={settings.paymentDay}
-                  onChange={(e) => setSettings({ ...settings, paymentDay: Number(e.target.value) || 29 })}
-                  className="w-20 px-3 py-1.5 text-center font-bold text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="text-xs text-slate-500 dark:text-slate-400">ของแต่ละเดือน (เช่น 29)</span>
-              </div>
-            </div>
-
-            {/* Weekend Adjustment Policy */}
-            <div className="pt-2">
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.adjustWeekend}
-                  onChange={(e) => setSettings({ ...settings, adjustWeekend: e.target.checked })}
-                  className="mt-0.5 rounded text-primary focus:ring-primary"
-                />
-                <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    ปรับเลื่อนวันจ่ายล่วงหน้าหากตรงกับเสาร์-อาทิตย์
+        <div className="p-2.5 space-y-1.5">
+          {configs.map((cfg) => {
+            const isSelected = cfg.employeeTypeId === selectedTypeId;
+            return (
+              <button
+                key={cfg.employeeTypeId}
+                type="button"
+                onClick={() => handleSelectType(cfg)}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary text-white border-primary shadow-xs'
+                    : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-transparent hover:bg-slate-50 dark:hover:bg-slate-700/60 hover:border-slate-200/80 dark:hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-[13px] truncate">{cfg.employeeTypeName}</span>
+                  <span
+                    className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getCycleBadgeStyle(
+                      cfg.payCycle,
+                      isSelected
+                    )}`}
+                  >
+                    {cfg.payCycle === 'SEMI_MONTHLY'
+                      ? 'รายปักษ์'
+                      : PAY_CYCLE_LABELS[cfg.payCycle] || cfg.payCycle}
                   </span>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                    หากวันที่กำหนดจ่ายตรงกับวันเสาร์หรือวันอาทิตย์ ระบบจะปรับกำหนดวันจ่ายเป็น <strong>วันศุกร์ก่อนหน้า</strong> ให้อัตโนมัติ เพื่อให้พนักงานได้รับเงินเดือนก่อนวันหยุด
-                  </p>
                 </div>
-              </label>
-            </div>
-          </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span
+                    className={`text-[11px] ${
+                      isSelected ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    ฐานค่าจ้าง: {WAGE_TYPE_LABELS[cfg.wageType] || cfg.wageType}
+                  </span>
+                  {cfg.isConfigured && (
+                    <span
+                      className={`inline-flex items-center gap-1 text-[10px] font-medium ${
+                        isSelected ? 'text-emerald-200' : 'text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          isSelected ? 'bg-emerald-300' : 'bg-emerald-500'
+                        }`}
+                      />
+                      ตั้งค่าแล้ว
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
+      </aside>
 
-        {/* Card 3: วันตัดรอบเงินเบิกสวัสดิการ (Benefit Claim Cutoff) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
-                3
+      {/* Right Main Card: Unified Clean Settings Panel */}
+      {draft && (
+        <section className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
+          {/* Card Header with Save Button */}
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+                <CalendarClock className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">วันตัดรอบเงินเบิกสวัสดิการ</h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">กำหนดเส้นตายของคำขอเบิกสวัสดิการที่จะจ่ายในรอบ</p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                    {draft.employeeTypeName}
+                  </h2>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                    ฐานค่าจ้าง: {WAGE_TYPE_LABELS[draft.wageType] || draft.wageType}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  กำหนดความถี่การจ่ายและช่วงวันตัดรอบ — สัญญาที่ตั้งความถี่เดียวกันจะถูกรวมอยู่ในรอบจ่ายเดียวกันอัตโนมัติ
+                </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">นโยบายวันตัดรอบเบิกสวัสดิการ</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="claimCutoffType"
-                    checked={settings.claimCutoffType === 'CUSTOM_DAY'}
-                    onChange={() => setSettings({ ...settings, claimCutoffType: 'CUSTOM_DAY' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-semibold">กำหนดวันตัดรอบเฉพาะ</span>
-                        <p className="text-[11px] text-slate-400">ตัดรอบก่อนวันจ่ายเงินเดือน</p>
+            {canEdit && (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="shrink-0 whitespace-nowrap"
+                icon={
+                  isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isSavedRecently ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )
+                }
+              >
+                {isSaving ? 'กำลังบันทึก...' : isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการตั้งค่า'}
+              </Button>
+            )}
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Section 1: Pay Cycle */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                1. ความถี่รอบการจ่ายเงิน
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(
+                  [
+                    {
+                      value: 'MONTHLY' as PayCycleType,
+                      title: 'รายเดือน',
+                      desc: '1 งวดต่อเดือน (เช่น วันที่ 1 – สิ้นเดือน)',
+                    },
+                    {
+                      value: 'SEMI_MONTHLY' as PayCycleType,
+                      title: 'รายปักษ์ (15 วัน)',
+                      desc: '2 งวดต่อเดือน (1–15 และ 16–สิ้นเดือน)',
+                    },
+                    {
+                      value: 'WEEKLY' as PayCycleType,
+                      title: 'รายสัปดาห์',
+                      desc: '4–5 งวดต่อเดือน (ทุก 7 วัน)',
+                    },
+                  ]
+                ).map((opt) => {
+                  const active = draft.payCycle === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => setDraft({ ...draft, payCycle: opt.value })}
+                      className={`text-left px-4 py-3 rounded-xl border-2 transition-all cursor-pointer disabled:cursor-not-allowed ${
+                        active
+                          ? 'border-primary bg-primary/5 dark:bg-primary/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{opt.title}</span>
+                        <span
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            active ? 'border-primary' : 'border-slate-300 dark:border-slate-600'
+                          }`}
+                        >
+                          {active && <span className="w-2 h-2 rounded-full bg-primary" />}
+                        </span>
                       </div>
-                      {settings.claimCutoffType === 'CUSTOM_DAY' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-slate-500">วันที่</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={31}
-                            value={settings.claimCutoffDay}
-                            onChange={(e) => setSettings({ ...settings, claimCutoffDay: Number(e.target.value) || 25 })}
-                            className="w-16 px-2 py-1 text-center font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs"
-                          />
-                        </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">{opt.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 2: Cutoff & Payment Dates */}
+            <div className="pt-5 border-t border-slate-100 dark:border-slate-700 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                2. ช่วงวันตัดรอบ วันจ่ายเงิน และวิธีจ่าย
+              </h3>
+
+              {draft.payCycle === 'MONTHLY' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันเริ่มคำนวณ</label>
+                    <div className="flex gap-2">
+                      <select
+                        disabled={!canEdit}
+                        value={draft.startDayType}
+                        onChange={(e) =>
+                          setDraft({ ...draft, startDayType: e.target.value as 'FIRST_DAY' | 'CUSTOM_DAY' })
+                        }
+                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                      >
+                        <option value="FIRST_DAY">ทุกวันที่ 1 ของเดือน</option>
+                        <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
+                      </select>
+                      {draft.startDayType === 'CUSTOM_DAY' && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={28}
+                          disabled={!canEdit}
+                          value={draft.startDay}
+                          onChange={(e) => setDraft({ ...draft, startDay: Number(e.target.value) || 1 })}
+                          className="w-20 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-center"
+                        />
                       )}
                     </div>
                   </div>
-                </label>
 
-                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-                  <input
-                    type="radio"
-                    name="claimCutoffType"
-                    checked={settings.claimCutoffType === 'SAME_AS_PAYMENT'}
-                    onChange={() => setSettings({ ...settings, claimCutoffType: 'SAME_AS_PAYMENT' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <div>
-                    <span className="font-semibold">ใช้วันเดียวกับวันกำหนดจ่ายเงิน</span>
-                    <p className="text-[11px] text-slate-400">อนุมัติก่อนถึงวันจ่ายเงินเดือนจะถูกนับรวมในรอบทันที</p>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันสิ้นสุดคำนวณ</label>
+                    <div className="flex gap-2">
+                      <select
+                        disabled={!canEdit}
+                        value={draft.endDayType}
+                        onChange={(e) =>
+                          setDraft({ ...draft, endDayType: e.target.value as 'LAST_DAY' | 'CUSTOM_DAY' })
+                        }
+                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                      >
+                        <option value="LAST_DAY">วันสุดท้ายของเดือน (28/30/31)</option>
+                        <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
+                      </select>
+                      {draft.endDayType === 'CUSTOM_DAY' && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={31}
+                          disabled={!canEdit}
+                          value={draft.endDay}
+                          onChange={(e) => setDraft({ ...draft, endDay: Number(e.target.value) || 30 })}
+                          className="w-20 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-center"
+                        />
+                      )}
+                    </div>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      วันจ่ายเงินเดือนของทุกเดือน (วันที่ 1–31)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      disabled={!canEdit}
+                      value={draft.paymentDay}
+                      onChange={(e) => setDraft({ ...draft, paymentDay: Number(e.target.value) || 29 })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      วันตัดรอบเบิกสวัสดิการ
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        disabled={!canEdit}
+                        value={draft.claimCutoffType}
+                        onChange={(e) =>
+                          setDraft({ ...draft, claimCutoffType: e.target.value as 'SAME_AS_PAYMENT' | 'CUSTOM_DAY' })
+                        }
+                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                      >
+                        <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
+                        <option value="SAME_AS_PAYMENT">ตรงกับวันจ่ายเงิน</option>
+                      </select>
+                      {draft.claimCutoffType === 'CUSTOM_DAY' && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={31}
+                          disabled={!canEdit}
+                          value={draft.claimCutoffDay}
+                          onChange={(e) => setDraft({ ...draft, claimCutoffDay: Number(e.target.value) || 25 })}
+                          className="w-20 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-center"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {draft.payCycle === 'SEMI_MONTHLY' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      วันตัดรอบงวดที่ 1 (วันที่ 10–20)
+                    </label>
+                    <input
+                      type="number"
+                      min={10}
+                      max={20}
+                      disabled={!canEdit}
+                      value={draft.semiMonthlyFirstCutoffDay}
+                      onChange={(e) =>
+                        setDraft({ ...draft, semiMonthlyFirstCutoffDay: Number(e.target.value) || 15 })
+                      }
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                    />
+                    <p className="text-[11px] text-slate-400">งวด 2 เริ่มวันถัดไปจนถึงสิ้นเดือน</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      วันจ่ายงวดที่ 1 (วันที่)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={25}
+                      disabled={!canEdit}
+                      value={draft.semiMonthlyFirstPayDay}
+                      onChange={(e) =>
+                        setDraft({ ...draft, semiMonthlyFirstPayDay: Number(e.target.value) || 15 })
+                      }
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      วันจ่ายงวดที่ 2 (31 = สิ้นเดือน)
+                    </label>
+                    <input
+                      type="number"
+                      min={16}
+                      max={31}
+                      disabled={!canEdit}
+                      value={draft.semiMonthlySecondPayDay}
+                      onChange={(e) =>
+                        setDraft({ ...draft, semiMonthlySecondPayDay: Number(e.target.value) || 31 })
+                      }
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {draft.payCycle === 'WEEKLY' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      จ่ายเงินหลังสิ้นสุดแต่ละสัปดาห์กี่วัน
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={14}
+                      disabled={!canEdit}
+                      value={draft.weeklyPayOffsetDays}
+                      onChange={(e) =>
+                        setDraft({ ...draft, weeklyPayOffsetDays: Math.max(0, Number(e.target.value) || 0) })
+                      }
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm"
+                    />
+                    <p className="text-[11px] text-slate-400">
+                      เช่น ใส่ 3 หมายถึงจบสัปดาห์แล้วจ่ายเงินภายในอีก 3 วัน
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Method + Weekend Rule (clean 2-column grid with no text wrap on buttons) */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700/80 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                    วิธีจ่ายเงินเริ่มต้น
+                  </label>
+                  <div className="inline-flex items-center gap-2 w-full">
+                    <button
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => setDraft({ ...draft, defaultPaymentMethod: 'BANK_BATCH' })}
+                      className={`flex-1 h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all cursor-pointer ${
+                        draft.defaultPaymentMethod === 'BANK_BATCH'
+                          ? 'bg-primary text-white border-primary shadow-2xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <Building2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>ส่งไฟล์ธนาคาร</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => setDraft({ ...draft, defaultPaymentMethod: 'DIRECT_TRANSFER' })}
+                      className={`flex-1 h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-semibold border whitespace-nowrap transition-all cursor-pointer ${
+                        draft.defaultPaymentMethod === 'DIRECT_TRANSFER'
+                          ? 'bg-primary text-white border-primary shadow-2xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                      <span>โอนตรง</span>
+                    </button>
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer md:mt-5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    disabled={!canEdit}
+                    checked={draft.adjustWeekend}
+                    onChange={(e) => setDraft({ ...draft, adjustWeekend: e.target.checked })}
+                    className="rounded border-slate-300 text-primary focus:ring-primary shrink-0"
+                  />
+                  <span>เลื่อนวันจ่ายเป็นวันศุกร์ก่อนหน้า หากตรงกับวันเสาร์–อาทิตย์</span>
                 </label>
               </div>
             </div>
+
+            {/* Section 3: Live Monthly Preview */}
+            <div className="pt-5 border-t border-slate-100 dark:border-slate-700 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  ตัวอย่างงวดประจำเดือน {THAI_MONTH_NAMES[previewMonth - 1]} {previewYear + 543} ({previewSlots.length} งวด)
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                {previewSlots.map((slot) => (
+                  <div
+                    key={slot.sequence}
+                    className="bg-slate-50/80 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700 px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 dark:text-slate-100 truncate">{slot.label}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        {formatThaiSlash(slot.startDate)} – {formatThaiSlash(slot.endDate)}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-slate-400 block">วันจ่าย</span>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatThaiSlash(slot.paymentDate)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* วิธีการจ่ายเงินเดือน (Payment Method) - Compact Layout */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-700/80">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center border border-blue-100 dark:border-blue-800/60 shrink-0">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">วิธีการจ่ายเงินเดือนหลัก</h3>
-              <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
-                วิธีหลักขององค์กร
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Option 1: Bank Batch */}
-          <button
-            type="button"
-            disabled={!canEdit}
-            onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'BANK_BATCH' })}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
-              settings.defaultPaymentMethod === 'BANK_BATCH'
-                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-primary dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
-                : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <div
-              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                settings.defaultPaymentMethod === 'BANK_BATCH'
-                  ? 'bg-primary text-white dark:bg-blue-600'
-                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
-              }`}
-            >
-              <Building2 className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
-                ส่งไฟล์ธนาคาร (Bank Batch)
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                ส่งไฟล์ .CSV ให้ธนาคารโอนให้อัตโนมัติ
-              </div>
-            </div>
-            {settings.defaultPaymentMethod === 'BANK_BATCH' && (
-              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 className="w-3 h-3" />
-                เลือกใช้
-              </span>
-            )}
-          </button>
-
-          {/* Option 2: Direct Transfer */}
-          <button
-            type="button"
-            disabled={!canEdit}
-            onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'DIRECT_TRANSFER' })}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
-              settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
-                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-primary dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
-                : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <div
-              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
-                  ? 'bg-primary text-white dark:bg-blue-600'
-                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
-              }`}
-            >
-              <Banknote className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
-                โอนเองทีละคน
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                โอนผ่าน Net Banking และแนบสลิปยืนยัน
-              </div>
-            </div>
-            {settings.defaultPaymentMethod === 'DIRECT_TRANSFER' && (
-              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 className="w-3 h-3" />
-                เลือกใช้
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 }

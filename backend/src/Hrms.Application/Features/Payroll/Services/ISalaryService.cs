@@ -102,4 +102,8 @@ public interface ISalaryService
 
     /// <summary>ดาวน์โหลดสลิป/ใบเสร็จการโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน)</summary>
     Task<SlipDownloadDto> GetBankReceiptAsync(long periodId, CancellationToken cancellationToken = default);
+
+    // ===== PAYROLL SCHEDULE CONFIG PER EMPLOYEE TYPE =====
+    Task<List<PayrollScheduleConfigDto>> GetPayrollScheduleConfigsAsync(CancellationToken cancellationToken = default);
+    Task<PayrollScheduleConfigDto> UpsertPayrollScheduleConfigAsync(long employeeTypeId, UpsertPayrollScheduleConfigRequest request, CancellationToken cancellationToken = default);
 }

@@ -5,6 +5,12 @@ public class PayrollPeriodDto
     public long Id { get; set; }
     public int Year { get; set; }
     public int Month { get; set; }
+    public long? EmployeeTypeId { get; set; }
+    public string? EmployeeTypeCode { get; set; }
+    public string? EmployeeTypeName { get; set; }
+    public string? WageType { get; set; }
+    public string PayCycle { get; set; } = "MONTHLY";
+    public int PeriodSequence { get; set; } = 1;
     public string PeriodName { get; set; } = string.Empty;
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
@@ -155,12 +161,64 @@ public class CreatePayrollPeriodRequest
 {
     public int Year { get; set; }
     public int Month { get; set; }
+    /// <summary>ประเภทสัญญา/ประเภทพนักงานของรอบนี้ (null = รอบรวมทั้งหมด)</summary>
+    public long? EmployeeTypeId { get; set; }
+    /// <summary>ความถี่รอบจ่าย: MONTHLY, SEMI_MONTHLY, WEEKLY</summary>
+    public string? PayCycle { get; set; }
+    /// <summary>ลำดับงวดในเดือน (1, 2, 3, 4...)</summary>
+    public int? PeriodSequence { get; set; }
     public string PeriodName { get; set; } = string.Empty;
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
     public string? PaymentDate { get; set; }
     /// <summary>วันตัดรอบเงินเบิก (ว่าง = ใช้วันกำหนดจ่าย)</summary>
     public string? ClaimCutoffDate { get; set; }
+}
+
+public class PayrollScheduleConfigDto
+{
+    public long Id { get; set; }
+    public long EmployeeTypeId { get; set; }
+    public string EmployeeTypeCode { get; set; } = string.Empty;
+    public string EmployeeTypeName { get; set; } = string.Empty;
+    public string WageType { get; set; } = "MONTHLY";
+    public string PayCycle { get; set; } = "MONTHLY";
+    public string StartDayType { get; set; } = "FIRST_DAY";
+    public int StartDay { get; set; } = 1;
+    public string EndDayType { get; set; } = "LAST_DAY";
+    public int EndDay { get; set; } = 31;
+    public int PaymentDay { get; set; } = 29;
+    public int SemiMonthlyFirstCutoffDay { get; set; } = 15;
+    public int SemiMonthlyFirstPayDay { get; set; } = 15;
+    public int SemiMonthlySecondPayDay { get; set; } = 31;
+    public int WeeklyStartDayOfWeek { get; set; } = 1;
+    public int WeeklyPayOffsetDays { get; set; } = 3;
+    public bool AdjustWeekend { get; set; } = true;
+    public string ClaimCutoffType { get; set; } = "CUSTOM_DAY";
+    public int ClaimCutoffDay { get; set; } = 25;
+    public string DefaultPaymentMethod { get; set; } = "BANK_BATCH";
+    public string? Note { get; set; }
+    public bool IsConfigured { get; set; }
+}
+
+public class UpsertPayrollScheduleConfigRequest
+{
+    public string PayCycle { get; set; } = "MONTHLY";
+    public string StartDayType { get; set; } = "FIRST_DAY";
+    public int StartDay { get; set; } = 1;
+    public string EndDayType { get; set; } = "LAST_DAY";
+    public int EndDay { get; set; } = 31;
+    public int PaymentDay { get; set; } = 29;
+    public int SemiMonthlyFirstCutoffDay { get; set; } = 15;
+    public int SemiMonthlyFirstPayDay { get; set; } = 15;
+    public int SemiMonthlySecondPayDay { get; set; } = 31;
+    public int WeeklyStartDayOfWeek { get; set; } = 1;
+    public int WeeklyPayOffsetDays { get; set; } = 3;
+    public bool AdjustWeekend { get; set; } = true;
+    public string ClaimCutoffType { get; set; } = "CUSTOM_DAY";
+    public int ClaimCutoffDay { get; set; } = 25;
+    public string DefaultPaymentMethod { get; set; } = "BANK_BATCH";
+    public string? Note { get; set; }
 }
 
 public class UpdateClaimCutoffRequest

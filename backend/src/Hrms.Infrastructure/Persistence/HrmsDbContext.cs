@@ -105,6 +105,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<EmployeeSalary> EmployeeSalaries => Set<EmployeeSalary>();
     public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
     public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
+    public DbSet<PayrollScheduleConfig> PayrollScheduleConfigs => Set<PayrollScheduleConfig>();
     public DbSet<Payroll> Payrolls => Set<Payroll>();
     public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
@@ -1951,6 +1952,10 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Year).HasColumnName("year");
             entity.Property(e => e.Month).HasColumnName("month");
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.PayCycle).HasColumnName("pay_cycle").HasMaxLength(20).HasDefaultValue("MONTHLY");
+            entity.Property(e => e.PeriodSequence).HasColumnName("period_sequence").HasDefaultValue(1);
+            entity.Property(e => e.PeriodName).HasColumnName("period_name").HasMaxLength(150);
             entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.PaymentDate).HasColumnName("payment_date");
@@ -1972,6 +1977,41 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.BankReceiptData).HasColumnName("bank_receipt_data");
             entity.Property(e => e.BankReceiptFileName).HasColumnName("bank_receipt_file_name").HasMaxLength(255);
             entity.Property(e => e.BankReceiptContentType).HasColumnName("bank_receipt_content_type").HasMaxLength(100);
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: PayrollScheduleConfig
+        modelBuilder.Entity<PayrollScheduleConfig>(entity =>
+        {
+            entity.ToTable("payroll_schedule_config", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.PayCycle).HasColumnName("pay_cycle").HasMaxLength(20).HasDefaultValue("MONTHLY");
+            entity.Property(e => e.StartDayType).HasColumnName("start_day_type").HasMaxLength(20).HasDefaultValue("FIRST_DAY");
+            entity.Property(e => e.StartDay).HasColumnName("start_day").HasDefaultValue(1);
+            entity.Property(e => e.EndDayType).HasColumnName("end_day_type").HasMaxLength(20).HasDefaultValue("LAST_DAY");
+            entity.Property(e => e.EndDay).HasColumnName("end_day").HasDefaultValue(31);
+            entity.Property(e => e.PaymentDay).HasColumnName("payment_day").HasDefaultValue(29);
+            entity.Property(e => e.SemiMonthlyFirstCutoffDay).HasColumnName("semi_monthly_first_cutoff_day").HasDefaultValue(15);
+            entity.Property(e => e.SemiMonthlyFirstPayDay).HasColumnName("semi_monthly_first_pay_day").HasDefaultValue(15);
+            entity.Property(e => e.SemiMonthlySecondPayDay).HasColumnName("semi_monthly_second_pay_day").HasDefaultValue(31);
+            entity.Property(e => e.WeeklyStartDayOfWeek).HasColumnName("weekly_start_day_of_week").HasDefaultValue(1);
+            entity.Property(e => e.WeeklyPayOffsetDays).HasColumnName("weekly_pay_offset_days").HasDefaultValue(3);
+            entity.Property(e => e.AdjustWeekend).HasColumnName("adjust_weekend").HasDefaultValue(true);
+            entity.Property(e => e.ClaimCutoffType).HasColumnName("claim_cutoff_type").HasMaxLength(20).HasDefaultValue("CUSTOM_DAY");
+            entity.Property(e => e.ClaimCutoffDay).HasColumnName("claim_cutoff_day").HasDefaultValue(25);
+            entity.Property(e => e.DefaultPaymentMethod).HasColumnName("default_payment_method").HasMaxLength(30).HasDefaultValue("BANK_BATCH");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.HasIndex(e => e.EmployeeTypeId).IsUnique();
+            entity.HasOne(e => e.EmployeeType)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configuration: Payroll

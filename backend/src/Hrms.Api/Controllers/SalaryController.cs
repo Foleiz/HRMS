@@ -866,6 +866,32 @@ public class SalaryController : ControllerBase
         return File(fileBytes, "application/pdf", fileName);
     }
 
+    // ===== PAYROLL SCHEDULE CONFIG PER EMPLOYEE TYPE =====
+
+    /// <summary>ดึงการตั้งค่ารอบเงินเดือนแยกตามประเภทสัญญา/ประเภทพนักงานทั้งหมด</summary>
+    [HttpGet("schedule-configs")]
+    [ProducesResponseType(typeof(ApiResponse<List<PayrollScheduleConfigDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<PayrollScheduleConfigDto>>>> GetPayrollScheduleConfigs(
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanView(_currentUser), "ดูการตั้งค่ารอบเงินเดือน");
+        var result = await _salaryService.GetPayrollScheduleConfigsAsync(cancellationToken);
+        return Ok(ApiResponse<List<PayrollScheduleConfigDto>>.Ok(result));
+    }
+
+    /// <summary>บันทึกการตั้งค่ารอบเงินเดือนสำหรับประเภทสัญญา/ประเภทพนักงาน</summary>
+    [HttpPut("schedule-configs/{employeeTypeId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollScheduleConfigDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PayrollScheduleConfigDto>>> UpsertPayrollScheduleConfig(
+        long employeeTypeId,
+        [FromBody] UpsertPayrollScheduleConfigRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ตั้งค่ารอบเงินเดือน");
+        var result = await _salaryService.UpsertPayrollScheduleConfigAsync(employeeTypeId, request, cancellationToken);
+        return Ok(ApiResponse<PayrollScheduleConfigDto>.Ok(result, "บันทึกการตั้งค่ารอบเงินเดือนเรียบร้อยแล้ว"));
+    }
+
     #endregion
 
     // ===== HELPER: ตรวจสิทธิ์การเปลี่ยนสถานะรอบเงินเดือนตามบทบาท =====

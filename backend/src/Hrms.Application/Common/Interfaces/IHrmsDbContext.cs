@@ -93,6 +93,7 @@ public interface IHrmsDbContext
     DbSet<EmployeeSalary> EmployeeSalaries { get; }
     DbSet<PayrollItem> PayrollItems { get; }
     DbSet<PayrollPeriod> PayrollPeriods { get; }
+    DbSet<PayrollScheduleConfig> PayrollScheduleConfigs { get; }
     DbSet<Payroll> Payrolls { get; }
     DbSet<PayrollDetail> PayrollDetails { get; }
     DbSet<Payslip> Payslips { get; }

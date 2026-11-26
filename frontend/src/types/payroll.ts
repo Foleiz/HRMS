@@ -196,10 +196,62 @@ export interface LinkedBenefit {
   status: string;
 }
 
+export type PayCycleType = 'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY';
+
+export interface PayrollScheduleConfig {
+  id: number;
+  employeeTypeId: number;
+  employeeTypeCode: string;
+  employeeTypeName: string;
+  wageType: string;
+  payCycle: PayCycleType;
+  startDayType: 'FIRST_DAY' | 'CUSTOM_DAY';
+  startDay: number;
+  endDayType: 'LAST_DAY' | 'CUSTOM_DAY';
+  endDay: number;
+  paymentDay: number;
+  semiMonthlyFirstCutoffDay: number;
+  semiMonthlyFirstPayDay: number;
+  semiMonthlySecondPayDay: number;
+  weeklyStartDayOfWeek: number;
+  weeklyPayOffsetDays: number;
+  adjustWeekend: boolean;
+  claimCutoffType: 'SAME_AS_PAYMENT' | 'CUSTOM_DAY';
+  claimCutoffDay: number;
+  defaultPaymentMethod: 'BANK_BATCH' | 'DIRECT_TRANSFER';
+  note?: string | null;
+  isConfigured: boolean;
+}
+
+export interface UpsertPayrollScheduleConfigPayload {
+  payCycle: PayCycleType;
+  startDayType: 'FIRST_DAY' | 'CUSTOM_DAY';
+  startDay: number;
+  endDayType: 'LAST_DAY' | 'CUSTOM_DAY';
+  endDay: number;
+  paymentDay: number;
+  semiMonthlyFirstCutoffDay: number;
+  semiMonthlyFirstPayDay: number;
+  semiMonthlySecondPayDay: number;
+  weeklyStartDayOfWeek: number;
+  weeklyPayOffsetDays: number;
+  adjustWeekend: boolean;
+  claimCutoffType: 'SAME_AS_PAYMENT' | 'CUSTOM_DAY';
+  claimCutoffDay: number;
+  defaultPaymentMethod: 'BANK_BATCH' | 'DIRECT_TRANSFER';
+  note?: string | null;
+}
+
 export interface PayrollPeriod {
   id: number;
   year: number;
   month: number;
+  employeeTypeId?: number | null;
+  employeeTypeCode?: string | null;
+  employeeTypeName?: string | null;
+  wageType?: string | null;
+  payCycle?: PayCycleType | string;
+  periodSequence?: number;
   periodName: string;
   startDate: string;
   endDate: string;

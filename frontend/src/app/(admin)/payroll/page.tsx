@@ -86,6 +86,7 @@ import {
   EmployeeBonus,
   BonusPeriodSummary,
   SaveEmployeeBonusesPayload,
+  PayrollScheduleConfig,
 } from '@/types/payroll';
 import { Position, EmployeeLevel, Department } from '@/types/organization';
 import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal';
@@ -109,7 +110,13 @@ import { commissionService } from '@/services/commissionService';
 import { CommissionPeriodSummary } from '@/types/commission';
 import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
-import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
+import CreatePayrollPeriodModal from '@/components/payroll/CreatePayrollPeriodModal';
+import {
+  calculatePeriodDatesFromSettings,
+  getPayrollScheduleSettings,
+  generatePeriodSlotsForConfig,
+  PAY_CYCLE_LABELS,
+} from '@/services/payrollScheduleService';
 import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
@@ -668,6 +675,157 @@ export default function PayrollPage() {
   const [bonusPayoutYear, setBonusPayoutYear] = useState<number | null>(null);
   const [isAdvancingStatus, setIsAdvancingStatus] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
+  const [createPeriodTarget, setCreatePeriodTarget] = useState<{ year: number; month: number } | null>(null);
+  const [scheduleConfigs, setScheduleConfigs] = useState<PayrollScheduleConfig[]>([]);
+  const [selectedProcessCycle, setSelectedProcessCycle] = useState<'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY'>('MONTHLY');
+
+  // จัดกลุ่มประเภทสัญญาตามความถี่รอบจ่าย (PayCycle) เพื่อไม่ต้องสร้าง/อนุมัติแยกทีละสัญญา
+  const payCycleGroups = React.useMemo(() => {
+    const order: Array<'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY'> = ['MONTHLY', 'SEMI_MONTHLY', 'WEEKLY'];
+    const map = new Map<
+      'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY',
+      { cycle: 'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY'; label: string; memberNames: string[]; config: PayrollScheduleConfig | null }
+    >();
+
+    for (const cfg of scheduleConfigs) {
+      const c = (cfg.payCycle || 'MONTHLY') as 'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY';
+      const existing = map.get(c);
+      if (existing) {
+        existing.memberNames.push(cfg.employeeTypeName);
+      } else {
+        map.set(c, {
+          cycle: c,
+          label: PAY_CYCLE_LABELS[c] || c,
+          memberNames: [cfg.employeeTypeName],
+          config: cfg,
+        });
+      }
+    }
+
+    // ถ้ายังโหลดไม่เสร็จหรือไม่มี config ให้มี MONTHLY เป็นค่าเริ่มต้น
+    if (map.size === 0) {
+      map.set('MONTHLY', {
+        cycle: 'MONTHLY',
+        label: PAY_CYCLE_LABELS.MONTHLY,
+        memberNames: [],
+        config: null,
+      });
+    }
+
+    return order.filter((c) => map.has(c)).map((c) => map.get(c)!);
+  }, [scheduleConfigs]);
+
+  // โหลดการตั้งค่ารอบเงินเดือนแยกตามประเภทสัญญา
+  useEffect(() => {
+    salaryService
+      .getPayrollScheduleConfigs()
+      .then((data) => {
+        setScheduleConfigs(data || []);
+      })
+      .catch(() => {
+        setScheduleConfigs([]);
+      });
+  }, [activeTab]);
+
+  // Sync กลุ่มรอบจ่ายตาม selectedPeriod ปัจจุบัน
+  useEffect(() => {
+    if (selectedPeriod) {
+      const c = (selectedPeriod.payCycle || 'MONTHLY').toUpperCase();
+      if (c === 'SEMI_MONTHLY' || c === 'WEEKLY' || c === 'MONTHLY') {
+        setSelectedProcessCycle(c);
+      }
+    }
+  }, [selectedPeriod?.id, selectedPeriod?.payCycle]);
+
+  // สร้างรอบเงินเดือนครบทุกงวดของกลุ่มความถี่ (PayCycle) ในเดือน/ปีที่เลือกในคลิกเดียว
+  const handleCreatePeriodsForPayCycle = async (
+    year: number,
+    month: number,
+    cycle: 'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY'
+  ) => {
+    if (isCreatingPeriod) return;
+
+    const group = payCycleGroups.find((g) => g.cycle === cycle);
+    const cfg = group?.config ?? null;
+    const slots = cfg
+      ? generatePeriodSlotsForConfig(year, month, { ...cfg, employeeTypeName: undefined })
+      : (() => {
+          const fallback = calculatePeriodDatesFromSettings(year, month);
+          return [
+            {
+              sequence: 1,
+              label: 'รายเดือน',
+              periodName: fallback.periodName,
+              startDate: fallback.startDate,
+              endDate: fallback.endDate,
+              paymentDate: fallback.paymentDate,
+              claimCutoffDate: fallback.claimCutoffDate,
+              payCycle: 'MONTHLY' as const,
+            },
+          ];
+        })();
+
+    const remaining = slots.filter(
+      (slot) =>
+        !periods.some(
+          (p) =>
+            (p.employeeTypeId ?? null) === null &&
+            (p.payCycle || 'MONTHLY').toUpperCase() === cycle &&
+            p.startDate <= slot.endDate &&
+            p.endDate >= slot.startDate
+        )
+    );
+
+    if (remaining.length === 0) {
+      showToast(`รอบเงินเดือนกลุ่ม${PAY_CYCLE_LABELS[cycle] || cycle} ถูกสร้างครบทุกงวดแล้วในเดือนนี้`);
+      return;
+    }
+
+    try {
+      setIsCreatingPeriod(true);
+      const createdList: PayrollPeriod[] = [];
+      for (const slot of remaining) {
+        const created = await salaryService.createPayrollPeriod({
+          year,
+          month,
+          employeeTypeId: null,
+          payCycle: cycle,
+          periodSequence: slot.sequence,
+          periodName: undefined,
+          startDate: slot.startDate,
+          endDate: slot.endDate,
+          paymentDate: slot.paymentDate || undefined,
+          claimCutoffDate: slot.claimCutoffDate || undefined,
+        });
+        createdList.push(created);
+      }
+
+      if (createdList.length > 0) {
+        const first = createdList[0];
+        showToast(
+          createdList.length > 1
+            ? `สร้างรอบเงินเดือน${PAY_CYCLE_LABELS[cycle] || cycle} ${createdList.length} งวด สำเร็จแล้ว`
+            : `สร้างรอบเงินเดือน "${first.periodName}" สำเร็จแล้ว`
+        );
+        const [updatedPeriods, updatedOverview] = await Promise.all([
+          salaryService.getPayrollPeriods(),
+          salaryService.getOverview().catch(() => null),
+        ]);
+        setPeriods(updatedPeriods || []);
+        if (updatedOverview) setOverview(updatedOverview);
+        setSelectedPeriod(first);
+        setSelectedProcessMonth(null);
+        setSelectedProcessCycle(cycle);
+        const pRows = await salaryService.getPayrollsByPeriod(first.id);
+        setPayrolls(pRows || []);
+      }
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการสร้างรอบเงินเดือน';
+      showToast(errorMsg);
+    } finally {
+      setIsCreatingPeriod(false);
+    }
+  };
   const [isAllPeriodsModalOpen, setIsAllPeriodsModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
   const [isDuplicatePeriodAlertOpen, setIsDuplicatePeriodAlertOpen] = useState(false);
@@ -3083,6 +3241,19 @@ export default function PayrollPage() {
           selectedMonth={periodsTabSelectedMonth}
           onMonthChange={setPeriodsTabSelectedMonth}
           onCreatePeriod={handleCreatePeriodInstant}
+          onPeriodCreated={async (created) => {
+            showToast(`สร้างรอบเงินเดือน "${created.periodName}" สำเร็จแล้ว`);
+            const [updatedPeriods, updatedOverview] = await Promise.all([
+              salaryService.getPayrollPeriods(),
+              salaryService.getOverview().catch(() => null),
+            ]);
+            setPeriods(updatedPeriods || []);
+            if (updatedOverview) setOverview(updatedOverview);
+            setSelectedPeriod(created);
+            setSelectedProcessMonth(null);
+            const pRows = await salaryService.getPayrollsByPeriod(created.id);
+            setPayrolls(pRows || []);
+          }}
           onOpenPeriodInProcess={(periodId) => {
             handlePeriodChange(periodId);
             setActiveTab('process');
@@ -3983,92 +4154,175 @@ export default function PayrollPage() {
             {/* ── PANEL 1: TOP PERIOD SELECTOR & ACTIONS BAR (คงเดิม) ── */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5">
               {/* ── TIER 1: Period Selection & Period Management (สร้าง/ลบรอบ) ── */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+              <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-2">
                 {/* Left: Period Selector & Status Badge */}
-                <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
                   <div
                     id="tour-payroll-period-selector"
                     data-tour="tour-payroll-period-selector"
-                    className="flex items-center gap-2 shrink-0 flex-wrap"
+                    className="flex items-center gap-1.5 flex-wrap min-w-0"
                   >
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
                         <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap hidden 2xl:inline">
                         รอบเงินเดือน:
                       </span>
                     </div>
 
-                    {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
-                    <div className="relative inline-block shrink-0">
-                      <CustomSelect
-                        value={
-                          selectedProcessMonth != null
-                            ? `UNCREATED_${selectedProcessMonth}`
-                            : selectedPeriod && selectedPeriod.year === activeYear
-                            ? selectedPeriod.id
-                            : (periodsInSelectedYear[0]?.id || '')
-                        }
-                        onChange={(e) => {
-                          const val = String(e?.target?.value ?? e ?? '');
-                          if (val.startsWith('UNCREATED_')) {
-                            const monthNum = parseInt(val.replace('UNCREATED_', ''), 10);
-                            setSelectedProcessMonth(monthNum);
-                            setSelectedPeriod(null);
-                            setPayrolls([]);
-                          } else if (val) {
-                            setSelectedProcessMonth(null);
-                            handlePeriodChange(Number(val));
-                          }
-                        }}
-                        numbered={false}
-                        size="sm"
-                        className="min-w-[125px] sm:min-w-[135px]"
-                        buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                        title="เลือกรอบเดือน"
-                      >
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const m = i + 1;
-                          const p = periodsInSelectedYear.find((x) => x.month === m);
-                          if (p) {
-                            const statusHint =
-                              p.status === 'CLOSED' ? 'ปิดรอบแล้ว' : p.status === 'PAID' ? 'จ่ายแล้ว' : undefined;
-                            return (
-                              <option
-                                key={p.id}
-                                value={p.id}
-                                data-hint={statusHint}
-                                className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
-                              >
-                                {THAI_MONTH_NAMES[i]}
-                              </option>
-                            );
-                          }
-                          return (
-                            <option
-                              key={`UNCREATED_${m}`}
-                              value={`UNCREATED_${m}`}
-                              data-hint="ยังไม่มีรอบ"
-                              className="text-slate-400 dark:text-slate-500 italic dark:bg-slate-800"
-                            >
-                              {THAI_MONTH_NAMES[i]}
-                            </option>
-                          );
-                        })}
-                      </CustomSelect>
-                    </div>
+                    {/* 1. ตัวเลือกเดือน (แสดงครบ 12 เดือนสะอาดๆ ไม่ซ้ำแถว) */}
+                    {(() => {
+                      const activeMonth =
+                        selectedProcessMonth ??
+                        (selectedPeriod && selectedPeriod.year === activeYear
+                          ? selectedPeriod.month
+                          : periodsInSelectedYear[0]?.month ?? new Date().getMonth() + 1);
+                      const activeCycle = selectedProcessCycle;
 
-                    {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
-                    <div className="relative inline-block shrink-0">
-                      <YearPicker
-                        value={activeYear}
-                        onChange={(y) => handleYearFilterChange(y)}
-                        className="w-24 sm:w-28"
-                        buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
-                        title="เลือกปีรอบเงินเดือน"
-                      />
-                    </div>
+                      const matchPeriodCycle = (p: PayrollPeriod, cycle: string) =>
+                        (p.payCycle || 'MONTHLY').toUpperCase() === cycle;
+
+                      const handleSelectMonth = (newMonth: number) => {
+                        const matches = periodsInSelectedYear
+                          .filter((p) => p.month === newMonth && matchPeriodCycle(p, activeCycle))
+                          .sort((a, b) => (a.periodSequence ?? 1) - (b.periodSequence ?? 1));
+                        if (matches.length > 0) {
+                          setSelectedProcessMonth(null);
+                          handlePeriodChange(matches[0].id);
+                        } else {
+                          setSelectedProcessMonth(newMonth);
+                          setSelectedPeriod(null);
+                          setPayrolls([]);
+                        }
+                      };
+
+                      const handleSelectPayCycle = (nextCycle: 'MONTHLY' | 'SEMI_MONTHLY' | 'WEEKLY') => {
+                        setSelectedProcessCycle(nextCycle);
+                        const matches = periodsInSelectedYear
+                          .filter((p) => p.month === activeMonth && matchPeriodCycle(p, nextCycle))
+                          .sort((a, b) => (a.periodSequence ?? 1) - (b.periodSequence ?? 1));
+                        if (matches.length > 0) {
+                          setSelectedProcessMonth(null);
+                          handlePeriodChange(matches[0].id);
+                        } else {
+                          setSelectedProcessMonth(activeMonth);
+                          setSelectedPeriod(null);
+                          setPayrolls([]);
+                        }
+                      };
+
+                      const showCycleDropdown =
+                        payCycleGroups.length > 1 ||
+                        periodsInSelectedYear.some((p) => (p.payCycle || 'MONTHLY').toUpperCase() !== 'MONTHLY');
+
+                      return (
+                        <>
+                          <div className="relative inline-block shrink-0">
+                            <CustomSelect
+                              value={String(activeMonth)}
+                              onChange={(e) => {
+                                const mNum = parseInt(String(e?.target?.value ?? e ?? ''), 10);
+                                if (mNum >= 1 && mNum <= 12) handleSelectMonth(mNum);
+                              }}
+                              numbered={false}
+                              size="sm"
+                              className="min-w-[105px] sm:min-w-[115px]"
+                              buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                              title="เลือกเดือน"
+                            >
+                              {Array.from({ length: 12 }, (_, i) => {
+                                const m = i + 1;
+                                const mCyclePeriods = periodsInSelectedYear.filter(
+                                  (x) => x.month === m && matchPeriodCycle(x, activeCycle)
+                                );
+                                const anyInMonth = periodsInSelectedYear.some((x) => x.month === m);
+                                const hint =
+                                  mCyclePeriods.length > 0
+                                    ? mCyclePeriods.every((x) => x.status === 'CLOSED')
+                                      ? 'ปิดรอบแล้ว'
+                                      : mCyclePeriods.every((x) => x.status === 'PAID')
+                                      ? 'จ่ายแล้ว'
+                                      : mCyclePeriods.length > 1
+                                      ? `${mCyclePeriods.length} งวด`
+                                      : undefined
+                                    : anyInMonth
+                                    ? 'มีรอบอื่น'
+                                    : 'ยังไม่มีรอบ';
+                                return (
+                                  <option
+                                    key={m}
+                                    value={String(m)}
+                                    data-hint={hint}
+                                    className={
+                                      mCyclePeriods.length > 0
+                                        ? 'text-slate-900 dark:text-slate-100 dark:bg-slate-800'
+                                        : 'text-slate-400 dark:text-slate-500 italic dark:bg-slate-800'
+                                    }
+                                  >
+                                    {THAI_MONTH_NAMES[i]}
+                                  </option>
+                                );
+                              })}
+                            </CustomSelect>
+                          </div>
+
+                          {/* 2. ตัวเลือกปี พ.ศ. */}
+                          <div className="relative inline-block shrink-0">
+                            <YearPicker
+                              value={activeYear}
+                              onChange={(y) => handleYearFilterChange(y)}
+                              className="w-[106px]"
+                              buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
+                              title="เลือกปีรอบเงินเดือน"
+                            />
+                          </div>
+
+                          {/* 3. ตัวเลือกกลุ่มรอบการจ่าย (แสดงเฉพาะเมื่อมีมากกว่า 1 ความถี่ เช่น รายเดือน + รายปักษ์) */}
+                          {showCycleDropdown && (
+                            <div className="relative inline-block shrink-0">
+                              <CustomSelect
+                                value={activeCycle}
+                                onChange={(e) => {
+                                  const raw = String(e?.target?.value ?? e ?? 'MONTHLY') as
+                                    | 'MONTHLY'
+                                    | 'SEMI_MONTHLY'
+                                    | 'WEEKLY';
+                                  handleSelectPayCycle(raw);
+                                }}
+                                numbered={false}
+                                size="sm"
+                                className="min-w-[110px] sm:min-w-[130px]"
+                                buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                                title="เลือกกลุ่มรอบการจ่าย"
+                              >
+                                {payCycleGroups.map((grp) => {
+                                  const countInMonth = periodsInSelectedYear.filter(
+                                    (p) => p.month === activeMonth && matchPeriodCycle(p, grp.cycle)
+                                  ).length;
+                                  return (
+                                    <option
+                                      key={grp.cycle}
+                                      value={grp.cycle}
+                                      data-hint={
+                                        countInMonth > 0
+                                          ? countInMonth > 1
+                                            ? `${countInMonth} งวด`
+                                            : 'มีรอบแล้ว'
+                                          : 'ยังไม่มีรอบ'
+                                      }
+                                      className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
+                                    >
+                                      {grp.label}
+                                    </option>
+                                  );
+                                })}
+                              </CustomSelect>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* สถานะรอบ */}
@@ -4123,7 +4377,7 @@ export default function PayrollPage() {
                 <div
                   id="tour-payroll-workflow-actions"
                   data-tour="tour-payroll-workflow-actions"
-                  className="flex flex-wrap items-center gap-2 shrink-0"
+                  className="flex flex-wrap xl:flex-nowrap items-center gap-1.5 ml-auto shrink-0"
                 >
                   {(!selectedPeriod || selectedProcessMonth != null) ? (
                     (canAccessHrView || isAdmin) ? (
@@ -4139,11 +4393,12 @@ export default function PayrollPage() {
                           const targetMonth =
                             selectedProcessMonth ??
                             (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
-                          handleCreatePeriodInstant(activeYear, targetMonth);
+                          handleCreatePeriodsForPayCycle(activeYear, targetMonth, selectedProcessCycle);
                         }}
                         icon={<Plus className="w-3.5 h-3.5" />}
                       >
                         สร้างรอบเงินเดือน
+                        {payCycleGroups.length > 1 ? ` (${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle})` : ''}
                       </Button>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
@@ -4405,6 +4660,72 @@ export default function PayrollPage() {
                 </div>
               </div>
 
+              {/* ── SUB-PERIOD SWITCHER (แสดงเฉพาะกลุ่มที่มีหลายงวดในเดือนเดียวกัน เช่น รายปักษ์ / รายสัปดาห์) ── */}
+              {(() => {
+                const subMonth =
+                  selectedProcessMonth ??
+                  (selectedPeriod && selectedPeriod.year === activeYear
+                    ? selectedPeriod.month
+                    : periodsInSelectedYear[0]?.month ?? new Date().getMonth() + 1);
+                const subPeriods = periodsInSelectedYear
+                  .filter(
+                    (p) => p.month === subMonth && (p.payCycle || 'MONTHLY').toUpperCase() === selectedProcessCycle
+                  )
+                  .sort((a, b) => (a.periodSequence ?? 1) - (b.periodSequence ?? 1));
+                if (subPeriods.length <= 1) return null;
+
+                const fmtShortRange = (startIso: string, endIso: string) => {
+                  const [, sm, sd] = startIso.slice(0, 10).split('-').map(Number);
+                  const [, em, ed] = endIso.slice(0, 10).split('-').map(Number);
+                  if (!sd || !ed) return '';
+                  if (sm === em) return `${sd}–${ed} ${TH_MONTHS_SHORT[(em || 1) - 1]}`;
+                  return `${sd} ${TH_MONTHS_SHORT[(sm || 1) - 1]}–${ed} ${TH_MONTHS_SHORT[(em || 1) - 1]}`;
+                };
+
+                return (
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mr-1">
+                      เลือกงวดการจ่าย:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {subPeriods.map((subP, idx) => {
+                        const isSubActive = selectedPeriod?.id === subP.id;
+                        const seqNum = subP.periodSequence ?? idx + 1;
+                        const baseLabel =
+                          subP.payCycle === 'WEEKLY' ? `สัปดาห์ที่ ${seqNum}` : `งวดที่ ${seqNum}`;
+                        const rangeLabel = fmtShortRange(subP.startDate, subP.endDate);
+                        return (
+                          <button
+                            key={subP.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedProcessMonth(null);
+                              handlePeriodChange(subP.id);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                              isSubActive
+                                ? 'bg-primary text-white border-primary shadow-xs'
+                                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-primary/50 hover:bg-white dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            <span>{baseLabel}</span>
+                            {rangeLabel && (
+                              <span
+                                className={`text-[11px] font-medium ${
+                                  isSubActive ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'
+                                }`}
+                              >
+                                ({rangeLabel})
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ── TIER 2: Schedule Metadata (4 Columns like Image 2) ── */}
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. ช่วงเงินเดือน */}
@@ -4562,9 +4883,17 @@ export default function PayrollPage() {
                       (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
                     ]}{' '}
                     {activeYear + 543}
+                    {payCycleGroups.length > 1
+                      ? ` (${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle})`
+                      : ''}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    ยังไม่ได้สร้างรอบเงินเดือนสำหรับเดือนนี้ คุณสามารถกดปุ่ม &ldquo;สร้างรอบเงินเดือน&rdquo; เพื่อเริ่มประมวลผล
+                    {(() => {
+                      const grp = payCycleGroups.find((g) => g.cycle === selectedProcessCycle);
+                      return grp && grp.memberNames.length > 0
+                        ? `รวมกลุ่มสัญญา: ${grp.memberNames.join(', ')} — ระบบจะสร้างครบทุกงวดตามหน้าตั้งค่าเงินเดือนให้อัตโนมัติ`
+                        : 'ยังไม่ได้สร้างรอบเงินเดือนสำหรับเดือนนี้ ระบบจะสร้างครบทุกงวดตามหน้าตั้งค่าเงินเดือนให้อัตโนมัติ';
+                    })()}
                   </p>
                 </div>
                 {(canAccessHrView || isAdmin) && (
@@ -4576,11 +4905,14 @@ export default function PayrollPage() {
                     onClick={() => {
                       const targetMonth =
                         selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
-                      handleCreatePeriodInstant(activeYear, targetMonth);
+                      handleCreatePeriodsForPayCycle(activeYear, targetMonth, selectedProcessCycle);
                     }}
                     icon={<Plus className="w-4 h-4" />}
                   >
                     สร้างรอบเงินเดือน{' '}
+                    {payCycleGroups.length > 1
+                      ? `${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle} · `
+                      : ''}
                     {THAI_MONTH_NAMES[
                       (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
                     ]}{' '}
@@ -6625,6 +6957,38 @@ export default function PayrollPage() {
           </div>
         </ModalShell>
       )}
+
+      {/* Modal สร้างรอบเงินเดือนใหม่แยกตามประเภทสัญญา (เปิดจากหน้าประมวลผลเงินเดือน) */}
+      <CreatePayrollPeriodModal
+        isOpen={isCreatePeriodModalOpen}
+        onClose={() => {
+          setIsCreatePeriodModalOpen(false);
+          setCreatePeriodTarget(null);
+        }}
+        existingPeriods={periods}
+        defaultYear={createPeriodTarget?.year ?? selectedPeriod?.year ?? new Date().getFullYear()}
+        defaultMonth={
+          createPeriodTarget?.month ??
+          (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1))
+        }
+        onCreated={async (created, createdCount = 1) => {
+          showToast(
+            createdCount > 1
+              ? `สร้างรอบเงินเดือน ${createdCount} งวด (${created.employeeTypeName || 'ทั้งหมด'}) สำเร็จแล้ว`
+              : `สร้างรอบเงินเดือน "${created.periodName}" สำเร็จแล้ว`
+          );
+          const [updatedPeriods, updatedOverview] = await Promise.all([
+            salaryService.getPayrollPeriods(),
+            salaryService.getOverview().catch(() => null),
+          ]);
+          setPeriods(updatedPeriods || []);
+          if (updatedOverview) setOverview(updatedOverview);
+          setSelectedPeriod(created);
+          setSelectedProcessMonth(null);
+          const pRows = await salaryService.getPayrollsByPeriod(created.id);
+          setPayrolls(pRows || []);
+        }}
+      />
     </div>
   );
 }

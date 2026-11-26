@@ -9,13 +9,15 @@ import {
   Search,
   CheckCircle2,
   Clock,
+  Plus,
 } from 'lucide-react';
 import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
-import { THAI_MONTH_NAMES } from '@/services/payrollScheduleService';
+import { THAI_MONTH_NAMES, PAY_CYCLE_LABELS } from '@/services/payrollScheduleService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { Button, TableToolbar } from '@/components/ui';
 import { PayrollPeriodDetailModal } from './PayrollPeriodDetailModal';
+import CreatePayrollPeriodModal from './CreatePayrollPeriodModal';
 
 interface PayrollPeriodsTabProps {
   periods: PayrollPeriod[];
@@ -25,6 +27,7 @@ interface PayrollPeriodsTabProps {
   selectedMonth?: number;
   onMonthChange?: (month: number) => void;
   onCreatePeriod?: (year: number, month: number) => Promise<void>;
+  onPeriodCreated?: (created: PayrollPeriod) => Promise<void> | void;
   onOpenPeriodInProcess: (periodId: number) => void;
   onDeletePeriod: (period: PayrollPeriod) => void;
   onRefresh: () => void;
@@ -44,6 +47,7 @@ export default function PayrollPeriodsTab({
   selectedMonth,
   onMonthChange,
   onCreatePeriod,
+  onPeriodCreated,
   onOpenPeriodInProcess,
   onDeletePeriod,
   onRefresh,
@@ -55,10 +59,29 @@ export default function PayrollPeriodsTab({
   onNavigateToScheduleSettings,
 }: PayrollPeriodsTabProps) {
   const [yearFilter, setYearFilter] = useState<string>(String(selectedYear));
+  const [contractTypeFilter, setContractTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [selectedDetailPeriod, setSelectedDetailPeriod] = useState<PayrollPeriod | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const contractTypeOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    let hasAllGroup = false;
+    for (const p of periods) {
+      if (p.employeeTypeId && p.employeeTypeName) {
+        map.set(String(p.employeeTypeId), p.employeeTypeName);
+      } else {
+        hasAllGroup = true;
+      }
+    }
+    const opts = Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+    if (hasAllGroup) {
+      opts.push({ value: 'LEGACY_ALL', label: 'รวมทุกสัญญา' });
+    }
+    return opts;
+  }, [periods]);
 
   // Available years from periods or current year
   const availableYears = useMemo(() => {
@@ -110,17 +133,25 @@ export default function PayrollPeriodsTab({
     return periods
       .filter((p) => {
         const matchesYear = yearFilter === 'ALL' || p.year === Number(yearFilter);
+        const matchesType =
+          contractTypeFilter === 'ALL' ||
+          (contractTypeFilter === 'LEGACY_ALL'
+            ? !p.employeeTypeId
+            : String(p.employeeTypeId) === contractTypeFilter);
+        const q = searchQuery.trim().toLowerCase();
         const matchesSearch =
-          !searchQuery ||
-          p.periodName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          !q ||
+          p.periodName?.toLowerCase().includes(q) ||
+          p.employeeTypeName?.toLowerCase().includes(q) ||
           (p.month && THAI_MONTH_NAMES[p.month - 1]?.includes(searchQuery));
-        return matchesYear && matchesSearch;
+        return matchesYear && matchesType && matchesSearch;
       })
       .sort((a, b) => {
         if (a.year !== b.year) return b.year - a.year;
-        return b.month - a.month;
+        if (a.month !== b.month) return b.month - a.month;
+        return (b.periodSequence ?? 1) - (a.periodSequence ?? 1);
       });
-  }, [periods, yearFilter, searchQuery]);
+  }, [periods, yearFilter, contractTypeFilter, searchQuery]);
 
   const totalCount = filteredPeriods.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -245,21 +276,44 @@ export default function PayrollPeriodsTab({
           }}
           searchPlaceholder="ค้นหารอบเงินเดือน..."
           filters={
-            <div className="w-full sm:w-44">
-              <CustomSelect
-                value={yearFilter}
-                onChange={(e) => handleYearSelect(String(e.target.value))}
-                numbered={false}
-                className="w-full text-xs font-bold"
-                title="เลือกปี พ.ศ."
-              >
-                <option value="ALL">ปีทั้งหมด</option>
-                {availableYears.map((y) => (
-                  <option key={y} value={String(y)}>
-                    ปี พ.ศ. {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="w-full sm:w-40">
+                <CustomSelect
+                  value={yearFilter}
+                  onChange={(e) => handleYearSelect(String(e.target.value))}
+                  numbered={false}
+                  className="w-full text-xs font-bold"
+                  title="เลือกปี พ.ศ."
+                >
+                  <option value="ALL">ปีทั้งหมด</option>
+                  {availableYears.map((y) => (
+                    <option key={y} value={String(y)}>
+                      ปี พ.ศ. {y + 543}
+                    </option>
+                  ))}
+                </CustomSelect>
+              </div>
+              {contractTypeOptions.length > 0 && (
+                <div className="w-full sm:w-48">
+                  <CustomSelect
+                    value={contractTypeFilter}
+                    onChange={(e) => {
+                      setContractTypeFilter(String(e.target.value));
+                      setPage(1);
+                    }}
+                    numbered={false}
+                    className="w-full text-xs font-bold"
+                    title="กรองตามประเภทสัญญา"
+                  >
+                    <option value="ALL">ประเภทสัญญาทั้งหมด</option>
+                    {contractTypeOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </CustomSelect>
+                </div>
+              )}
             </div>
           }
           actions={
@@ -279,6 +333,19 @@ export default function PayrollPeriodsTab({
               >
                 <span className="hidden sm:inline">รีเฟรช</span>
               </Button>
+              {canAccessHrView && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  disabled={isCreating}
+                  icon={<Plus className="w-3.5 h-3.5" />}
+                  className="!h-9"
+                >
+                  สร้างรอบเงินเดือน
+                </Button>
+              )}
             </div>
           }
         />
@@ -328,9 +395,20 @@ export default function PayrollPeriodsTab({
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors"
                     >
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
-                          {p.periodName}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
+                            {p.periodName}
+                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60">
+                              {p.employeeTypeName || 'รวมทุกสัญญา'}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                              {PAY_CYCLE_LABELS[p.payCycle || 'MONTHLY'] || p.payCycle || 'รายเดือน'}
+                              {p.payCycle && p.payCycle !== 'MONTHLY' && p.periodSequence ? ` • งวดที่ ${p.periodSequence}` : ''}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {formatDateSlash(p.startDate)} - {formatDateSlash(p.endDate)}
@@ -429,6 +507,22 @@ export default function PayrollPeriodsTab({
           onOpenPeriodInProcess(periodId);
         }}
         canViewProcess={canViewProcess}
+      />
+
+      {/* Create Payroll Period Modal (Per-Contract Type) */}
+      <CreatePayrollPeriodModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        existingPeriods={periods}
+        defaultYear={selectedYear}
+        defaultMonth={selectedMonth}
+        onCreated={async (created) => {
+          if (onPeriodCreated) {
+            await onPeriodCreated(created);
+          } else {
+            onRefresh();
+          }
+        }}
       />
     </div>
   );

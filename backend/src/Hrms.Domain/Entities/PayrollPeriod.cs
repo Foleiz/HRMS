@@ -10,6 +10,14 @@ public class PayrollPeriod : BaseEntity
 {
     public int Year { get; set; }
     public int Month { get; set; }
+    /// <summary>ประเภทสัญญา/ประเภทพนักงานของรอบนี้ (null = รอบรวมทั้งหมดแบบเดิม)</summary>
+    public long? EmployeeTypeId { get; set; }
+    /// <summary>ความถี่รอบจ่าย: MONTHLY, SEMI_MONTHLY, WEEKLY</summary>
+    public string PayCycle { get; set; } = "MONTHLY";
+    /// <summary>ลำดับงวดในเดือนนั้น (เช่น 1, 2, 3, 4)</summary>
+    public int PeriodSequence { get; set; } = 1;
+    /// <summary>ชื่อรอบเงินเดือนที่บันทึกไว้ (null = สร้างจากเดือน/ปีอัตโนมัติ)</summary>
+    public string? PeriodName { get; set; }
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public DateOnly? PaymentDate { get; set; }
@@ -45,5 +53,6 @@ public class PayrollPeriod : BaseEntity
     public string? BankReceiptFileName { get; set; }
     public string? BankReceiptContentType { get; set; }
 
+    public EmployeeType? EmployeeType { get; set; }
     public ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
 }
