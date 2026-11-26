@@ -5,6 +5,7 @@ export const EMPLOYEES_ARTICLES: ManualArticle[] = [
     slug: 'employees-management',
     categoryId: 'organization',
     title: 'พนักงาน — จัดการพนักงาน และประเภทพนักงาน',
+    sidebarTitle: 'จัดการพนักงาน',
     summary:
       'เพิ่ม แก้ไข และค้นหาทะเบียนประวัติพนักงานทั้งองค์กร พร้อมตั้งค่าประเภทการจ้างงาน (พนักงานประจำ / สัญญาจ้าง / ทดลองงาน)',
     menuPath: 'องค์กรและบุคลากร ➔ พนักงาน ➔ จัดการพนักงาน / ประเภทพนักงาน',
@@ -32,6 +33,7 @@ export const EMPLOYEES_ARTICLES: ManualArticle[] = [
     slug: 'employees-transfers-contracts',
     categoryId: 'organization',
     title: 'พนักงาน — การย้ายแผนก/เลื่อนตำแหน่ง และสัญญาจ้าง',
+    sidebarTitle: 'การย้ายแผนก/สัญญาจ้าง',
     summary:
       'บันทึกประวัติการโอนย้ายแผนก ปรับตำแหน่ง และจัดทำสัญญาจ้างงานพร้อมแนบไฟล์สัญญา',
     menuPath: 'องค์กรและบุคลากร ➔ พนักงาน ➔ การย้ายแผนก/เลื่อนตำแหน่ง / สัญญาจ้าง',
@@ -59,6 +61,7 @@ export const EMPLOYEES_ARTICLES: ManualArticle[] = [
     slug: 'employees-documents',
     categoryId: 'organization',
     title: 'พนักงาน — เอกสารใกล้หมดอายุ',
+    sidebarTitle: 'เอกสารใกล้หมดอายุ',
     summary:
       'ติดตามเอกสารสำคัญของพนักงานที่ใกล้หมดอายุ (เช่น ใบอนุญาตทำงาน บัตรประชาชน ใบขับขี่) เพื่อแจ้งเตือนต่ออายุได้ทันเวลา',
     menuPath: 'องค์กรและบุคลากร ➔ พนักงาน ➔ เอกสารใกล้หมดอายุ',

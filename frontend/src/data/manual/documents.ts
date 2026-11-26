@@ -5,6 +5,7 @@ export const DOCUMENTS_ARTICLES: ManualArticle[] = [
     slug: 'ess-documents',
     categoryId: 'documents',
     title: 'รายการเอกสาร (หนังสือรับรอง / คำขอทั่วไป / ลาออก)',
+    sidebarTitle: 'รายการเอกสาร',
     summary:
       'ขั้นตอนการยื่นคำขอเอกสารออนไลน์สำหรับพนักงาน ทั้งหนังสือรับรองการทำงาน/เงินเดือน คำขอทั่วไป และใบลาออก',
     menuPath: 'เอกสาร ➔ ยื่นเอกสาร ➔ รายการเอกสาร',

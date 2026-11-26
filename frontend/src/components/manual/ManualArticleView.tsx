@@ -72,21 +72,25 @@ export const ManualArticleView: React.FC<ManualArticleViewProps> = ({
         {/* Article Hero Header */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-2xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary dark:bg-blue-950/60 dark:text-blue-300">
                 หมวด {category.order}: {category.title}
               </span>
-              {article.roles.map((r) => {
-                const meta = MANUAL_ROLE_META[r];
-                return (
-                  <span
-                    key={r}
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${meta.badgeClass}`}
-                  >
-                    {meta.label}
-                  </span>
-                );
-              })}
+              <div
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80"
+                aria-label="บทบาทที่ใช้งานได้"
+              >
+                {article.roles.map((r) => {
+                  const meta = MANUAL_ROLE_META[r];
+                  return (
+                    <span
+                      key={r}
+                      title={meta.label}
+                      className={`h-2.5 w-6 rounded-full ${meta.barClass} transition-transform hover:scale-110 cursor-help`}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
             <button

@@ -5,6 +5,7 @@ export const LEAVE_ARTICLES: ManualArticle[] = [
     slug: 'leave-request',
     categoryId: 'leave',
     title: 'การลา (ยื่นใบลา และประวัติเอกสาร)',
+    sidebarTitle: 'การลา',
     summary:
       'ขั้นตอนการยื่นใบลาออนไลน์ (เต็มวัน/ครึ่งวัน/รายชั่วโมง) แนบใบรับรองแพทย์ และติดตามสถานะใบลาในประวัติเอกสาร',
     menuPath: 'การลา ➔ การลา (ยื่นใบลา / ประวัติเอกสาร)',
@@ -97,6 +98,7 @@ export const LEAVE_ARTICLES: ManualArticle[] = [
     slug: 'leave-policy-admin',
     categoryId: 'leave',
     title: 'สิทธิ์การลา (ประเภทการลา / กำหนดสิทธิ์ / ยอดวันลาพนักงาน)',
+    sidebarTitle: 'สิทธิ์การลา',
     summary:
       'คู่มือสำหรับฝ่ายบุคคลในการจัดการประเภทการลา กฎการได้รับสิทธิ์ตามอายุงาน การทบวันลาข้ามปี และปรับยอดวันลาพนักงาน',
     menuPath: 'การลา ➔ สิทธิ์การลา',

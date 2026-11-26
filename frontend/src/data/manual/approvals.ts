@@ -38,6 +38,7 @@ export const APPROVALS_ARTICLES: ManualArticle[] = [
     slug: 'approvals-history',
     categoryId: 'approvals',
     title: 'ประวัติเอกสาร (การอนุมัติ)',
+    sidebarTitle: 'ประวัติเอกสาร',
     summary:
       'ตรวจสอบย้อนหลังรายการเอกสารทั้งหมดที่เคยพิจารณาอนุมัติหรือไม่อนุมัติ พร้อมสถานะปัจจุบันและบันทึกความเห็น',
     menuPath: 'การอนุมัติ ➔ ประวัติเอกสาร',

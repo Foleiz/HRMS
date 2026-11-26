@@ -178,7 +178,7 @@ export const ManualSidebar: React.FC<ManualSidebarProps> = ({
                               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-700/60'
                           }`}
                         >
-                          {art.title}
+                          {art.sidebarTitle ?? art.title}
                         </Link>
                       );
                     })}

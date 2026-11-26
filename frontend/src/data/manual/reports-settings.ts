@@ -5,6 +5,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'reports-headcount-turnover',
     categoryId: 'reports',
     title: 'รายงาน — พนักงานแยกตามแผนก และอัตราการลาออก',
+    sidebarTitle: 'พนักงานแยกตามแผนก',
     summary:
       'ดูรายงานอัตรากำลังคน (Headcount) แยกตามฝ่าย/แผนก/ประเภทพนักงาน และแนวโน้มอัตราการลาออก (Turnover)',
     menuPath: 'รายงานและสถิติ ➔ รายงาน ➔ พนักงานแยกตามแผนก / อัตราการลาออก',
@@ -31,6 +32,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'reports-attendance-leave',
     categoryId: 'reports',
     title: 'รายงาน — การเข้าออกงาน และการลา',
+    sidebarTitle: 'การเข้าออกงานและการลา',
     summary:
       'วิเคราะห์สถิติการเข้างานตรงเวลา มาสาย ขาดงาน และสัดส่วนการลาแยกตามประเภทและแผนก',
     menuPath: 'รายงานและสถิติ ➔ รายงาน ➔ การเข้าออกงาน / การลา',
@@ -57,6 +59,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'master-data',
     categoryId: 'settings',
     title: 'ข้อมูลหลัก (7 หมวดพื้นฐาน)',
+    sidebarTitle: 'ข้อมูลหลัก',
     summary:
       'ตั้งค่ารายการตัวเลือกพื้นฐานทั้งระบบ: ประเภทเอกสารแนบ ประเภทหนังสือรับรอง สัญชาติ ศาสนา สถานภาพสมรส เพศ และธนาคาร',
     menuPath: 'ระบบและการตั้งค่า ➔ ข้อมูลหลัก',
@@ -84,6 +87,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'settings-users-roles',
     categoryId: 'settings',
     title: 'ตั้งค่าระบบ — ผู้ใช้งาน และบทบาทและสิทธิ์',
+    sidebarTitle: 'ผู้ใช้งานและสิทธิ์',
     summary:
       'จัดการบัญชีผู้ใช้งาน (สร้างบัญชี ผูกพนักงาน รีเซ็ตรหัสผ่าน เปิด/ปิดบัญชี) และกำหนดสิทธิ์การเข้าถึงแต่ละเมนู (RBAC)',
     menuPath: 'ระบบและการตั้งค่า ➔ ตั้งค่าระบบ ➔ ผู้ใช้งาน / บทบาทและสิทธิ์',
@@ -110,6 +114,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'settings-approval-flows',
     categoryId: 'settings',
     title: 'ตั้งค่าระบบ — สายการอนุมัติ',
+    sidebarTitle: 'สายการอนุมัติ',
     summary:
       'กำหนดลำดับขั้นตอนการอนุมัติสำหรับเอกสารแต่ละประเภท แยกตามแผนกและระดับตำแหน่ง พร้อมเปิด/ปิดการใช้งาน',
     menuPath: 'ระบบและการตั้งค่า ➔ ตั้งค่าระบบ ➔ สายการอนุมัติ',
@@ -142,6 +147,7 @@ export const REPORTS_SETTINGS_ARTICLES: ManualArticle[] = [
     slug: 'settings-audit-log',
     categoryId: 'settings',
     title: 'ตั้งค่าระบบ — บันทึกการใช้งานระบบ (Audit Log)',
+    sidebarTitle: 'บันทึกการใช้งานระบบ',
     summary:
       'ตรวจสอบประวัติการกระทำสำคัญทั้งหมดในระบบ (ใคร ทำอะไร เมื่อไหร่ กับข้อมูลใด) เพื่อความปลอดภัยและการตรวจสอบย้อนหลัง',
     menuPath: 'ระบบและการตั้งค่า ➔ ตั้งค่าระบบ ➔ บันทึกการใช้งานระบบ',

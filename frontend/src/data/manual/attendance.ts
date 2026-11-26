@@ -5,6 +5,7 @@ export const ATTENDANCE_ARTICLES: ManualArticle[] = [
     slug: 'ess-attendance',
     categoryId: 'attendance',
     title: 'บันทึกเวลาของฉัน (ตรวจบันทึกเวลา / คำขอปรับปรุงเวลา)',
+    sidebarTitle: 'บันทึกเวลาของฉัน',
     summary:
       'ตรวจสอบประวัติการเข้า-ออกงานรายวันของตนเอง และยื่นคำขอปรับปรุงเวลาเมื่อลืมสแกนนิ้วหรือออกไปปฏิบัติงานนอกสถานที่',
     menuPath: 'เวลาการทำงาน ➔ บันทึกเวลาของฉัน',
@@ -40,6 +41,7 @@ export const ATTENDANCE_ARTICLES: ManualArticle[] = [
     slug: 'attendance-daily-import',
     categoryId: 'attendance',
     title: 'ตรวจบันทึกเวลา (ตรวจประจำวัน / นำเข้าไฟล์บันทึกเวลา)',
+    sidebarTitle: 'ตรวจบันทึกเวลา',
     summary:
       'นำเข้าไฟล์สแกนนิ้วจากเครื่องบันทึกเวลา (Excel/CSV) และตรวจสอบเวลาเข้า-ออกงานประจำวันของพนักงานทั้งองค์กร',
     menuPath: 'เวลาการทำงาน ➔ ตรวจบันทึกเวลา',
@@ -76,6 +78,7 @@ export const ATTENDANCE_ARTICLES: ManualArticle[] = [
     slug: 'attendance-schedules-shifts',
     categoryId: 'attendance',
     title: 'การจัดตารางงาน (มอบหมายกะ / กะการทำงาน)',
+    sidebarTitle: 'การจัดตารางงาน',
     summary:
       'สร้างและตั้งค่ากะการทำงาน (เวลาเข้า-ออก พักกลางวัน ช่วงผ่อนผันสาย) และมอบหมายกะให้พนักงานหรือแผนก',
     menuPath: 'เวลาการทำงาน ➔ การจัดตารางงาน',
@@ -109,6 +112,7 @@ export const ATTENDANCE_ARTICLES: ManualArticle[] = [
     slug: 'work-calendar',
     categoryId: 'attendance',
     title: 'วันทำงานและวันหยุด (วันทำงานประจำสัปดาห์ / วันหยุดประจำปี)',
+    sidebarTitle: 'วันทำงานและวันหยุด',
     summary:
       'กำหนดวันทำงานมาตรฐานประจำสัปดาห์ของบริษัท และตั้งค่ารายการวันหยุดนักขัตฤกษ์ประจำปี',
     menuPath: 'เวลาการทำงาน ➔ วันทำงานและวันหยุด',

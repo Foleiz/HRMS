@@ -5,6 +5,7 @@ export const ORGANIZATION_ARTICLES: ManualArticle[] = [
     slug: 'organization-structure',
     categoryId: 'organization',
     title: 'โครงสร้างองค์กร (ฝ่าย / แผนก / ทีม / ตำแหน่ง / ระดับ / สวัสดิการ / บริษัท)',
+    sidebarTitle: 'โครงสร้างองค์กร',
     summary:
       'ตั้งค่าโครงสร้างฝ่าย แผนก ทีม ตำแหน่งงาน ระดับพนักงานพร้อมกรอบเงินเดือน สวัสดิการ ข้อมูลบริษัท และบัญชีธนาคารบริษัท',
     menuPath: 'องค์กรและบุคลากร ➔ โครงสร้างองค์กร',
@@ -34,6 +35,7 @@ export const ORGANIZATION_ARTICLES: ManualArticle[] = [
     slug: 'announcements-management',
     categoryId: 'organization',
     title: 'จัดการประกาศ (ประกาศข่าวสารทั่วไป / ประกาศกิจกรรม)',
+    sidebarTitle: 'จัดการประกาศ',
     summary:
       'สร้าง แก้ไข ปักหมุด และเผยแพร่ประกาศข่าวสารทั่วไปหรือประกาศกิจกรรม เพื่อให้พนักงานเห็นในหน้า “ข่าวสารสำหรับฉัน”',
     menuPath: 'องค์กรและบุคลากร ➔ จัดการประกาศ',
