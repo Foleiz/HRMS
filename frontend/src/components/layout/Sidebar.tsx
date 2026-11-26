@@ -115,7 +115,7 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'วิธีการใช้งาน',
+        title: 'ตัวช่วยงาน',
         href: '/guide',
         matchPrefix: '/guide',
         icon: Compass,

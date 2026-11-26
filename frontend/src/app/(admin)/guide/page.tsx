@@ -74,7 +74,7 @@ function GuidePageContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    setBreadcrumb({ page: 'วิธีการใช้งาน' });
+    setBreadcrumb({ page: 'ตัวช่วยงาน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
@@ -144,7 +144,7 @@ function GuidePageContent() {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      <h1 className="sr-only">วิธีการใช้งาน</h1>
+      <h1 className="sr-only">ตัวช่วยงาน</h1>
 
       {/* Main Content Card (Panel พื้นหลังครอบตามมาตรฐานเดียวกับหน้าอื่นๆ ในระบบ) */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
@@ -189,7 +189,7 @@ function GuidePageContent() {
                         onClick={() => router.push(item.route)}
                         className="shadow-2xs text-xs font-semibold"
                       >
-                        เริ่มดูคู่มือ
+                        เริ่ม
                       </Button>
                     </div>
                   </div>
@@ -228,7 +228,7 @@ export default function GuidePage() {
     <Suspense
       fallback={
         <div className="p-8 text-center text-xs text-slate-400">
-          กำลังโหลดวิธีการใช้งาน...
+          กำลังโหลดตัวช่วยงาน...
         </div>
       }
     >

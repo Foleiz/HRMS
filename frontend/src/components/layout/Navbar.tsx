@@ -289,7 +289,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/settings')) return { section: 'ตั้งค่าระบบ', page: 'ผู้ใช้งาน' };
 
     // 14. หน้าเดี่ยวอื่นๆ
-    if (pathname.startsWith('/guide')) return { page: 'วิธีการใช้งาน' };
+    if (pathname.startsWith('/guide')) return { page: 'ตัวช่วยงาน' };
     if (pathname.startsWith('/my-news')) return { page: 'ข่าวสารสำหรับฉัน' };
     if (pathname.startsWith('/org-chart')) return { page: 'แผนผังองค์กร' };
     if (pathname.startsWith('/announcements')) return { section: 'จัดการประกาศ', page: 'ประกาศข่าวสารทั่วไป' };

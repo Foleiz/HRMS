@@ -149,17 +149,17 @@ public class RoleService : IRoleService
         new("SETTINGS_AUDIT_SENSITIVE", "ข้อมูลเชิงลึกในบันทึกการใช้งานระบบ (เงินเดือน/PDPA)", "SETTINGS_AUDIT_SENSITIVE", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
 
         // 20. วิธีการใช้งาน (GUIDE)
-        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_PAYROLL_HR", "ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)", "GUIDE_PAYROLL_HR", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_PAYROLL_FINANCE", "ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)", "GUIDE_PAYROLL_FINANCE", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_PAYROLL_CEO", "ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)", "GUIDE_PAYROLL_CEO", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE")
+        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_PAYROLL_HR", "ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)", "GUIDE_PAYROLL_HR", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_FINANCE", "ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)", "GUIDE_PAYROLL_FINANCE", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_CEO", "ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)", "GUIDE_PAYROLL_CEO", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "ตัวช่วยงาน", "GUIDE")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)

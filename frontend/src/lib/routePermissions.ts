@@ -10,7 +10,7 @@ export interface RouteRule {
 export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/guide',
-    title: 'วิธีการใช้งาน',
+    title: 'ตัวช่วยงาน',
   },
   {
     matchPrefix: '/employees/contracts',
