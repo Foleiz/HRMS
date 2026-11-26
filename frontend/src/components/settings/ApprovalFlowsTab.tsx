@@ -1358,7 +1358,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                   {/* Step Summary Flow */}
                   {sortedSteps.length > 0 && (
-                    <div className="mt-3.5 overflow-x-auto pb-1 custom-scrollbar bg-slate-50/60 dark:bg-slate-900/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="mt-3.5 overflow-x-auto custom-scrollbar bg-slate-50/60 dark:bg-slate-900/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
                       <div className="flex items-center min-w-max">
                         {/* Start Node */}
                         <div className="flex items-center gap-2.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 shrink-0 shadow-2xs">
