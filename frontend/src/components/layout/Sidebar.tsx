@@ -152,7 +152,7 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    category: 'บริการตนเอง (ESS)',
+    category: 'ข้อมูลส่วนตัว',
     items: [
       {
         title: 'โปรไฟล์ของฉัน',
@@ -161,17 +161,11 @@ const menuGroups: MenuGroup[] = [
         icon: User,
         requiredPermissions: ['ESS_PROFILE_VIEW'],
       },
-      {
-        title: 'การลา',
-        href: '/documents/leave',
-        matchPrefix: '/documents/leave',
-        icon: CalendarX2,
-        requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT', 'ESS_DOCS_HISTORY_VIEW'],
-        children: [
-          { title: 'ยื่นใบลา', href: '/documents/leave', icon: CalendarX2, requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT'] },
-          { title: 'ประวัติเอกสาร', href: '/documents/history?type=LEAVE', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW', 'ESS_LEAVE_REQUEST_VIEW'] },
-        ],
-      },
+    ],
+  },
+  {
+    category: 'เอกสาร',
+    items: [
       {
         title: 'ยื่นเอกสาร',
         href: '/documents',
@@ -181,6 +175,22 @@ const menuGroups: MenuGroup[] = [
         children: [
           { title: 'รายการเอกสาร', href: '/documents', icon: FileText, requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'] },
           { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW'] },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'การลา',
+    items: [
+      {
+        title: 'การลา',
+        href: '/documents/leave',
+        matchPrefix: '/documents/leave',
+        icon: CalendarX2,
+        requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT', 'ESS_DOCS_HISTORY_VIEW'],
+        children: [
+          { title: 'ยื่นใบลา', href: '/documents/leave', icon: CalendarX2, requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT'] },
+          { title: 'ประวัติเอกสาร', href: '/documents/history?type=LEAVE', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW', 'ESS_LEAVE_REQUEST_VIEW'] },
         ],
       },
       {
@@ -198,6 +208,27 @@ const menuGroups: MenuGroup[] = [
         requiredPermissions: ['ESS_LEAVE_VIEW'],
       },
       {
+        title: 'สิทธิ์การลา',
+        href: '/leave',
+        matchPrefix: '/leave',
+        icon: CalendarCheck,
+        requiredPermissions: [
+          'LEAVE_BALANCE_VIEW',
+          'LEAVE_TYPE_VIEW',
+          'LEAVE_POLICY_VIEW',
+        ],
+        children: [
+          { title: 'ประเภทการลา', href: '/leave?tab=types', icon: ListChecks, requiredPermissions: ['LEAVE_TYPE_VIEW'] },
+          { title: 'กำหนดสิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
+          { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', icon: Wallet, requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'เวลาการทำงาน',
+    items: [
+      {
         title: 'บันทึกเวลาของฉัน',
         href: '/ess/attendance',
         matchPrefix: '/ess/attendance',
@@ -209,20 +240,50 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'สวัสดิการของฉัน',
-        href: '/ess/benefits',
-        matchPrefix: '/ess/benefits',
-        icon: Gift,
-        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
+        title: 'ตรวจบันทึกเวลา',
+        href: '/attendance/daily',
+        matchPrefix: '/attendance/daily',
+        icon: CalendarDays,
+        requiredPermissions: [
+          'TIME_DAILY_VIEW',
+          'TIME_IMPORT_VIEW',
+        ],
         children: [
-          { title: 'สวัสดิการของฉัน', href: '/ess/benefits', icon: Gift, requiredPermissions: ['ESS_BENEFIT_VIEW'] },
-          { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์', href: '/ess/benefits/history', icon: Receipt, requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW'] },
+          { title: 'ตรวจบันทึกเวลาประจำวัน', href: '/attendance/daily?tab=daily', icon: Clock, requiredPermissions: ['TIME_DAILY_VIEW'] },
+          { title: 'นำเข้าไฟล์บันทึกเวลา', href: '/attendance/daily?tab=import', icon: Upload, requiredPermissions: ['TIME_IMPORT_VIEW'] },
+        ],
+      },
+      {
+        title: 'การจัดตารางงาน',
+        href: '/attendance/schedules',
+        matchPrefix: '/attendance/schedules',
+        icon: CalendarRange,
+        requiredPermissions: [
+          'TIME_SCHEDULE_VIEW',
+          'TIME_SHIFT_VIEW',
+        ],
+        children: [
+          { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', icon: CalendarRange, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
+          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', icon: Sunrise, requiredPermissions: ['TIME_SHIFT_VIEW'] },
+        ],
+      },
+      {
+        title: 'วันทำงานและวันหยุด',
+        href: '/work-calendar',
+        matchPrefix: '/work-calendar',
+        icon: CalendarDays,
+        requiredPermissions: [
+          'WORK_CALENDAR_VIEW',
+        ],
+        children: [
+          { title: 'วันทำงานประจำสัปดาห์', href: '/work-calendar?tab=work-week', icon: CalendarDays, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
+          { title: 'วันหยุดประจำปี', href: '/work-calendar?tab=holidays', icon: Palmtree, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
         ],
       },
     ],
   },
   {
-    category: 'การเงินและค่าตอบแทน',
+    category: 'เงินเดือนและสวัสดิการ',
     items: [
       {
         title: 'เงินเดือน',
@@ -260,10 +321,31 @@ const menuGroups: MenuGroup[] = [
         icon: Wallet,
         requiredPermissions: ['ESS_SALARY_VIEW'],
       },
+      {
+        title: 'สวัสดิการของฉัน',
+        href: '/ess/benefits',
+        matchPrefix: '/ess/benefits',
+        icon: Gift,
+        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
+        children: [
+          { title: 'สวัสดิการของฉัน', href: '/ess/benefits', icon: Gift, requiredPermissions: ['ESS_BENEFIT_VIEW'] },
+          { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์', href: '/ess/benefits/history', icon: Receipt, requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW'] },
+        ],
+      },
+      {
+        title: 'ยอดสวัสดิการพนักงาน',
+        href: '/benefits/balances',
+        matchPrefix: '/benefits',
+        icon: Gift,
+        requiredPermissions: [
+          'BENEFIT_BALANCE_VIEW',
+          'BENEFIT_VIEW',
+        ],
+      },
     ],
   },
   {
-    category: 'การจัดการบุคคล',
+    category: 'องค์กรและบุคลากร',
     items: [
       {
         title: 'พนักงาน',
@@ -284,17 +366,6 @@ const menuGroups: MenuGroup[] = [
           { title: 'การย้ายแผนก/เลื่อนตำแหน่ง', href: '/employees/transfers', icon: ArrowRightLeft, requiredPermissions: ['EMP_TRANSFER_VIEW'] },
           { title: 'สัญญาจ้าง', href: '/employees/contracts', icon: FileSignature, requiredPermissions: ['EMP_CONTRACT_VIEW'] },
           { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', icon: Hourglass, requiredPermissions: ['EMP_DOC_VIEW'] },
-        ],
-      },
-      {
-        title: 'ยอดสวัสดิการพนักงาน',
-        href: '/benefits/balances',
-        matchPrefix: '/benefits',
-        icon: Gift,
-        requiredPermissions: [
-          'BENEFIT_BALANCE_VIEW',
-
-          'BENEFIT_VIEW',
         ],
       },
       {
@@ -349,69 +420,7 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    category: 'เวลาและการลา',
-    items: [
-      {
-        title: 'ตรวจบันทึกเวลา',
-        href: '/attendance/daily',
-        matchPrefix: '/attendance/daily',
-        icon: CalendarDays,
-        requiredPermissions: [
-          'TIME_DAILY_VIEW',
-          'TIME_IMPORT_VIEW',
-        ],
-        children: [
-          { title: 'ตรวจบันทึกเวลาประจำวัน', href: '/attendance/daily?tab=daily', icon: Clock, requiredPermissions: ['TIME_DAILY_VIEW'] },
-          { title: 'นำเข้าไฟล์บันทึกเวลา', href: '/attendance/daily?tab=import', icon: Upload, requiredPermissions: ['TIME_IMPORT_VIEW'] },
-        ],
-      },
-      {
-        title: 'การจัดตารางงาน',
-        href: '/attendance/schedules',
-        matchPrefix: '/attendance/schedules',
-        icon: CalendarRange,
-        requiredPermissions: [
-          'TIME_SCHEDULE_VIEW',
-          'TIME_SHIFT_VIEW',
-        ],
-        children: [
-          { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', icon: CalendarRange, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
-          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', icon: Sunrise, requiredPermissions: ['TIME_SHIFT_VIEW'] },
-        ],
-      },
-      {
-        title: 'สิทธิ์การลา',
-        href: '/leave',
-        matchPrefix: '/leave',
-        icon: CalendarCheck,
-        requiredPermissions: [
-          'LEAVE_BALANCE_VIEW',
-          'LEAVE_TYPE_VIEW',
-          'LEAVE_POLICY_VIEW',
-        ],
-        children: [
-          { title: 'ประเภทการลา', href: '/leave?tab=types', icon: ListChecks, requiredPermissions: ['LEAVE_TYPE_VIEW'] },
-          { title: 'กำหนดสิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
-          { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', icon: Wallet, requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
-        ],
-      },
-      {
-        title: 'วันทำงานและวันหยุด',
-        href: '/work-calendar',
-        matchPrefix: '/work-calendar',
-        icon: CalendarDays,
-        requiredPermissions: [
-          'WORK_CALENDAR_VIEW',
-        ],
-        children: [
-          { title: 'วันทำงานประจำสัปดาห์', href: '/work-calendar?tab=work-week', icon: CalendarDays, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
-          { title: 'วันหยุดประจำปี', href: '/work-calendar?tab=holidays', icon: Palmtree, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
-        ],
-      },
-    ],
-  },
-  {
-    category: 'การอนุมัติและรายงาน',
+    category: 'การอนุมัติ',
     items: [
       {
         title: 'การอนุมัติ',
@@ -433,6 +442,11 @@ const menuGroups: MenuGroup[] = [
           { title: 'ประวัติเอกสาร', href: '/approvals/history', icon: History },
         ],
       },
+    ],
+  },
+  {
+    category: 'รายงานและสถิติ',
+    items: [
       {
         title: 'รายงาน',
         href: '/reports',

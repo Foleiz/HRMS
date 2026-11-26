@@ -59,7 +59,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: จัดการพนักงาน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "จัดการพนักงาน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "จัดการพนักงาน"',
             selectors: ['a[data-sidebar-path="/employees"]', '[data-sidebar-path="/employees"]'],
             side: 'right',
             align: 'center',
@@ -86,7 +86,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: สัญญาจ้าง',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "สัญญาจ้าง"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "สัญญาจ้าง"',
             selectors: ['a[data-sidebar-path="/employees/contracts"]', '[data-sidebar-path="/employees/contracts"]'],
             side: 'right',
             align: 'center',
@@ -150,7 +150,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ตรวจบันทึกเวลาประจำวัน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
             selectors: ['a[data-sidebar-path="/attendance/daily?tab=daily"]', '[data-sidebar-path="/attendance/daily?tab=daily"]'],
             side: 'right',
             align: 'center',
@@ -172,7 +172,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เงินเดือนและสวัสดิการ" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
             selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
             side: 'right',
             align: 'center',
@@ -244,7 +244,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เงินเดือนและสวัสดิการ" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
             selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
             side: 'right',
             align: 'center',
@@ -299,7 +299,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เงินเดือนและสวัสดิการ" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
             selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
             side: 'right',
             align: 'center',
@@ -354,7 +354,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประมวลเงินเดือน (ขั้นที่ 4: ชำระเงิน)',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน" แล้วเลือกขั้นตอนหมายเลข 4 (ชำระเงิน โอนเงินธนาคาร)',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เงินเดือนและสวัสดิการ" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน" แล้วเลือกขั้นตอนหมายเลข 4 (ชำระเงิน โอนเงินธนาคาร)',
             selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
             side: 'right',
             align: 'center',
@@ -427,7 +427,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประวัติเอกสาร (คำขอลาออก)',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "บริการตนเอง (ESS)" ➔ "ยื่นเอกสาร" ➔ "ประวัติเอกสาร"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เอกสาร" ➔ "ยื่นเอกสาร" ➔ "ประวัติเอกสาร"',
             selectors: ['a[data-sidebar-path="/documents/history"]', '[data-sidebar-path="/documents/history"]'],
             side: 'right',
             align: 'center',
@@ -456,7 +456,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: สัญญาจ้าง',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "สัญญาจ้าง"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "สัญญาจ้าง"',
             selectors: ['a[data-sidebar-path="/employees/contracts"]', '[data-sidebar-path="/employees/contracts"]'],
             side: 'right',
             align: 'center',
@@ -520,7 +520,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: กะการทำงาน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "การจัดตารางงาน" ➔ "กะการทำงาน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "การจัดตารางงาน" ➔ "กะการทำงาน"',
             selectors: ['a[data-sidebar-path="/attendance/schedules?tab=shifts"]', '[data-sidebar-path="/attendance/schedules?tab=shifts"]'],
             side: 'right',
             align: 'center',
@@ -550,7 +550,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: มอบหมายกะให้พนักงาน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "การจัดตารางงาน" ➔ "มอบหมายกะให้พนักงาน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "การจัดตารางงาน" ➔ "มอบหมายกะให้พนักงาน"',
             selectors: ['a[data-sidebar-path="/attendance/schedules?tab=roster"]', '[data-sidebar-path="/attendance/schedules?tab=roster"]'],
             side: 'right',
             align: 'center',
@@ -572,7 +572,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ตรวจบันทึกเวลาประจำวัน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
             selectors: ['a[data-sidebar-path="/attendance/daily?tab=daily"]', '[data-sidebar-path="/attendance/daily?tab=daily"]'],
             side: 'right',
             align: 'center',
@@ -603,7 +603,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: นำเข้าไฟล์บันทึกเวลา',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "ตรวจบันทึกเวลา" ➔ "นำเข้าไฟล์บันทึกเวลา"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "ตรวจบันทึกเวลา" ➔ "นำเข้าไฟล์บันทึกเวลา"',
             selectors: ['a[data-sidebar-path="/attendance/daily?tab=import"]', '[data-sidebar-path="/attendance/daily?tab=import"]'],
             side: 'right',
             align: 'center',
@@ -625,7 +625,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ตรวจบันทึกเวลาประจำวัน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "ตรวจบันทึกเวลา" ➔ "ตรวจบันทึกเวลาประจำวัน"',
             selectors: ['a[data-sidebar-path="/attendance/daily?tab=daily"]', '[data-sidebar-path="/attendance/daily?tab=daily"]'],
             side: 'right',
             align: 'center',
@@ -656,7 +656,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: การย้ายแผนก/เลื่อนตำแหน่ง',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "พนักงาน" ➔ "การย้ายแผนก/เลื่อนตำแหน่ง"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "พนักงาน" ➔ "การย้ายแผนก/เลื่อนตำแหน่ง"',
             selectors: ['a[data-sidebar-path="/employees/transfers"]', '[data-sidebar-path="/employees/transfers"]'],
             side: 'right',
             align: 'center',
@@ -686,7 +686,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: สัญญาจ้าง',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "สัญญาจ้าง"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "สัญญาจ้าง"',
             selectors: ['a[data-sidebar-path="/employees/contracts"]', '[data-sidebar-path="/employees/contracts"]'],
             side: 'right',
             align: 'center',
@@ -746,7 +746,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประเภทการลา',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "สิทธิ์การลา" ➔ "ประเภทการลา"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การลา" ➔ "สิทธิ์การลา" ➔ "ประเภทการลา"',
             selectors: ['a[data-sidebar-path="/leave?tab=types"]', '[data-sidebar-path="/leave?tab=types"]'],
             side: 'right',
             align: 'center',
@@ -768,7 +768,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: วันหยุดประจำปี',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "วันทำงานและวันหยุด" ➔ "วันหยุดประจำปี"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "วันทำงานและวันหยุด" ➔ "วันหยุดประจำปี"',
             selectors: ['a[data-sidebar-path="/work-calendar?tab=holidays"]', '[data-sidebar-path="/work-calendar?tab=holidays"]'],
             side: 'right',
             align: 'center',
@@ -790,7 +790,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ยอดวันลาคงเหลือ',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "บริการตนเอง (ESS)" ➔ "ยอดวันลาคงเหลือ"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การลา" ➔ "ยอดวันลาคงเหลือ"',
             selectors: ['a[data-sidebar-path="/leave-balances"]', '[data-sidebar-path="/leave-balances"]'],
             side: 'right',
             align: 'center',
@@ -821,7 +821,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: เอกสารรอดำเนินการ',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การอนุมัติและรายงาน" ➔ "การอนุมัติ" ➔ "เอกสารรอดำเนินการ"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การอนุมัติ" ➔ "การอนุมัติ" ➔ "เอกสารรอดำเนินการ"',
             selectors: ['a[data-sidebar-path="/approvals/leave-requests"]', '[data-sidebar-path="/approvals/leave-requests"]'],
             side: 'right',
             align: 'center',
@@ -843,7 +843,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ปฏิทินการลาของทีม',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "บริการตนเอง (ESS)" ➔ "ปฏิทินการลาของทีม"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การลา" ➔ "ปฏิทินการลาของทีม"',
             selectors: ['a[data-sidebar-path="/team-leave-calendar"]', '[data-sidebar-path="/team-leave-calendar"]'],
             side: 'right',
             align: 'center',
@@ -874,7 +874,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: โครงสร้างองค์กร (ฝ่าย)',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "โครงสร้างองค์กร" ➔ "จัดการฝ่าย"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "องค์กรและบุคลากร" ➔ "โครงสร้างองค์กร" ➔ "จัดการฝ่าย"',
             selectors: ['a[data-sidebar-path="/organization?tab=divisions"]', '[data-sidebar-path="/organization?tab=divisions"]'],
             side: 'right',
             align: 'center',
@@ -896,7 +896,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: วันทำงานประจำสัปดาห์',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "วันทำงานและวันหยุด" ➔ "วันทำงานประจำสัปดาห์"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาการทำงาน" ➔ "วันทำงานและวันหยุด" ➔ "วันทำงานประจำสัปดาห์"',
             selectors: ['a[data-sidebar-path="/work-calendar?tab=work-week"]', '[data-sidebar-path="/work-calendar?tab=work-week"]'],
             side: 'right',
             align: 'center',
@@ -918,7 +918,7 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: กำหนดสิทธิ์การลา',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "เวลาและการลา" ➔ "สิทธิ์การลา" ➔ "กำหนดสิทธิ์การลา"',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การลา" ➔ "สิทธิ์การลา" ➔ "กำหนดสิทธิ์การลา"',
             selectors: ['a[data-sidebar-path="/leave?tab=policies"]', '[data-sidebar-path="/leave?tab=policies"]'],
             side: 'right',
             align: 'center',
