@@ -1063,6 +1063,11 @@ function DocumentHistoryPageContent() {
                                 </td>
                                 <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                   {doc.detailDate}
+                                  {doc.rawLeave?.totalDays != null && (
+                                    <span className="ml-1.5 text-slate-500 dark:text-slate-400">
+                                      ({Number(doc.rawLeave.totalDays)} วัน)
+                                    </span>
+                                  )}
                                 </td>
                               </>
                             ) : (
