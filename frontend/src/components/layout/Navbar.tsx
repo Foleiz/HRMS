@@ -252,7 +252,7 @@ export const Navbar: React.FC = () => {
 
     // 5. ยื่นเอกสาร (Documents) & การลา
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
-    if (pathname.startsWith('/documents/leave')) return { page: 'การลา' };
+    if (pathname.startsWith('/documents/leave')) return { section: 'การลา', page: 'ยื่นใบลา' };
     if (pathname.startsWith('/documents/certificate')) return { section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' };
     if (pathname.startsWith('/documents/resignation')) return { section: 'ยื่นเอกสาร', page: 'เอกสารขอลาออก' };
     if (pathname.startsWith('/documents/general')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' };

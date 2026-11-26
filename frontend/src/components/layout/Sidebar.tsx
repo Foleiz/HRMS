@@ -166,7 +166,11 @@ const menuGroups: MenuGroup[] = [
         href: '/documents/leave',
         matchPrefix: '/documents/leave',
         icon: CalendarX2,
-        requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT'],
+        requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT', 'ESS_DOCS_HISTORY_VIEW'],
+        children: [
+          { title: 'ยื่นใบลา', href: '/documents/leave', icon: CalendarX2, requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT'] },
+          { title: 'ประวัติเอกสาร', href: '/documents/history?type=LEAVE', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW', 'ESS_LEAVE_REQUEST_VIEW'] },
+        ],
       },
       {
         title: 'ยื่นเอกสาร',
@@ -606,6 +610,10 @@ export const Sidebar: React.FC = () => {
       if (childQuery) {
         if (pathname !== childPath) return false;
         const childParams = new URLSearchParams(childQuery);
+        const childType = childParams.get('type');
+        if (childType) {
+          return searchParams.get('type') === childType;
+        }
         const childTab = childParams.get('tab');
         const currentTab = searchParams.get('tab');
 
@@ -644,6 +652,9 @@ export const Sidebar: React.FC = () => {
             !pathname.startsWith('/documents/history') &&
             !pathname.startsWith('/documents/leave'))
         );
+      }
+      if (child.href === '/documents/history') {
+        return pathname === '/documents/history' && searchParams.get('type') !== 'LEAVE';
       }
       if (child.href === '/approvals/leave-requests') {
         return pathname === '/approvals/leave-requests' || pathname === '/approvals';

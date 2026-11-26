@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   ChevronRight,
@@ -181,15 +182,34 @@ const toTs = (v?: string | null) => {
 const normalizeStatus = (s: string) => (s === 'ISSUED' ? 'APPROVED' : s);
 
 export default function DocumentHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm py-20 text-center text-slate-400">
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            กำลังโหลดข้อมูล...
+          </div>
+        </div>
+      }
+    >
+      <DocumentHistoryPageContent />
+    </Suspense>
+  );
+}
+
+function DocumentHistoryPageContent() {
   const { user } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
+  const searchParams = useSearchParams();
+  const isLeaveOnly = searchParams.get('type') === 'LEAVE';
 
   // Navbar จะเดา breadcrumb จาก path prefix "/documents" เป็น "รายการเอกสาร" โดยอัตโนมัติ
   // ต้อง override ให้ถูกต้องเป็น "ประวัติเอกสาร" เฉพาะหน้านี้
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' });
+    setBreadcrumb({ section: isLeaveOnly ? 'การลา' : 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' });
     return () => setBreadcrumb(null);
-  }, [setBreadcrumb]);
+  }, [setBreadcrumb, isLeaveOnly]);
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
@@ -344,18 +364,23 @@ export default function DocumentHistoryPage() {
   }, [leaveRequests, resignationRequests, certificateRequests, generalRequests]);
 
   const stats = useMemo(() => {
-    const approved = documents.filter((d) => normalizeStatus(d.status) === 'APPROVED').length;
-    const pending = documents.filter((d) => d.status === 'PENDING').length;
-    const rejected = documents.filter((d) => d.status === 'REJECTED').length;
-    const cancelled = documents.filter((d) => d.status === 'CANCELLED').length;
-    return { approved, pending, rejected, cancelled, total: documents.length };
-  }, [documents]);
+    const baseDocs = isLeaveOnly ? documents.filter((d) => d.source === 'LEAVE') : documents;
+    const approved = baseDocs.filter((d) => normalizeStatus(d.status) === 'APPROVED').length;
+    const pending = baseDocs.filter((d) => d.status === 'PENDING').length;
+    const rejected = baseDocs.filter((d) => d.status === 'REJECTED').length;
+    const cancelled = baseDocs.filter((d) => d.status === 'CANCELLED').length;
+    return { approved, pending, rejected, cancelled, total: baseDocs.length };
+  }, [documents, isLeaveOnly]);
 
   // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───
   const [searchQuery, setSearchQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [sourceFilter, setSourceFilter] = useState(isLeaveOnly ? 'LEAVE' : 'ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
+
+  useEffect(() => {
+    setSourceFilter(isLeaveOnly ? 'LEAVE' : 'ALL');
+  }, [isLeaveOnly]);
   const { sortField, sortDirection, handleSort } = useTableSort<DocSortField>();
 
   // ปี พ.ศ. ที่มีเอกสาร (จากวันที่ยื่น) — ใหม่สุดก่อน
@@ -407,7 +432,7 @@ export default function DocumentHistoryPage() {
     });
   }, [documents, searchQuery, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
 
-  const hasActiveFilter = !!searchQuery.trim() || sourceFilter !== 'ALL' || statusFilter !== 'ALL' || yearFilter !== 'ALL';
+  const hasActiveFilter = !!searchQuery.trim() || (!isLeaveOnly && sourceFilter !== 'ALL') || statusFilter !== 'ALL' || yearFilter !== 'ALL';
 
   useEffect(() => {
     setPage(1);
@@ -864,11 +889,13 @@ export default function DocumentHistoryPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
-      <DocumentsSubNav />
+      {!isLeaveOnly && <DocumentsSubNav />}
 
       {/* Page Header */}
       <div>
-        <p className="text-sm text-gray-500 dark:text-slate-400">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
+          {isLeaveOnly ? 'รวมเอกสารการลาที่คุณเคยยื่นและสถานะล่าสุด' : 'รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด'}
+        </p>
       </div>
 
       {/* Stat Cards */}
@@ -896,12 +923,14 @@ export default function DocumentHistoryPage() {
             searchPlaceholder="ค้นหารหัส หรือประเภทเอกสาร..."
             filters={
               <>
-                <CustomSelect
-                  value={sourceFilter}
-                  onChange={(val) => setSourceFilter(String(val))}
-                  className="min-w-[170px]"
-                  options={SOURCE_FILTER_OPTIONS}
-                />
+                {!isLeaveOnly && (
+                  <CustomSelect
+                    value={sourceFilter}
+                    onChange={(val) => setSourceFilter(String(val))}
+                    className="min-w-[170px]"
+                    options={SOURCE_FILTER_OPTIONS}
+                  />
+                )}
                 <CustomSelect
                   value={statusFilter}
                   onChange={(val) => setStatusFilter(String(val))}
@@ -920,7 +949,7 @@ export default function DocumentHistoryPage() {
                     type="button"
                     onClick={() => {
                       setSearchQuery('');
-                      setSourceFilter('ALL');
+                      if (!isLeaveOnly) setSourceFilter('ALL');
                       setStatusFilter('ALL');
                       setYearFilter('ALL');
                     }}
