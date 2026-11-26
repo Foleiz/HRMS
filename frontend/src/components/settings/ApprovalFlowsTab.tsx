@@ -12,6 +12,7 @@ import {
   GripVertical,
   X,
   CheckCircle2,
+  FileText,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { approvalService } from '@/services/approvalService';
@@ -1289,22 +1290,31 @@ export const ApprovalFlowsTab: React.FC = () => {
               const levelName = levels.find((l) => l.id === flow.levelId)?.levelName ?? 'ทุกระดับตำแหน่ง';
               const docLabel = DOCUMENT_TYPE_LABELS[flow.documentType] || flow.documentType;
 
+              const isInactive = flow.status !== 'ACTIVE';
+
               return (
                 <div
                   key={flow.id}
-                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                  className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
+                    isInactive
+                      ? 'bg-slate-50/90 dark:bg-slate-900/50 border-dashed border-slate-300 dark:border-slate-700 opacity-75'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xs hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1.5 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
+                        <h3
+                          className={`font-bold text-sm sm:text-base ${
+                            isInactive
+                              ? 'text-slate-500 dark:text-slate-400'
+                              : 'text-slate-800 dark:text-slate-100'
+                          }`}
+                        >
                           {flow.flowName}
                         </h3>
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
-                          {docLabel}
-                        </span>
-                        {flow.status !== 'ACTIVE' && (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600">
+                        {isInactive && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200/80 text-slate-600 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600">
                             ปิดใช้งาน
                           </span>
                         )}
@@ -1319,6 +1329,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                         <span className="inline-flex items-center gap-1">
                           <UserCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                           <span>{levelName}</span>
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                        <span className="inline-flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                          <span>{docLabel}</span>
                         </span>
                         <span className="text-slate-300 dark:text-slate-600">•</span>
                         <span>{sortedSteps.length} ขั้นตอน</span>
