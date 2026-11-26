@@ -120,6 +120,7 @@ public class EmployeeTransfersController : ControllerBase
     /// ดาวน์โหลดเอกสารคำสั่งย้าย (สำหรับ RecordType = ARCHIVE หรือคำขอที่มีเอกสารแนบ)
     /// </summary>
     [HttpGet("{id:long}/document")]
+    [AuditAccess("DOWNLOAD", "employee_transfer", "id", "ดาวน์โหลดเอกสารคำสั่งโอนย้าย/ปรับตำแหน่ง")]
     [RequirePermission("EMP_TRANSFER_VIEW,APPROVAL_EMP_VIEW,APPROVAL_EMP_APPROVE")]
     public async Task<IActionResult> GetDocument(long id, CancellationToken cancellationToken)
     {

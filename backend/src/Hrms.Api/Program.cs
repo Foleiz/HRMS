@@ -62,6 +62,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<UserAccessLoader>();
 builder.Services.AddScoped<IDataScopeService, DataScopeService>();
+builder.Services.AddHostedService<AuditLogRetentionHostedService>();
 
 // 3. Application Services DI
 builder.Services.AddScoped<IBankService, BankService>();
@@ -186,6 +187,9 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
               {
                   if (string.IsNullOrEmpty(origin)) return false;
+                  // Production: ระบุ domain ที่อนุญาตผ่าน config/env เช่น Cors__AllowedOrigins__0=https://hrms.syaco.co.th
+                  var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                  if (configuredOrigins != null && configuredOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase)) return true;
                   try
                   {
                       var uri = new Uri(origin);
@@ -236,7 +240,19 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// อยู่หลัง nginx (reverse proxy): เชื่อ X-Forwarded-For / X-Forwarded-Proto เพื่อให้ได้ IP และ scheme จริงของผู้ใช้
+// (container เปิดพอร์ตที่ 127.0.0.1 เท่านั้น จึงมีแต่ nginx ในเครื่องที่ส่ง header นี้ได้)
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                       | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // ตัวเข้ารหัสคอลัมน์ข้อมูลอ่อนไหว (เลขบัญชีธนาคาร) ที่ EF ValueConverter ใช้
 SensitiveFieldCipher.Service = app.Services.GetRequiredService<IAesEncryptionService>();
@@ -500,6 +516,20 @@ using (var scope = app.Services.CreateScope())
                 END IF;
             END $$;
         ");
+
+        // อัปเกรดสคีมาและความปลอดภัยของระบบ Audit Log (Actor Snapshot, Write-time Subject, Immutability Trigger, FK RESTRICT)
+        var candidateSqlPaths = new[]
+        {
+            Path.Combine(app.Environment.ContentRootPath, "..", "..", "scripts", "audit_log_hardening_v2.sql"),
+            Path.Combine(app.Environment.ContentRootPath, "backend", "scripts", "audit_log_hardening_v2.sql"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "scripts", "audit_log_hardening_v2.sql")
+        };
+        var auditHardeningSqlPath = candidateSqlPaths.Select(Path.GetFullPath).FirstOrDefault(File.Exists);
+        if (auditHardeningSqlPath != null)
+        {
+            var auditHardeningSql = await File.ReadAllTextAsync(auditHardeningSqlPath);
+            await db.Database.ExecuteSqlRawAsync(auditHardeningSql);
+        }
 
         // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot
         var unSnapshottedInstances = await db.ApprovalInstances

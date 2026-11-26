@@ -184,34 +184,46 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
 
         var logs = await _context.AuditLogs.AsNoTracking()
             .Where(a =>
-                (a.EntityType == "employee" && a.EntityId == employeeId)
-                || (childTables.Contains(a.EntityType)
-                    && ((a.EntityId != null && allChildIds.Contains(a.EntityId.Value)) || a.Action == "INSERT" || a.Action == "DELETE")))
+                a.SubjectEmployeeId == employeeId
+                || (a.SubjectEmployeeId == null && (
+                    (a.EntityType == "employee" && a.EntityId == employeeId)
+                    || (childTables.Contains(a.EntityType)
+                        && ((a.EntityId != null && allChildIds.Contains(a.EntityId.Value)) || a.Action == "INSERT" || a.Action == "DELETE")))))
+            .Where(a => a.Action == "INSERT" || a.Action == "UPDATE" || a.Action == "DELETE")
             .OrderByDescending(a => a.CreatedAt)
             .Take(limit * 6)
-            .Select(a => new { a.Id, a.UserId, a.Action, a.EntityType, a.EntityId, a.OldValue, a.NewValue, a.CreatedAt })
+            .Select(a => new { a.Id, a.UserId, a.ActorName, a.ActorUsername, a.SubjectEmployeeId, a.Action, a.EntityType, a.EntityId, a.OldValue, a.NewValue, a.CreatedAt })
             .ToListAsync(cancellationToken);
 
         // กรองแถวตารางย่อยที่เป็นของพนักงานคนนี้จริง
         var rows = new List<(long Id, long? UserId, string Action, string Table, DateTime At, Dictionary<string, JsonElement> Old, Dictionary<string, JsonElement> New)>();
+        var logActorNames = new Dictionary<long, string>();
         foreach (var l in logs)
         {
+            if (!Tables.ContainsKey(l.EntityType)) continue;
             var oldValues = ParseJson(l.OldValue);
             var newValues = ParseJson(l.NewValue);
-            if (l.EntityType != "employee")
+            if (l.SubjectEmployeeId != employeeId && l.EntityType != "employee")
             {
                 var belongs = (l.EntityId.HasValue && childIds.TryGetValue(l.EntityType, out var ids) && ids.Contains(l.EntityId.Value))
                               || MatchesEmployee(oldValues, idText) || MatchesEmployee(newValues, idText);
                 if (!belongs) continue;
             }
+            var actorLbl = !string.IsNullOrWhiteSpace(l.ActorName) ? l.ActorName : l.ActorUsername;
+            if (!string.IsNullOrWhiteSpace(actorLbl))
+            {
+                logActorNames[l.Id] = actorLbl!;
+            }
             rows.Add((l.Id, l.UserId, l.Action, l.EntityType, l.CreatedAt, oldValues, newValues));
         }
 
-        var userIds = rows.Where(r => r.UserId.HasValue).Select(r => r.UserId!.Value).Distinct().ToList();
-        var users = await _context.UserAccounts.AsNoTracking()
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Username, u.Employee.Prefix, u.Employee.FirstName, u.Employee.LastName })
-            .ToListAsync(cancellationToken);
+        var userIds = rows.Where(r => r.UserId.HasValue && !logActorNames.ContainsKey(r.Id)).Select(r => r.UserId!.Value).Distinct().ToList();
+        var users = userIds.Count > 0
+            ? await _context.UserAccounts.AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Username, u.Employee.Prefix, u.Employee.FirstName, u.Employee.LastName })
+                .ToListAsync(cancellationToken)
+            : new();
         var userName = users.ToDictionary(u => u.Id, u => $"{u.Prefix} {u.FirstName} {u.LastName}".Trim() is { Length: > 0 } n ? n : u.Username);
 
         _lookups = await LoadLookupsAsync(rows.SelectMany(r => r.Old.Concat(r.New)), cancellationToken);
@@ -242,7 +254,9 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
             var entry = new EmployeeChangeHistoryEntry
             {
                 At = DateTime.SpecifyKind(first.At, DateTimeKind.Utc),
-                ChangedBy = first.UserId.HasValue && userName.TryGetValue(first.UserId.Value, out var n) ? n : "ระบบ",
+                ChangedBy = logActorNames.TryGetValue(first.Id, out var an)
+                    ? an
+                    : (first.UserId.HasValue && userName.TryGetValue(first.UserId.Value, out var n) ? n : "ระบบ"),
                 Category = catLabel,
                 CategoryKey = catKey,
                 Action = first.Action

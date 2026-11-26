@@ -69,6 +69,7 @@ public class EmployeeDocumentsController : ControllerBase
 
     /// <summary>ดาวน์โหลดไฟล์เอกสาร</summary>
     [HttpGet("api/employee-documents/{id:long}/file")]
+    [AuditAccess("DOWNLOAD", "employee_document", "id", "ดาวน์โหลดเอกสารในแฟ้มพนักงาน")]
     public async Task<IActionResult> Download(long id, CancellationToken cancellationToken)
     {
         var file = await _service.GetFileAsync(id, cancellationToken);

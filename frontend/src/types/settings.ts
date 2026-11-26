@@ -128,18 +128,22 @@ export interface UpdateRoleMatrixRequest {
 export interface AuditLogItem {
   id: number;
   userId?: number;
+  actorType?: 'USER' | 'SYSTEM' | 'API' | 'ANONYMOUS' | string;
   username: string;
   fullName: string;
-  action: 'LOGIN' | 'LOGOUT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'EXPORT' | string;
+  actorRole?: string | null;
+  action: 'LOGIN' | 'LOGIN_FAILED' | 'LOGOUT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'EXPORT' | 'APPROVE' | 'REJECT' | 'CLEANUP' | string;
   entityType: string;
   entityId?: number;
   fieldName?: string;
   oldValue?: string;
   newValue?: string;
+  metadata?: string | null;
   ipAddress?: string;
+  userAgent?: string | null;
   description?: string;
   createdAt: string;
-  /** เจ้าของข้อมูล (พนักงาน) ที่ถูกสร้าง/แก้ไข/ลบ */
+  /** เจ้าของข้อมูล (พนักงาน) ที่ถูกสร้าง/แก้ไข/ลบ/เปิดดู */
   subjectEmployeeId?: number | null;
   subjectEmployeeCode?: string | null;
   subjectEmployeeName?: string | null;

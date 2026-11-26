@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -10,6 +11,8 @@ public class EmployeeAddress : BaseEntity
 {
     public long EmployeeId { get; set; }
     public string AddressType { get; set; } = "CURRENT"; // REGISTERED, CURRENT, OTHER
+
+    [AuditSensitive(AuditMaskMode.PersonalPii)]
     public string? AddressLine { get; set; }
     public string? SubDistrict { get; set; }
     public string? District { get; set; }

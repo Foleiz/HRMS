@@ -29,6 +29,10 @@ public class CurrentUserService : ICurrentUserService
 
     public string? Username => User?.FindFirstValue(ClaimTypes.Name) ?? User?.FindFirstValue("unique_name");
 
+    public string? FullName => User?.FindFirstValue("full_name");
+
+    public string? EmployeeCode => User?.FindFirstValue("employee_code");
+
     public long? EmployeeId
     {
         get

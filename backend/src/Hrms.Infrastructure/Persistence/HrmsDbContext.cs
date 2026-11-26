@@ -443,6 +443,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.SalaryPinHash).HasColumnName("salary_pin_hash").HasMaxLength(255);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
 
@@ -1559,19 +1560,27 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Configuration: AuditLog (PDPA Compliance)
+        // Configuration: AuditLog (PDPA Compliance & Immutable Audit Trail)
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.ToTable("audit_log", "hrms");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ActorType).HasColumnName("actor_type").IsRequired().HasMaxLength(20).HasDefaultValue("USER");
+            entity.Property(e => e.ActorUsername).HasColumnName("actor_username").HasMaxLength(100);
+            entity.Property(e => e.ActorName).HasColumnName("actor_name").HasMaxLength(255);
+            entity.Property(e => e.ActorRole).HasColumnName("actor_role").HasMaxLength(255);
             entity.Property(e => e.Action).HasColumnName("audit_action").IsRequired().HasMaxLength(30);
             entity.Property(e => e.EntityType).HasColumnName("target_table_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.EntityId).HasColumnName("target_record_id");
-            entity.Property(e => e.FieldName).HasColumnName("changed_column_name").HasMaxLength(100);
+            entity.Property(e => e.FieldName).HasColumnName("changed_column_name").HasMaxLength(500);
             entity.Property(e => e.OldValue).HasColumnName("old_value").HasColumnType("jsonb");
             entity.Property(e => e.NewValue).HasColumnName("new_value").HasColumnType("jsonb");
+            entity.Property(e => e.Metadata).HasColumnName("metadata").HasColumnType("jsonb");
+            entity.Property(e => e.SubjectEmployeeId).HasColumnName("subject_employee_id");
+            entity.Property(e => e.SubjectEmployeeCode).HasColumnName("subject_employee_code").HasMaxLength(50);
+            entity.Property(e => e.SubjectEmployeeName).HasColumnName("subject_employee_name").HasMaxLength(255);
             entity.Property(e => e.IpAddress)
                 .HasColumnName("ip_address")
                 .HasConversion(
@@ -1583,6 +1592,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.SubjectEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.SubjectEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

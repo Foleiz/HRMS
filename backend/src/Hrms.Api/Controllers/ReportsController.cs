@@ -45,6 +45,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานอัตรากำลังคนประจำวันเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("headcount/daily/export")]
+    [AuditAccess("EXPORT", "reports", null, "ส่งออกรายงานอัตรากำลังคนประจำวัน")]
     [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_ATT_VIEW,REPORT_ATT_EXPORT,REPORT_VIEW")]
     public async Task<IActionResult> ExportDailyHeadcountCsv(
         [FromQuery] string? date,
@@ -89,6 +90,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานสรุปเวลาและการมาสายประจำเดือนเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("attendance/monthly-lateness/export")]
+    [AuditAccess("EXPORT", "reports", null, "ส่งออกรายงานสรุปเวลาและการมาสายประจำเดือน")]
     [RequirePermission("REPORT_ATT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportMonthlyLatenessCsv(
         [FromQuery] int? year,
@@ -131,6 +133,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/payroll-tax/export")]
+    [AuditAccess("EXPORT", "payroll_tax_report", null, "ส่งออกรายงานภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)")]
     // ไฟล์ ภ.ง.ด.1 มีข้อมูลเงินได้ทุกคน — เฉพาะการเงิน/ภาษีเงินเดือน (ไม่เปิดให้ REPORT_VIEW ทั่วไป)
     [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_EXPORT")]
     public async Task<IActionResult> ExportPayrollTaxCsv(
@@ -154,6 +157,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานการนำส่งเงินสมทบกองทุนประกันสังคม (สปส. 1-10) เป็นไฟล์ CSV
     /// </summary>
     [HttpGet("financial/sso/export")]
+    [AuditAccess("EXPORT", "sso_report", null, "ส่งออกรายงานประกันสังคม (สปส. 1-10)")]
     // ไฟล์ สปส.1-10: การเงิน/ภาษีเงินเดือน และ HR เงินเดือน (ไม่เปิดให้ REPORT_VIEW ทั่วไป)
     [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_EXPORT")]
     public async Task<IActionResult> ExportSsoCsv(
@@ -197,6 +201,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานอัตราการเข้า-ออกของพนักงานเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("analytics/turnover/export")]
+    [AuditAccess("EXPORT", "reports", null, "ส่งออกรายงานอัตราการเข้า-ออกพนักงาน")]
     [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportMonthlyTurnoverCsv(
         [FromQuery] int? year,
@@ -229,6 +234,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("employees/by-department/export")]
+    [AuditAccess("EXPORT", "reports", null, "ส่งออกรายงานพนักงานแยกตามแผนก")]
     [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
     public async Task<IActionResult> ExportEmployeesByDepartment(
         [FromQuery] long? divisionId,
@@ -240,9 +246,10 @@ public class ReportsController : ControllerBase
         return ExportFile(csvBytes, $"Employees_By_Department_{DateTime.Today:yyyyMMdd}.csv", format);
     }
 
-    /// <summary>ส่งไฟล์รายงานตามรูปแบบที่ขอ: csv (ค่าเริ่มต้น) หรือ xlsx</summary>
+    /// <summary>ส่งไฟล์รายงานตามรูปแบบที่ขอ: csv (ค่าเริ่มต้น) หรือ xlsx พร้อมบันทึกจำนวนแถวลง Audit Metadata</summary>
     private IActionResult ExportFile(byte[] csvBytes, string csvFileName, string? format)
     {
+        HttpContext.Items[AuditAccessFilter.ExportRowCountKey] = AuditAccessFilter.CountCsvDataRows(csvBytes);
         if (string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase))
         {
             var baseName = Path.GetFileNameWithoutExtension(csvFileName);

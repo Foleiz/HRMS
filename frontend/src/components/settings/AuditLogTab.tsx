@@ -17,6 +17,7 @@ import {
   Pencil,
   X,
   Plus,
+  Eye,
   Settings as SettingsIcon,
   Layers,
 } from 'lucide-react';
@@ -61,7 +62,9 @@ export const isSystemEvent = (item: AuditLogItem) => {
   const u = (item.username || '').toLowerCase();
   const act = (item.action || '').toUpperCase();
   const ent = (item.entityType || '').toLowerCase();
+  const aType = (item.actorType || '').toUpperCase();
   return (
+    aType === 'SYSTEM' ||
     u === 'system' ||
     u === 'ระบบ' ||
     act === 'CLEANUP' ||
@@ -85,6 +88,7 @@ export const isImportantLog = (item: AuditLogItem) => {
     act === 'DELETE' ||
     act === 'LOGIN_FAILED' ||
     act === 'EXPORT' ||
+    (act === 'DOWNLOAD' && (ent.includes('payslip') || ent.includes('bank') || ent.includes('contract') || ent.includes('signature'))) ||
     desc.includes('รหัสผ่าน') ||
     desc.includes('password') ||
     ent.includes('role') ||
@@ -102,6 +106,8 @@ export const isSecurityLog = (item: AuditLogItem) => {
     act === 'LOGOUT' ||
     act === 'LOGIN_FAILED' ||
     act === 'EXPORT' ||
+    act === 'DOWNLOAD' ||
+    act === 'VIEW' ||
     ent === 'auth' ||
     desc.includes('รหัสผ่าน') ||
     desc.includes('password')
@@ -115,7 +121,7 @@ export const isDataEditLog = (item: AuditLogItem) => {
 
 export const getLogType = (
   item: AuditLogItem
-): 'login' | 'fail' | 'pw' | 'role' | 'edit' | 'del' | 'exp' | 'sys' => {
+): 'login' | 'fail' | 'pw' | 'role' | 'edit' | 'del' | 'exp' | 'view' | 'sys' => {
   const act = (item.action || '').toUpperCase();
   const desc = (item.description || '').toLowerCase();
   const ent = (item.entityType || '').toLowerCase();
@@ -125,8 +131,9 @@ export const getLogType = (
   if (ent.includes('role') || ent.includes('user_role')) return 'role';
   if (act === 'LOGIN' || act === 'LOGOUT') return 'login';
   if (act === 'DELETE') return 'del';
+  if (act === 'VIEW') return 'view';
+  if (act === 'EXPORT' || act === 'DOWNLOAD') return 'exp';
   if (act === 'UPDATE' || act === 'INSERT') return 'edit';
-  if (act === 'EXPORT') return 'exp';
   if (isSystemEvent(item)) return 'sys';
   return 'edit';
 };
@@ -147,6 +154,8 @@ export const getIconElement = (type: ReturnType<typeof getLogType>) => {
       return { icon: <X className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />, bg: 'bg-rose-100 dark:bg-rose-950/50' };
     case 'exp':
       return { icon: <Download className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />, bg: 'bg-amber-100 dark:bg-amber-950/50' };
+    case 'view':
+      return { icon: <Eye className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />, bg: 'bg-sky-100 dark:bg-sky-950/50' };
     case 'sys':
       return { icon: <SettingsIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />, bg: 'bg-slate-100 dark:bg-slate-800' };
   }
@@ -577,12 +586,14 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <option value="INSERT">สร้างข้อมูลใหม่</option>
                 <option value="UPDATE">แก้ไขข้อมูล</option>
                 <option value="DELETE">ลบข้อมูล</option>
+                <option value="VIEW">เปิดดูข้อมูลอ่อนไหว</option>
+                <option value="DOWNLOAD">ดาวน์โหลดไฟล์</option>
+                <option value="EXPORT">ส่งออกรายงาน</option>
                 <option value="LOGIN">เข้าสู่ระบบ</option>
                 <option value="LOGIN_FAILED">เข้าสู่ระบบไม่สำเร็จ</option>
                 <option value="LOGOUT">ออกจากระบบ</option>
                 <option value="APPROVE">อนุมัติ</option>
                 <option value="REJECT">ปฏิเสธ</option>
-                <option value="EXPORT">ส่งออก</option>
               </CustomSelect>
             </div>
 
@@ -597,12 +608,16 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               >
                 <option value="ทั้งหมด">ทุกประเภทข้อมูล</option>
                 <option value="employee">ข้อมูลพนักงาน</option>
+                <option value="employee_salary">ฐานเงินเดือน</option>
+                <option value="payroll">เงินเดือนพนักงาน</option>
+                <option value="payslip">สลิปเงินเดือน</option>
+                <option value="employment_contract">สัญญาจ้างงาน</option>
                 <option value="user_account">บัญชีผู้ใช้งาน</option>
                 <option value="role">บทบาทและสิทธิ์</option>
                 <option value="approval_flow">สายการอนุมัติ</option>
                 <option value="leave_request">การลา</option>
                 <option value="attendance_daily">เวลาทำงาน</option>
-                <option value="document">เอกสาร</option>
+                <option value="employee_document">เอกสารพนักงาน</option>
               </CustomSelect>
             </div>
           </div>

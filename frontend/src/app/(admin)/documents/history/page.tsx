@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   ChevronRight,
@@ -181,15 +182,34 @@ const toTs = (v?: string | null) => {
 const normalizeStatus = (s: string) => (s === 'ISSUED' ? 'APPROVED' : s);
 
 export default function DocumentHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm py-20 text-center text-slate-400">
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            กำลังโหลดข้อมูล...
+          </div>
+        </div>
+      }
+    >
+      <DocumentHistoryPageContent />
+    </Suspense>
+  );
+}
+
+function DocumentHistoryPageContent() {
   const { user } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
+  const searchParams = useSearchParams();
+  const isLeaveOnly = searchParams.get('type') === 'LEAVE';
 
   // Navbar จะเดา breadcrumb จาก path prefix "/documents" เป็น "รายการเอกสาร" โดยอัตโนมัติ
   // ต้อง override ให้ถูกต้องเป็น "ประวัติเอกสาร" เฉพาะหน้านี้
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' });
+    setBreadcrumb({ section: isLeaveOnly ? 'การลา' : 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' });
     return () => setBreadcrumb(null);
-  }, [setBreadcrumb]);
+  }, [setBreadcrumb, isLeaveOnly]);
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
@@ -344,19 +364,39 @@ export default function DocumentHistoryPage() {
   }, [leaveRequests, resignationRequests, certificateRequests, generalRequests]);
 
   const stats = useMemo(() => {
-    const approved = documents.filter((d) => normalizeStatus(d.status) === 'APPROVED').length;
-    const pending = documents.filter((d) => d.status === 'PENDING').length;
-    const rejected = documents.filter((d) => d.status === 'REJECTED').length;
-    const cancelled = documents.filter((d) => d.status === 'CANCELLED').length;
-    return { approved, pending, rejected, cancelled, total: documents.length };
-  }, [documents]);
+    const baseDocs = isLeaveOnly ? documents.filter((d) => d.source === 'LEAVE') : documents;
+    const approved = baseDocs.filter((d) => normalizeStatus(d.status) === 'APPROVED').length;
+    const pending = baseDocs.filter((d) => d.status === 'PENDING').length;
+    const rejected = baseDocs.filter((d) => d.status === 'REJECTED').length;
+    const cancelled = baseDocs.filter((d) => d.status === 'CANCELLED').length;
+    return { approved, pending, rejected, cancelled, total: baseDocs.length };
+  }, [documents, isLeaveOnly]);
 
   // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───
   const [searchQuery, setSearchQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [sourceFilter, setSourceFilter] = useState(isLeaveOnly ? 'LEAVE' : 'ALL');
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
+
+  useEffect(() => {
+    setSourceFilter(isLeaveOnly ? 'LEAVE' : 'ALL');
+    setLeaveTypeFilter('ALL');
+  }, [isLeaveOnly]);
   const { sortField, sortDirection, handleSort } = useTableSort<DocSortField>();
+
+  const leaveTypeOptions = useMemo(() => {
+    const names = new Set<string>();
+    leaveRequests.forEach((r) => {
+      if (r.leaveTypeName) names.add(r.leaveTypeName);
+    });
+    return [
+      { value: 'ALL', label: 'ทุกประเภทการลา' },
+      ...Array.from(names)
+        .sort((a, b) => a.localeCompare(b, 'th'))
+        .map((n) => ({ value: n, label: n })),
+    ];
+  }, [leaveRequests]);
 
   // ปี พ.ศ. ที่มีเอกสาร (จากวันที่ยื่น) — ใหม่สุดก่อน
   const yearOptions = useMemo(() => {
@@ -383,6 +423,7 @@ export default function DocumentHistoryPage() {
         if (!matchCode && !matchType && !matchDetail) return false;
       }
       if (sourceFilter !== 'ALL' && d.source !== sourceFilter) return false;
+      if (isLeaveOnly && leaveTypeFilter !== 'ALL' && d.subType !== leaveTypeFilter) return false;
       if (statusFilter !== 'ALL' && normalizeStatus(d.status) !== statusFilter) return false;
       if (yearFilter !== 'ALL') {
         const ts = toTs(d.submittedDate ?? d.lastActivityAt);
@@ -405,13 +446,18 @@ export default function DocumentHistoryPage() {
           return 0;
       }
     });
-  }, [documents, searchQuery, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
+  }, [documents, searchQuery, sourceFilter, isLeaveOnly, leaveTypeFilter, statusFilter, yearFilter, sortField, sortDirection]);
 
-  const hasActiveFilter = !!searchQuery.trim() || sourceFilter !== 'ALL' || statusFilter !== 'ALL' || yearFilter !== 'ALL';
+  const hasActiveFilter =
+    !!searchQuery.trim() ||
+    (!isLeaveOnly && sourceFilter !== 'ALL') ||
+    (isLeaveOnly && leaveTypeFilter !== 'ALL') ||
+    statusFilter !== 'ALL' ||
+    yearFilter !== 'ALL';
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, sourceFilter, statusFilter, yearFilter]);
+  }, [searchQuery, sourceFilter, leaveTypeFilter, statusFilter, yearFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleDocuments.length / pageSize));
   const pagedDocuments = visibleDocuments.slice((page - 1) * pageSize, page * pageSize);
@@ -864,11 +910,13 @@ export default function DocumentHistoryPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
-      <DocumentsSubNav />
+      {!isLeaveOnly && <DocumentsSubNav />}
 
       {/* Page Header */}
       <div>
-        <p className="text-sm text-gray-500 dark:text-slate-400">รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
+          {isLeaveOnly ? 'รวมเอกสารการลาที่คุณเคยยื่นและสถานะล่าสุด' : 'รวมเอกสารทุกประเภทที่คุณเคยยื่นและสถานะล่าสุด'}
+        </p>
       </div>
 
       {/* Stat Cards */}
@@ -896,12 +944,21 @@ export default function DocumentHistoryPage() {
             searchPlaceholder="ค้นหารหัส หรือประเภทเอกสาร..."
             filters={
               <>
-                <CustomSelect
-                  value={sourceFilter}
-                  onChange={(val) => setSourceFilter(String(val))}
-                  className="min-w-[170px]"
-                  options={SOURCE_FILTER_OPTIONS}
-                />
+                {isLeaveOnly ? (
+                  <CustomSelect
+                    value={leaveTypeFilter}
+                    onChange={(val) => setLeaveTypeFilter(String(val))}
+                    className="min-w-[170px]"
+                    options={leaveTypeOptions}
+                  />
+                ) : (
+                  <CustomSelect
+                    value={sourceFilter}
+                    onChange={(val) => setSourceFilter(String(val))}
+                    className="min-w-[170px]"
+                    options={SOURCE_FILTER_OPTIONS}
+                  />
+                )}
                 <CustomSelect
                   value={statusFilter}
                   onChange={(val) => setStatusFilter(String(val))}
@@ -920,7 +977,8 @@ export default function DocumentHistoryPage() {
                     type="button"
                     onClick={() => {
                       setSearchQuery('');
-                      setSourceFilter('ALL');
+                      if (!isLeaveOnly) setSourceFilter('ALL');
+                      if (isLeaveOnly) setLeaveTypeFilter('ALL');
                       setStatusFilter('ALL');
                       setYearFilter('ALL');
                     }}
@@ -980,8 +1038,17 @@ export default function DocumentHistoryPage() {
                     <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
                       <SortableTh label="รหัสเอกสาร" field="code" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                       <SortableTh label="วันที่ยื่นเอกสาร" field="submittedDate" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
-                      <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      {isLeaveOnly ? (
+                        <>
+                          <SortableTh label="ประเภทการลา" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                          <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ขอลา</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
+                          <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                        </>
+                      )}
                       <SortableTh label="สถานะเอกสาร" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                       <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
                     </tr>
@@ -1012,19 +1079,43 @@ export default function DocumentHistoryPage() {
                               </button>
                             </td>
                             <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                            <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {doc.subType && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                    {doc.subType}
-                                  </span>
-                                )}
-                                <span className="whitespace-nowrap">{doc.detailDate}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <SourceBadge source={doc.source} />
-                            </td>
+                            {isLeaveOnly ? (
+                              <>
+                                <td className="px-4 py-4">
+                                  {doc.subType ? (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                      {doc.subType}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">
+                                  {doc.detailDate}
+                                  {(doc.rawLeave?.leaveDays ?? doc.rawLeave?.totalDays) != null && (
+                                    <span className="ml-1.5 text-slate-500 dark:text-slate-400">
+                                      ({Number(doc.rawLeave?.leaveDays ?? doc.rawLeave?.totalDays)} วัน)
+                                    </span>
+                                  )}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {doc.subType && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                        {doc.subType}
+                                      </span>
+                                    )}
+                                    <span className="whitespace-nowrap">{doc.detailDate}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <SourceBadge source={doc.source} />
+                                </td>
+                              </>
+                            )}
                             <td className="px-4 py-4">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
                                 {statusConf.icon}

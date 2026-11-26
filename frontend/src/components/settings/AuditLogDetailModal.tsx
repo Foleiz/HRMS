@@ -118,6 +118,23 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   reverted_by_user_id: 'ผู้ยกเลิกการนำเข้า',
   revertedat: 'เวลายกเลิกการนำเข้า',
   reverted_at: 'เวลายกเลิกการนำเข้า',
+  exportedrows: 'จำนวนแถวที่ส่งออก',
+  statuscode: 'รหัสสถานะ HTTP',
+  path: 'เส้นทาง API',
+  query: 'เงื่อนไขการค้นหา',
+  basesalary: 'ฐานเงินเดือน',
+  totalgrossincome: 'รายได้รวม',
+  totaldeductionamount: 'รายการหักรวม',
+  netpayablesalary: 'เงินเดือนสุทธิ',
+  grantedpermissions: 'สิทธิ์ที่เพิ่ม',
+  revokedpermissions: 'สิทธิ์ที่ถอดออก',
+  addedscopes: 'ขอบเขตข้อมูลที่เพิ่ม',
+  removedscopes: 'ขอบเขตข้อมูลที่ถอดออก',
+  permissioncount: 'จำนวนสิทธิ์รวม',
+  rolecode: 'รหัสบทบาท',
+  rolename: 'ชื่อบทบาท',
+  deletedat: 'เวลาระงับบัญชี',
+  accountstatus: 'สถานะบัญชี',
 };
 
 const renderDiffValue = (val: string | null | undefined, type: 'new' | 'old' | 'del') => {
@@ -214,29 +231,36 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
     return { name: log.subjectEmployeeName, code: log.subjectEmployeeCode || '', id: log.subjectEmployeeId };
   }, [log]);
 
-  // Role changes parsing
+  // Role changes parsing (รองรับทั้ง Array และ Object Diff ของ Permission Matrix)
   const roleChanges = useMemo(() => {
-    if (!log) return { added: [], removed: [] };
+    if (!log) return { added: [] as string[], removed: [] as string[] };
     const desc = log.description || '';
     if (
       log.entityType?.toLowerCase().includes('role') ||
       desc.includes('บทบาท')
     ) {
-      // Try to parse from JSON oldValue / newValue
       try {
-        const oldRoles = log.oldValue ? JSON.parse(log.oldValue) : [];
-        const newRoles = log.newValue ? JSON.parse(log.newValue) : [];
-        if (Array.isArray(oldRoles) && Array.isArray(newRoles)) {
-          const added = newRoles.filter((r) => !oldRoles.includes(r));
-          const removed = oldRoles.filter((r) => !newRoles.includes(r));
+        const oldParsed = log.oldValue ? JSON.parse(log.oldValue) : null;
+        const newParsed = log.newValue ? JSON.parse(log.newValue) : null;
+        if (Array.isArray(oldParsed) && Array.isArray(newParsed)) {
+          const added = newParsed.filter((r) => !oldParsed.includes(r)).map(String);
+          const removed = oldParsed.filter((r) => !newParsed.includes(r)).map(String);
+          return { added, removed };
+        }
+        if (oldParsed || newParsed) {
+          const added: string[] = Array.isArray(newParsed?.grantedPermissions)
+            ? newParsed.grantedPermissions.map(String)
+            : [];
+          const removed: string[] = Array.isArray(oldParsed?.revokedPermissions)
+            ? oldParsed.revokedPermissions.map(String)
+            : [];
           if (added.length || removed.length) return { added, removed };
         }
       } catch {
-        // fallback
+        // ignore invalid json
       }
-      return { added: ['HR Manager'], removed: ['HR Staff'] };
     }
-    return { added: [], removed: [] };
+    return { added: [] as string[], removed: [] as string[] };
   }, [log]);
 
   // Field differences parsing
@@ -328,17 +352,21 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
       id: log.id,
       timestamp: log.createdAt,
       actor_id: log.userId || null,
+      actor_type: log.actorType || (log.userId ? 'USER' : 'SYSTEM'),
+      actor_username: log.username || null,
+      actor_role: log.actorRole || null,
       action: log.action,
       entity_type: log.entityType,
       entity_id: log.entityId || null,
-      target_user_id: targetUser?.id || null,
+      subject_employee_id: targetUser?.id || null,
+      subject_employee_code: targetUser?.code || null,
       result: isFail ? 'FAILED' : 'SUCCESS',
       ip: log.ipAddress || '-',
-      user_agent: 'Edge 141 · Windows',
-      session_id: `s_${(log.id * 7919).toString(16).slice(0, 6)}`,
+      user_agent: log.userAgent || '-',
       field_name: log.fieldName || null,
       old_value: log.oldValue || null,
       new_value: log.newValue || null,
+      metadata: log.metadata || null,
     };
     navigator.clipboard.writeText(JSON.stringify(raw, null, 2));
     setCopied(true);
@@ -422,7 +450,13 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                   {log.fullName || log.username}
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {log.userId ? `ผู้ดูแลระบบ · ผู้ใช้ #${log.userId}` : 'งานอัตโนมัติของระบบ'}
+                  {log.actorRole
+                    ? `${log.actorRole}${log.userId ? ` · ผู้ใช้ #${log.userId}` : ''}`
+                    : log.actorType === 'ANONYMOUS'
+                      ? 'ไม่ระบุตัวตน (ภายนอก)'
+                      : log.userId
+                        ? `ผู้ใช้ #${log.userId}`
+                        : 'งานอัตโนมัติของระบบ'}
                 </div>
               </div>
               {onFilterByUser && log.userId && (
@@ -516,7 +550,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             )}
 
             {/* Field Diff Table */}
-            {diffFields.length > 0 && !isPw && !isRole && (
+            {diffFields.length > 0 && !isPw && (!isRole || (roleChanges.added.length === 0 && roleChanges.removed.length === 0)) && (
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1 bg-white dark:bg-slate-800 divide-y divide-dashed divide-slate-200 dark:divide-slate-700 min-w-0 overflow-hidden">
                 {diffFields.map((f, i) => {
                   const hasOld = f.oldVal !== undefined && f.oldVal !== '';
@@ -558,7 +592,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             <h3 className="text-xs font-semibold text-slate-500 mb-1.5">บริบท</h3>
             <div className="grid grid-cols-[110px_1fr] gap-y-1.5 gap-x-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-800 min-w-0 overflow-hidden">
               <span className="text-slate-500">IP</span>
-              <span className="font-mono text-slate-800">
+              <span className="font-mono text-slate-800 dark:text-slate-200">
                 {log.ipAddress === '::1' || log.ipAddress === '127.0.0.1' ? (
                   <span>
                     {log.ipAddress}{' '}
@@ -568,19 +602,21 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                   </span>
                 ) : isFail ? (
                   <span className="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-bold">
-                    {log.ipAddress || '49.228.10.7'}
+                    {log.ipAddress || '-'}
                   </span>
                 ) : (
-                  log.ipAddress || '203.150.12.30'
+                  log.ipAddress || '-'
                 )}
               </span>
 
               <span className="text-slate-500">อุปกรณ์</span>
-              <span className="text-slate-800">Edge 141 · Windows</span>
+              <span className="text-slate-800 dark:text-slate-200 break-all">
+                {log.userAgent || '-'}
+              </span>
 
-              <span className="text-slate-500">Session</span>
-              <span className="font-mono text-slate-600">
-                s_{(log.id * 7919).toString(16).slice(0, 6)}
+              <span className="text-slate-500">ประเภทผู้กระทำ</span>
+              <span className="font-mono text-slate-600 dark:text-slate-300">
+                {log.actorType || (log.userId ? 'USER' : 'SYSTEM')}
               </span>
             </div>
           </div>
@@ -641,13 +677,15 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                   id: log.id,
                   timestamp: log.createdAt,
                   actor_id: log.userId || null,
+                  actor_type: log.actorType || (log.userId ? 'USER' : 'SYSTEM'),
+                  actor_role: log.actorRole || null,
                   action: log.action,
                   entity_type: log.entityType,
                   entity_id: log.entityId || null,
-                  target_user_id: targetUser?.id || null,
+                  subject_employee_id: targetUser?.id || null,
                   result: isFail ? 'FAILED' : 'SUCCESS',
                   ip: log.ipAddress || '-',
-                  user_agent: 'Edge 141 · Windows',
+                  user_agent: log.userAgent || '-',
                   old_value: log.oldValue || null,
                   new_value: log.newValue || null,
                 },

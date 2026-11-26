@@ -54,6 +54,7 @@ public class EmploymentContractsController : ControllerBase
     /// ดึงรายละเอียดสัญญาจ้างงานตาม ID
     /// </summary>
     [HttpGet("{id:long}")]
+    [AuditAccess("VIEW", "employment_contract", "id", "เปิดดูรายละเอียดสัญญาจ้างงาน")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [RequirePermission("EMP_CONTRACT_VIEW")]
@@ -181,6 +182,7 @@ public class EmploymentContractsController : ControllerBase
     /// ดาวน์โหลดหรือเปิดดูไฟล์เอกสารสัญญาจ้างงาน (รองรับ parameter inline=true เพื่อ preview ในเบราว์เซอร์)
     /// </summary>
     [HttpGet("{id:long}/document")]
+    [AuditAccess("DOWNLOAD", "employment_contract", "id", "ดาวน์โหลดไฟล์สัญญาจ้างงาน")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDocument(
@@ -233,6 +235,7 @@ public class EmploymentContractsController : ControllerBase
     /// ดาวน์โหลดหรือเปิดดูไฟล์แนบรายไฟล์ของสัญญาจ้าง (inline=true เพื่อ preview)
     /// </summary>
     [HttpGet("{id:long}/documents/{documentId:long}")]
+    [AuditAccess("DOWNLOAD", "employment_contract", "id", "ดาวน์โหลดเอกสารแนบสัญญาจ้างงาน")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDocumentById(

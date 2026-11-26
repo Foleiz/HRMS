@@ -17,8 +17,6 @@ import {
   Lock,
   Download,
   Loader2,
-  TrendingUp,
-  PieChart as PieChartIcon,
 } from 'lucide-react';
 import { getThaiInitial } from '@/components/ui/AvatarName';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -50,13 +48,6 @@ function MySalaryContent() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overview, setOverview] = useState<MySalaryOverview | null>(null);
-  const otherIncomeAmount = Math.max(
-    0,
-    (overview?.latestGrossIncome || 0) -
-      (overview?.chartData?.baseSalaryAmount || 0) -
-      (overview?.chartData?.overtimeAmount || 0) -
-      (overview?.chartData?.allowanceAmount || 0)
-  );
 
   // View state: null = Overview, number = Detail view of specific payrollId
   const [selectedPayrollId, setSelectedPayrollId] = useState<number | null>(null);
@@ -530,11 +521,9 @@ function MySalaryContent() {
     <div className="space-y-6 font-sans transition-all duration-300">
 
       {/* ========================================================= */}
-      {/* MAIN SECTION: History Table (8 cols) + Visual Charts (4 cols) */}
+      {/* MAIN SECTION: History Table */}
       {/* ========================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* LEFT COLUMN: ประวัติสลิปเงินเดือน (8 Cols) */}
-        <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
           <div className="space-y-5 flex-1">
             {/* Toolbar: ช่องค้นหาด้านซ้ายตามต้นแบบระบบ */}
             <TableToolbar
@@ -559,13 +548,10 @@ function MySalaryContent() {
 
             {/* Desktop View: Slips History Table */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
-              <table className="table-standard w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
+              <table className="table-standard w-full text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold bg-slate-50/50 dark:bg-slate-700/30 whitespace-nowrap">
                     <th className="py-3 px-3.5 whitespace-nowrap">เดือน-ปี</th>
-                    <th className="py-3 px-3.5 whitespace-nowrap text-right">รายได้รวม</th>
-                    <th className="py-3 px-3.5 whitespace-nowrap text-right">รายการหักรวม</th>
-                    <th className="py-3 px-3.5 whitespace-nowrap text-right">เงินเดือนสุทธิ</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-center">วันที่โอน</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-center">สถานะ</th>
                     <th className="py-3 px-3.5 whitespace-nowrap text-center">จัดการ</th>
@@ -581,15 +567,6 @@ function MySalaryContent() {
                       >
                         <td className="py-3.5 px-3.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                           {row.periodMonthName}
-                        </td>
-                        <td className="py-3.5 px-3.5 text-right tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                          {formatMoney(row.totalGrossIncome)}
-                        </td>
-                        <td className="py-3.5 px-3.5 text-right tabular-nums text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                          {formatMoney(row.totalDeductions)}
-                        </td>
-                        <td className="py-3.5 px-3.5 text-right tabular-nums font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                          {formatMoney(row.netPayableSalary)}
                         </td>
                         <td className="py-3.5 px-3.5 text-center text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {row.paymentDateThai}
@@ -617,7 +594,7 @@ function MySalaryContent() {
                       </tr>
                     ))
                   ) : (
-                    <TableEmpty colSpan={7} text={searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'} />
+                    <TableEmpty colSpan={4} text={searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'} />
                   )}
                 </tbody>
               </table>
@@ -644,25 +621,6 @@ function MySalaryContent() {
                       <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : row.status === 'ไม่มียอดโอน' ? 'neutral' : 'warning'}>
                         {row.status}
                       </StatusBadge>
-                    </div>
-
-                    <div className="bg-slate-50/80 dark:bg-slate-700/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700 space-y-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">เงินเดือนสุทธิ</span>
-                        <span className="text-base font-extrabold text-primary tabular-nums">
-                          {formatMoney(row.netPayableSalary)}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-2xs pt-1 border-t border-slate-200/60 dark:border-slate-600">
-                        <div>
-                          <span className="text-slate-400 block">รายได้รวม</span>
-                          <span className="tabular-nums text-slate-700 dark:text-slate-300 font-semibold">{formatMoney(row.totalGrossIncome)}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block">รายการหัก</span>
-                          <span className="tabular-nums text-rose-600 dark:text-rose-400 font-semibold">{formatMoney(row.totalDeductions)}</span>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
@@ -706,256 +664,6 @@ function MySalaryContent() {
               }}
             />
           </div>
-        </div>
-
-        {/* RIGHT COLUMN: 2 Visual Charts (ออกแบบใหม่ตรงหัวข้อเงินเดือนของฉัน) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Card 1: สัดส่วนเงินเดือนสุทธิ vs รายการหัก (Take-Home Pay Ratio) */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <PieChartIcon className="w-4 h-4 text-emerald-500" />
-                  สัดส่วนเงินเดือนสุทธิ
-                </h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                  เงินโอนรับสุทธิเทียบกับยอดหัก (งวดล่าสุด)
-                </p>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">
-                {overview?.latestPeriodMonthName || '-'}
-              </span>
-            </div>
-
-            {/* Donut Chart: Net Pay vs Deductions */}
-            {(() => {
-              const gross = overview?.latestGrossIncome || 0;
-              const net = overview?.latestNetPay || 0;
-              const deductions = overview?.latestTotalDeductions || Math.max(0, gross - net);
-
-              if (gross <= 0) {
-                return (
-                  <div className="h-44 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-                    ยังไม่มีข้อมูลเงินเดือนงวดล่าสุด
-                  </div>
-                );
-              }
-
-              const netPercent = gross > 0 ? (net / gross) * 100 : 0;
-              const dedPercent = gross > 0 ? (deductions / gross) * 100 : 0;
-
-              const radius = 38;
-              const circumference = 2 * Math.PI * radius; // ~238.76
-              const netDash = (netPercent / 100) * circumference;
-              const dedDash = (dedPercent / 100) * circumference;
-
-              return (
-                <div className="space-y-4">
-                  {/* Donut with Center Stat */}
-                  <div className="relative flex items-center justify-center py-2">
-                    <svg viewBox="0 0 100 100" className="w-40 h-40 -rotate-90">
-                      {/* Background Track */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#F1F5F9"
-                        className="dark:stroke-slate-700/60"
-                        strokeWidth="14"
-                      />
-                      {/* Net Pay Arc (Emerald) */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#10B981"
-                        strokeWidth="14"
-                        strokeDasharray={`${netDash} ${circumference}`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        className="transition-all duration-500"
-                      />
-                      {/* Deductions Arc (Rose) */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r={radius}
-                        fill="transparent"
-                        stroke="#F43F5E"
-                        strokeWidth="14"
-                        strokeDasharray={`${dedDash} ${circumference}`}
-                        strokeDashoffset={-netDash}
-                        strokeLinecap="round"
-                        className="transition-all duration-500"
-                      />
-                    </svg>
-
-                    {/* Donut Center Display */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">รับสุทธิ</span>
-                      <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tabular-nums">
-                        {formatMoney(net)}
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 px-1.5 py-0.2 bg-emerald-50 dark:bg-emerald-950/40 rounded-full">
-                        {netPercent.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Summary Breakdown List */}
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/80 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 dark:bg-slate-700/30">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                        <span className="text-slate-600 dark:text-slate-300 font-medium">รายได้รวมทั้งหมด</span>
-                      </div>
-                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                        {formatMoney(gross)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/60 dark:border-rose-900/30">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#F43F5E]" />
-                        <span className="text-rose-700 dark:text-rose-300 font-medium">รายการหักรวม ({dedPercent.toFixed(1)}%)</span>
-                      </div>
-                      <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
-                        -{formatMoney(deductions)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100/80 dark:border-emerald-900/30">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-                        <span className="text-emerald-800 dark:text-emerald-300 font-bold">เงินเดือนสุทธิ (รับจริง)</span>
-                      </div>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                        {formatMoney(net)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Card 2: โครงสร้างรายได้ของฉัน */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                โครงสร้างรายได้ของฉัน
-              </h3>
-            </div>
-
-            {(() => {
-                const base = overview?.chartData?.baseSalaryAmount || 0;
-                const ot = (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0);
-                const other = otherIncomeAmount;
-                const totalGross = base + ot + other || overview?.latestGrossIncome || 0;
-
-                if (totalGross <= 0) {
-                  return (
-                    <div className="h-44 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-                      ยังไม่มีข้อมูลโครงสร้างเงินเดือน
-                    </div>
-                  );
-                }
-
-                const basePct = Math.min(100, (base / totalGross) * 100);
-                const otPct = Math.min(100, (ot / totalGross) * 100);
-                const otherPct = Math.min(100, (other / totalGross) * 100);
-
-                return (
-                  <div className="space-y-4">
-                    {/* Visual Segmented Progress Bar */}
-                    <div className="space-y-1.5">
-                      <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
-                        <div
-                          style={{ width: `${basePct}%` }}
-                          className="bg-emerald-500 h-full transition-all duration-500"
-                          title={`เงินเดือนพื้นฐาน: ${basePct.toFixed(1)}%`}
-                        />
-                        <div
-                          style={{ width: `${otPct}%` }}
-                          className="bg-amber-500 h-full transition-all duration-500"
-                          title={`OT / เบี้ยขยัน: ${otPct.toFixed(1)}%`}
-                        />
-                        <div
-                          style={{ width: `${otherPct}%` }}
-                          className="bg-purple-500 h-full transition-all duration-500"
-                          title={`รายได้อื่น / พิเศษ: ${otherPct.toFixed(1)}%`}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400">
-                        <span>เงินเดือนหลัก: {basePct.toFixed(1)}%</span>
-                        <span>OT/เงินเพิ่ม: {(otPct + otherPct).toFixed(1)}%</span>
-                      </div>
-                    </div>
-
-                    {/* Breakdown Items List */}
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                          <div>
-                            <span className="block font-semibold text-slate-800 dark:text-slate-200">เงินเดือนประจำ / พื้นฐาน</span>
-                            <span className="block text-[10px] text-slate-400">ฐานเงินเดือนตามสัญญาจ้าง</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="block font-bold text-slate-800 dark:text-slate-200 tabular-nums">
-                            {formatMoney(base)}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 font-medium">
-                            {basePct.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                          <div>
-                            <span className="block font-semibold text-slate-800 dark:text-slate-200">ค่าล่วงเวลา (OT) & เบี้ยขยัน</span>
-                            <span className="block text-[10px] text-slate-400">ทำงานล่วงเวลาและเบี้ยขยัน</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="block font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                            {formatMoney(ot)}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 font-medium">
-                            {otPct.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                          <div>
-                            <span className="block font-semibold text-slate-800 dark:text-slate-200">รายได้อื่น / โบนัส / พิเศษ</span>
-                            <span className="block text-[10px] text-slate-400">เงินช่วยเหลือและรางวัล</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="block font-bold text-purple-600 dark:text-purple-400 tabular-nums">
-                            {formatMoney(other)}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 font-medium">
-                            {otherPct.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-          </div>
-        </div>
       </div>
     </div>
   );

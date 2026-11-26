@@ -9,7 +9,8 @@ export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const { protocol, hostname } = window.location;
     // ถ้าเข้าด้วย localhost หรือ 127.0.0.1 และมีการระบุ NEXT_PUBLIC_API_URL ใน env ให้ใช้ตามนั้น
-    if ((hostname === 'localhost' || hostname === '127.0.0.1') && process.env.NEXT_PUBLIC_API_URL) {
+    // Production (อยู่หลัง domain + nginx): ตั้ง NEXT_PUBLIC_API_URL_FORCE=1 ตอน build เพื่อใช้ NEXT_PUBLIC_API_URL เสมอ ไม่ต่อ host:5229
+    if (process.env.NEXT_PUBLIC_API_URL && (hostname === 'localhost' || hostname === '127.0.0.1' || process.env.NEXT_PUBLIC_API_URL_FORCE === '1')) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
     // หากเข้าผ่าน localhost ให้ใช้ 127.0.0.1 เพื่อป้องกัน IPv6 (::1) Connection Refused บน Windows

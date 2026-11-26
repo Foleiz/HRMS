@@ -54,6 +54,7 @@ public class EmployeesController : ControllerBase
     /// ดึงข้อมูลพนักงานตาม ID
     /// </summary>
     [HttpGet("{id:long}")]
+    [AuditAccess("VIEW", "employee", "id", "เปิดดูข้อมูลส่วนบุคคลพนักงาน", idIsEmployee: true)]
     [ProducesResponseType(typeof(ApiResponse<EmployeeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> GetById(
@@ -239,6 +240,7 @@ public class EmployeesController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [AuditAccess("DOWNLOAD", "employee_signature", "id", "ดาวน์โหลดลายเซ็นอิเล็กทรอนิกส์", idIsEmployee: true)]
     public async Task<IActionResult> GetSignature(
         long id,
         [FromQuery] DateTime? at,

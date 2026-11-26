@@ -55,6 +55,7 @@ public class LeaveInsightsController : ControllerBase
     }
 
     [HttpGet("api/reports/leave-summary/export")]
+    [AuditAccess("EXPORT", "leave_request", null, "ส่งออกรายงานสรุปการลาประจำปี")]
     [RequirePermission("REPORT_LEAVE_VIEW")]
     public async Task<IActionResult> ExportLeaveSummary(
         [FromQuery] int? year,
@@ -65,6 +66,7 @@ public class LeaveInsightsController : ControllerBase
         var report = await _insights.GetSummaryReportAsync(year ?? LeavePolicyRules.ThaiToday().Year, departmentId, cancellationToken);
         var csv = _insights.BuildSummaryCsv(report);
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+        HttpContext.Items[AuditAccessFilter.ExportRowCountKey] = AuditAccessFilter.CountCsvDataRows(bytes);
         if (string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase))
             return File(Hrms.Application.Common.Utilities.ReportFileConverter.CsvToXlsx(bytes, "รายงานการลา"),
                 Hrms.Application.Common.Utilities.ReportFileConverter.XlsxContentType, $"Leave_Summary_{report.Year + 543}.xlsx");

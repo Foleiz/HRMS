@@ -252,6 +252,7 @@ public class SalaryController : ControllerBase
     /// ดึงประวัติเงินเดือนของพนักงานรายบุคคล
     /// </summary>
     [HttpGet("employees/{employeeId:long}/history")]
+    [AuditAccess("VIEW", "employee_salary", "employeeId", "เปิดดูประวัติฐานเงินเดือนพนักงาน", idIsEmployee: true)]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeSalaryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<List<EmployeeSalaryDto>>>> GetEmployeeSalaryHistory(
@@ -417,6 +418,7 @@ public class SalaryController : ControllerBase
     /// ดึงรายละเอียดรายได้/รายหักของพนักงาน (payroll_detail)
     /// </summary>
     [HttpGet("payrolls/{id:long}/details")]
+    [AuditAccess("VIEW", "payroll", "id", "เปิดดูรายละเอียดสลิปเงินเดือนพนักงาน")]
     [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> GetPayrollDetails(long id, CancellationToken cancellationToken)
     {
@@ -571,6 +573,7 @@ public class SalaryController : ControllerBase
     /// ดาวน์โหลดไฟล์โอนเงินธนาคาร (Text/CSV Format)
     /// </summary>
     [HttpGet("periods/{id:long}/bank-transfer-file")]
+    [AuditAccess("EXPORT", "bank_transfer_file", "id", "ส่งออกไฟล์โอนเงินเดือนธนาคาร")]
     public async Task<IActionResult> GenerateBankTransferFile(
         long id,
         [FromQuery] string bankCode = "004",
@@ -759,6 +762,7 @@ public class SalaryController : ControllerBase
 
     /// <summary>ดาวน์โหลด Slip ของพนักงานรายบุคคล</summary>
     [HttpGet("payrolls/{payrollId:long}/slip")]
+    [AuditAccess("DOWNLOAD", "payroll", "payrollId", "ดาวน์โหลดหลักฐานการโอนเงินรายบุคคล")]
     public async Task<IActionResult> DownloadSlip(
         long payrollId,
         CancellationToken cancellationToken)
@@ -770,6 +774,7 @@ public class SalaryController : ControllerBase
 
     /// <summary>สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
     [HttpPost("periods/{id:long}/generate-bank-file")]
+    [AuditAccess("EXPORT", "bank_transfer_file", "id", "สร้างและส่งออกไฟล์โอนเงินธนาคารแบบกลุ่ม")]
     public async Task<IActionResult> GenerateBankFile(
         long id,
         [FromQuery] string? bankCode,
@@ -847,6 +852,7 @@ public class SalaryController : ControllerBase
 
     /// <summary>ดาวน์โหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร (สำหรับฝ่ายการเงิน)</summary>
     [HttpGet("periods/{id:long}/bank-receipt")]
+    [AuditAccess("DOWNLOAD", "payroll_period", "id", "ดาวน์โหลดใบเสร็จโอนเงินรวมธนาคาร")]
     public async Task<IActionResult> DownloadBankReceipt(
         long id,
         CancellationToken cancellationToken)
@@ -858,6 +864,7 @@ public class SalaryController : ControllerBase
 
     /// <summary>สร้างหรือดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน) ของพนักงาน</summary>
     [HttpGet("payrolls/{id:long}/payslip-pdf")]
+    [AuditAccess("DOWNLOAD", "payslip", "id", "ดาวน์โหลดสลิปเงินเดือน PDF พนักงาน")]
     public async Task<IActionResult> DownloadEmployeePayslip(
         long id,
         CancellationToken cancellationToken)

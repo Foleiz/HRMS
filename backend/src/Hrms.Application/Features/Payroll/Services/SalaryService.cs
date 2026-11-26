@@ -5,6 +5,7 @@ using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Hrms.Application.Features.Payroll.Services;
 
@@ -651,15 +652,42 @@ public class SalaryService : ISalaryService
             // ให้ปรับฐานเงินเดือนปัจจุบันให้เท่ากับขั้นต่ำของโครงสร้างเงินเดือนโดยอัตโนมัติ
             if (currentSalary != null && matchingStructure != null && matchingStructure.MinSalary > 0 && currentSalary.BaseSalary < matchingStructure.MinSalary)
             {
+                var oldBaseSalary = currentSalary.BaseSalary;
+                var oldReason = currentSalary.Reason;
                 var newMin = matchingStructure.MinSalary;
+                var newReason = string.IsNullOrEmpty(oldReason)
+                    ? $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำ ({newMin:N0} บาท)"
+                    : oldReason + $" (ปรับขั้นต่ำตามตำแหน่ง/ระดับ {newMin:N0} บาท)";
+
                 await _context.EmployeeSalaries
                     .Where(s => s.Id == currentSalary.Id)
                     .ExecuteUpdateAsync(setter => setter
                         .SetProperty(s => s.BaseSalary, newMin)
-                        .SetProperty(s => s.Reason, s => string.IsNullOrEmpty(s.Reason)
-                            ? $"ปรับฐานเงินเดือนตามโครงสร้างขั้นต่ำ ({newMin:N0} บาท)"
-                            : s.Reason + $" (ปรับขั้นต่ำตามตำแหน่ง/ระดับ {newMin:N0} บาท)"),
+                        .SetProperty(s => s.Reason, newReason),
                         cancellationToken);
+
+                // บันทึก AuditLog ชดเชยคำสั่ง ExecuteUpdateAsync ที่ไม่ผ่าน ChangeTracker
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    Action = "UPDATE",
+                    EntityType = "employee_salary",
+                    EntityId = currentSalary.Id,
+                    FieldName = "BaseSalary, Reason",
+                    OldValue = JsonSerializer.Serialize(new { BaseSalary = oldBaseSalary, Reason = oldReason }),
+                    NewValue = JsonSerializer.Serialize(new { BaseSalary = newMin, Reason = newReason }),
+                    Metadata = JsonSerializer.Serialize(new { sensitiveFields = new[] { "BaseSalary" }, autoAdjustedToMinStructure = true }),
+                    UserId = _currentUser.UserId,
+                    ActorType = "SYSTEM",
+                    ActorUsername = "SYSTEM",
+                    ActorName = "ระบบปรับฐานขั้นต่ำอัตโนมัติ",
+                    SubjectEmployeeId = emp.Id,
+                    SubjectEmployeeCode = emp.EmployeeCode,
+                    SubjectEmployeeName = emp.FullName,
+                    IpAddress = _currentUser.IpAddress,
+                    UserAgent = _currentUser.UserAgent,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync(cancellationToken);
 
                 currentSalary.BaseSalary = newMin;
             }
@@ -3927,26 +3955,61 @@ public class SalaryService : ISalaryService
         }
 
         // คำขอเบิกที่อยู่ในรอบนี้ → กลับไปรอสรุปรอบถัดไป
-        await _context.EmployeeBenefitClaims
+        var revertedClaimsCount = await _context.EmployeeBenefitClaims
             .Where(c => c.PayrollPeriodId == period.Id && c.PaymentStatus == BenefitPayCode.PaymentInPayroll)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(c => c.PaymentStatus, BenefitPayCode.PaymentUnpaid)
                 .SetProperty(c => c.PayrollPeriodId, (long?)null), cancellationToken);
 
         // ปลดล็อกค่าคอมมิชชั่นที่ผูกกับรอบนี้ ให้กลับเป็นสถานะ CONFIRMED เพื่อให้นำไปคำนวณใหม่ได้
-        await _context.EmployeeCommissions
+        var revertedCommissionsCount = await _context.EmployeeCommissions
             .Where(c => c.PaidPeriodId == period.Id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(c => c.Status, "CONFIRMED")
                 .SetProperty(c => c.PaidPeriodId, (long?)null), cancellationToken);
 
+        var deletedPayslipsCount = 0;
         var payrollIds = period.Payrolls.Select(p => p.Id).ToList();
         if (payrollIds.Any())
         {
             // ลบ Payslips ที่อ้างอิง Payroll ก่อนเพื่อไม่ให้ติด FK Constraint ใน PostgreSQL
-            await _context.Payslips
+            deletedPayslipsCount = await _context.Payslips
                 .Where(ps => payrollIds.Contains(ps.PayrollId))
                 .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (revertedClaimsCount > 0 || revertedCommissionsCount > 0 || deletedPayslipsCount > 0)
+        {
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Action = "DELETE",
+                EntityType = "payroll_period_cleanup",
+                EntityId = period.Id,
+                FieldName = "Payslips, BenefitClaims, Commissions",
+                OldValue = JsonSerializer.Serialize(new
+                {
+                    PeriodId = period.Id,
+                    Year = period.Year,
+                    Month = period.Month,
+                    DeletedPayslips = deletedPayslipsCount,
+                    RevertedBenefitClaims = revertedClaimsCount,
+                    RevertedCommissions = revertedCommissionsCount
+                }),
+                Metadata = JsonSerializer.Serialize(new
+                {
+                    deletedPayslipsCount,
+                    revertedClaimsCount,
+                    revertedCommissionsCount
+                }),
+                UserId = _currentUser.UserId,
+                ActorType = _currentUser.UserId.HasValue ? "USER" : "SYSTEM",
+                ActorUsername = _currentUser.Username ?? "SYSTEM",
+                ActorName = _currentUser.FullName ?? _currentUser.Username ?? "ระบบอัตโนมัติ",
+                ActorRole = _currentUser.Roles.Count > 0 ? string.Join(", ", _currentUser.Roles) : null,
+                IpAddress = _currentUser.IpAddress,
+                UserAgent = _currentUser.UserAgent,
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         // Clean up payroll details and payroll records

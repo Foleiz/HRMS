@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -10,8 +11,14 @@ public class Payroll : BaseEntity
 {
     public long PeriodId { get; set; }
     public long EmployeeId { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal TotalGrossIncome { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal TotalDeductionAmount { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal NetPayableSalary { get; set; }
     public string Status { get; set; } = "CALCULATED"; // CALCULATED, REVIEW, DRAFT, APPROVED, PAID
     public string? SnapshotEmployeeName { get; set; }

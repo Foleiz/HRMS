@@ -119,6 +119,7 @@ public class GeneralRequestsController : ControllerBase
 
     /// <summary>ดาวน์โหลดไฟล์แนบ (เจ้าของคำขอ / ฝ่ายบุคคล / ผู้อนุมัติในสาย)</summary>
     [HttpGet("{id:long}/attachment")]
+    [AuditAccess("DOWNLOAD", "general_request", "id", "ดาวน์โหลดเอกสารแนบคำร้องทั่วไป")]
     public async Task<IActionResult> Attachment(long id, CancellationToken cancellationToken)
     {
         try

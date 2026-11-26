@@ -37,7 +37,6 @@ import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { StatCard, type StatTone } from '@/components/ui/StatCard';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
-import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { ModalHeader } from '@/components/ui/ModalHeader';
@@ -214,8 +213,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const [formTitle, setFormTitle] = useState('');
   const [formStartDate, setFormStartDate] = useState('');
   const [formEndDate, setFormEndDate] = useState('');
-  const [formStartTime, setFormStartTime] = useState('');
-  const [formEndTime, setFormEndTime] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formIsPinned, setFormIsPinned] = useState(false);
   const [formPriority, setFormPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
@@ -389,8 +386,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     setFormTitle('');
     setFormStartDate(targetDate);
     setFormEndDate(targetDate);
-    setFormStartTime('09:00');
-    setFormEndTime('16:30');
     setFormDescription('');
     setFormIsPinned(false);
     setFormPriority('NORMAL');
@@ -409,23 +404,13 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
 
   // Open Edit Modal
   const handleOpenEdit = (act: Announcement) => {
-    const { timeRange, description } = parseActivityMeta(act.content);
-
-    let stTime = '09:00';
-    let endTime = '16:30';
-    if (timeRange.includes('-')) {
-      const parts = timeRange.split('-').map((p) => p.trim());
-      stTime = parts[0] || '09:00';
-      endTime = parts[1] || '16:30';
-    }
+    const { description } = parseActivityMeta(act.content);
 
     setModalMode('edit');
     setEditingId(act.id);
     setFormTitle(act.title);
     setFormStartDate(formatDateForInput(act.publishedAt || act.createdAt));
     setFormEndDate(formatDateForInput(act.expireAt));
-    setFormStartTime(stTime);
-    setFormEndTime(endTime);
     setFormDescription(description);
     setFormIsPinned(act.isPinned);
     setFormPriority((act.priority as any) || 'NORMAL');
@@ -647,8 +632,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       targets = formTargetEmployeeIds.map((id) => ({ targetType: 'EMPLOYEE', targetEntityId: id }));
     }
 
-    const timeRange = formStartTime && formEndTime ? `${formStartTime} - ${formEndTime}` : '';
-    const content = buildActivityContent(timeRange, formDescription);
+    const content = buildActivityContent('', formDescription);
 
     const payload: CreateAnnouncementPayload = {
       title: formTitle.trim(),
@@ -1437,20 +1421,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                       className="w-full"
                     />
                   </div>
-                </div>
-
-                {/* Row: เวลาเริ่มกิจกรรม & เวลาสิ้นสุดกิจกรรม */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <ThaiTimePicker
-                    label="เวลาเริ่มกิจกรรม"
-                    value={formStartTime}
-                    onChange={setFormStartTime}
-                  />
-                  <ThaiTimePicker
-                    label="เวลาสิ้นสุดกิจกรรม"
-                    value={formEndTime}
-                    onChange={setFormEndTime}
-                  />
                 </div>
 
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}

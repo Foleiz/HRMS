@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, Gift, Info, ReceiptText, Wallet } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
@@ -25,10 +25,10 @@ const PAYOUTS = [
 ] as const;
 
 const FREQUENCIES = [
-  { key: 'YEARLY', label: 'ปี' },
-  { key: 'MONTHLY', label: 'เดือน' },
-  { key: 'DAILY', label: 'วัน' },
-  { key: 'PER_OCCURRENCE', label: 'ครั้ง' },
+  { key: 'YEARLY', label: 'ต่อปี', desc: 'วงเงินรวมตลอดทั้งปี (รีเซ็ตใหม่ทุกปี)' },
+  { key: 'MONTHLY', label: 'ต่อเดือน', desc: 'วงเงินรวมต่อเดือน (รีเซ็ตใหม่ทุกเดือน)' },
+  { key: 'DAILY', label: 'ต่อวัน', desc: 'จำกัดวงเงินสูงสุดต่อวัน' },
+  { key: 'PER_OCCURRENCE', label: 'ต่อครั้ง', desc: 'จำกัดวงเงินสูงสุดต่อการยื่นเบิก 1 ครั้ง' },
 ];
 
 /**
@@ -46,6 +46,19 @@ export function BenefitPolicyFields({
   categories: { value: string; label: string }[];
 }) {
   const [unlimited, setUnlimited] = useState(() => !value.defaultCoverageAmount);
+  const [showFreqInfo, setShowFreqInfo] = useState(false);
+  const freqInfoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFreqInfo) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (freqInfoRef.current && !freqInfoRef.current.contains(e.target as Node)) {
+        setShowFreqInfo(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [showFreqInfo]);
   const noClaim = !!value.isStatutory || NO_CLAIM_CATEGORIES.includes(value.category);
   const payout = value.payoutType || 'REIMBURSEMENT';
   const isClaim = payout === 'REIMBURSEMENT';
@@ -163,29 +176,26 @@ export function BenefitPolicyFields({
         </div>
       ) : (
         <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {isClaim ? 'วงเงินเริ่มต้น' : 'จำนวนเงินเริ่มต้นต่องวด'}
-            </span>
-            {isClaim && (
-              <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                ไม่จำกัดวงเงิน
-                <ToggleSwitch
-                  checked={unlimited}
-                  ariaLabel="ไม่จำกัดวงเงิน"
-                  onChange={(v) => {
-                    setUnlimited(v);
-                    if (v) onChange({ defaultCoverageAmount: 0 });
-                  }}
-                />
-              </label>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             <div>
-              <label htmlFor="benefit-amount" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                {isClaim ? 'วงเงิน (บาท)' : 'จำนวนเงินต่องวด (บาท)'}
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1 min-h-[20px]">
+                <label htmlFor="benefit-amount" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  {isClaim ? 'วงเงิน (บาท)' : 'จำนวนเงินต่องวด (บาท)'}
+                </label>
+                {isClaim && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+                    ไม่จำกัดวงเงิน
+                    <ToggleSwitch
+                      checked={unlimited}
+                      ariaLabel="ไม่จำกัดวงเงิน"
+                      onChange={(v) => {
+                        setUnlimited(v);
+                        if (v) onChange({ defaultCoverageAmount: 0 });
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
               <input
                 id="benefit-amount"
                 type="number"
@@ -200,7 +210,31 @@ export function BenefitPolicyFields({
             </div>
             {isClaim && (
               <div>
-                <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">รอบวงเงิน</span>
+                <div className="flex items-center gap-1.5 mb-1 min-h-[20px]">
+                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">รอบวงเงิน</span>
+                  <div ref={freqInfoRef} className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowFreqInfo((v) => !v)}
+                      aria-label="คำอธิบายรอบวงเงิน"
+                      aria-expanded={showFreqInfo}
+                      title="คลิกเพื่อดูคำอธิบายรอบวงเงิน"
+                      className="text-slate-400 hover:text-primary dark:hover:text-blue-300 transition-colors cursor-pointer"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                    {showFreqInfo && (
+                      <div className="absolute right-0 bottom-full mb-2 w-72 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg z-30 text-[11px] space-y-2">
+                        <div className="font-bold text-slate-800 dark:text-slate-100 pb-1 border-b border-slate-100 dark:border-slate-700">
+                          คำอธิบายรอบวงเงิน
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          ระยะเวลาหรือเงื่อนไขการรีเซ็ตวงเงินของสวัสดิการแบบเบิกตามจริง ว่าพนักงานสามารถเบิกได้ไม่เกินวงเงินที่ตั้งไว้ ต่อหน่วยที่กำหนด
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="grid grid-cols-4 gap-1 p-[3px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
                   {FREQUENCIES.map((f) => {
                     const on = (value.defaultFrequency || 'YEARLY') === f.key;
@@ -208,9 +242,10 @@ export function BenefitPolicyFields({
                       <button
                         key={f.key}
                         type="button"
+                        title={f.desc}
                         aria-pressed={on}
                         onClick={() => onChange({ defaultFrequency: f.key })}
-                        className={`h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                           on ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
                         }`}
                       >

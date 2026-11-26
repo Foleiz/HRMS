@@ -114,7 +114,7 @@ const ToggleSwitch: React.FC<{
         isSm ? 'h-5 w-9' : 'h-6 w-11'
       } ${
         checked
-          ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-[0_0_8px_rgba(59,130,246,0.45)]'
+          ? 'bg-primary hover:bg-primary-hover'
           : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border dark:border-slate-600/60'
       }`}
     >
@@ -190,7 +190,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   ANNOUNCEMENTS: 'จัดการประกาศ',
   MASTER_DATA: 'ข้อมูลหลัก',
   SETTINGS: 'ตั้งค่าระบบ',
-  GUIDE: 'วิธีการใช้งาน',
+  GUIDE: 'ตัวช่วยงาน',
 };
 
 /** โครงสร้างเมนูย่อยของแต่ละ Flow ในวิธีการใช้งาน (Two-way Sync กับโมดูลหลัก) */
@@ -825,7 +825,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           moduleName: flow.title,
           groupName: 'GUIDE',
           categoryCode: 'GUIDE',
-          categoryName: 'วิธีการใช้งาน',
+          categoryName: 'ตัวช่วยงาน',
           dataScope: 'SELF',
           canView: false,
           canCreate: false,
@@ -904,7 +904,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         moduleName: 'ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)',
         groupName: 'GUIDE',
         categoryCode: 'GUIDE',
-        categoryName: 'วิธีการใช้งาน',
+        categoryName: 'ตัวช่วยงาน',
         dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
         canView: legacyGuidePayroll?.canView || false,
         canCreate: legacyGuidePayroll?.canCreate || false,
@@ -925,7 +925,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         moduleName: 'ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)',
         groupName: 'GUIDE',
         categoryCode: 'GUIDE',
-        categoryName: 'วิธีการใช้งาน',
+        categoryName: 'ตัวช่วยงาน',
         dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
         canView: legacyGuidePayroll?.canView || false,
         canCreate: legacyGuidePayroll?.canCreate || false,
@@ -946,7 +946,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         moduleName: 'ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)',
         groupName: 'GUIDE',
         categoryCode: 'GUIDE',
-        categoryName: 'วิธีการใช้งาน',
+        categoryName: 'ตัวช่วยงาน',
         dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
         canView: legacyGuidePayroll?.canView || false,
         canCreate: legacyGuidePayroll?.canCreate || false,

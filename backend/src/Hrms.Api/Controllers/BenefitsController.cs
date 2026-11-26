@@ -234,6 +234,7 @@ public class BenefitsController : ControllerBase
     }
 
     [HttpGet("claim-requests/{id:long}/attachment")]
+    [AuditAccess("DOWNLOAD", "employee_benefit_claim", "id", "ดาวน์โหลดหลักฐานแนบคำขอเบิกสวัสดิการ")]
     public async Task<IActionResult> GetClaimAttachment(long id, CancellationToken cancellationToken)
     {
         var file = await _claimRequests.GetAttachmentAsync(id, cancellationToken);

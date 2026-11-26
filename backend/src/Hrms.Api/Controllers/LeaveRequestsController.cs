@@ -272,6 +272,7 @@ public class LeaveRequestsController : ControllerBase
     /// ดาวน์โหลดไฟล์เอกสารแนบของคำร้องขอลา (เช่น ใบรับรองแพทย์)
     /// </summary>
     [HttpGet("{id:long}/documents/{docId:long}")]
+    [AuditAccess("DOWNLOAD", "leave_request", "id", "ดาวน์โหลดเอกสารแนบคำร้องขอลา")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DownloadDocument(long id, long docId, CancellationToken cancellationToken)

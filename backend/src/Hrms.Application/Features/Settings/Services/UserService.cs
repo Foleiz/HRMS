@@ -69,6 +69,11 @@ public class UserService : IUserService
         {
             baseQuery = baseQuery.Where(u => u.Status == filter.Status.Trim().ToUpperInvariant());
         }
+        else
+        {
+            // ซ่อนบัญชีที่ถูกระงับถาวรแบบ Soft Delete ออกจากตารางปกติ
+            baseQuery = baseQuery.Where(u => u.Status != "DELETED");
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -143,7 +148,7 @@ public class UserService : IUserService
 
     public async Task<List<long>> GetAssignedEmployeeIdsAsync(CancellationToken cancellationToken = default)
     {
-        var baseQuery = _dbContext.UserAccounts.AsNoTracking();
+        var baseQuery = _dbContext.UserAccounts.AsNoTracking().Where(u => u.Status != "DELETED");
         var accessibleEmployeeIds = await _dataScopeService.GetAccessibleEmployeeIdsAsync("SETTINGS_USERS_VIEW", cancellationToken);
         if (accessibleEmployeeIds != null)
         {
@@ -219,7 +224,8 @@ public class UserService : IUserService
         }
 
         var username = request.Username.Trim().ToLowerInvariant();
-        var usernameExists = await _dbContext.UserAccounts.AnyAsync(u => u.Username.ToLower() == username, cancellationToken);
+        var usernameExists = await _dbContext.UserAccounts.AnyAsync(
+            u => u.Status != "DELETED" && u.Username.ToLower() == username, cancellationToken);
         if (usernameExists)
         {
             throw new BusinessRuleException($"ชื่อผู้ใช้งาน '{request.Username}' มีอยู่ในระบบแล้ว");
@@ -231,23 +237,42 @@ public class UserService : IUserService
             throw new NotFoundException("Employee", request.EmployeeId);
         }
 
-        var empAccountExists = await _dbContext.UserAccounts.AnyAsync(u => u.EmployeeId == request.EmployeeId, cancellationToken);
-        if (empAccountExists)
+        var existingEmpAccount = await _dbContext.UserAccounts
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId, cancellationToken);
+        if (existingEmpAccount != null && existingEmpAccount.Status != "DELETED")
         {
             throw new BusinessRuleException("พนักงานท่านนี้มีบัญชีผู้ใช้งานในระบบอยู่แล้ว");
         }
 
-        var user = new UserAccount
+        UserAccount user;
+        if (existingEmpAccount != null)
         {
-            EmployeeId = request.EmployeeId,
-            Username = request.Username.Trim(),
-            PasswordHash = _passwordHasher.HashPassword(request.Password),
-            Status = "ACTIVE",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        _dbContext.UserAccounts.Add(user);
+            // เปิดใช้งานบัญชีที่เคยถูก Soft Delete กลับมาใหม่โดยคง UserId เดิมไว้เพื่อความต่อเนื่องของ Audit Trail
+            if (existingEmpAccount.UserRoles.Any())
+            {
+                _dbContext.UserRoles.RemoveRange(existingEmpAccount.UserRoles);
+            }
+            existingEmpAccount.Username = request.Username.Trim();
+            existingEmpAccount.PasswordHash = _passwordHasher.HashPassword(request.Password);
+            existingEmpAccount.Status = "ACTIVE";
+            existingEmpAccount.DeletedAt = null;
+            existingEmpAccount.UpdatedAt = DateTime.UtcNow;
+            user = existingEmpAccount;
+        }
+        else
+        {
+            user = new UserAccount
+            {
+                EmployeeId = request.EmployeeId,
+                Username = request.Username.Trim(),
+                PasswordHash = _passwordHasher.HashPassword(request.Password),
+                Status = "ACTIVE",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _dbContext.UserAccounts.Add(user);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         // Add Roles
@@ -451,8 +476,10 @@ public class UserService : IUserService
 
     public async Task<bool> DeleteUserAsync(long id, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default)
     {
-        var user = await _dbContext.UserAccounts.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-        if (user == null)
+        var user = await _dbContext.UserAccounts
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user == null || user.Status == "DELETED")
         {
             throw new NotFoundException("UserAccount", id);
         }
@@ -472,16 +499,40 @@ public class UserService : IUserService
             }
         }
 
-        // ยิงคำสั่ง DELETE ไปยัง PostgreSQL โดยตรง เพื่อให้ Database Constraints
-        // (ON DELETE CASCADE สำหรับ user_role/notification และ ON DELETE SET NULL สำหรับ audit_log/attendance_import_batch)
-        // ทำงานในระดับฐานข้อมูลได้อย่างสมบูรณ์ โดยไม่เกิด DbUpdateConcurrencyException จาก ChangeTracker ของ EF Core
-        await _dbContext.UserAccounts.Where(u => u.Id == id).ExecuteDeleteAsync(cancellationToken);
+        // ใช้ Soft Delete แทน Hard Delete เพื่อรักษาหลักฐาน Foreign Key (ON DELETE RESTRICT) ใน hrms.audit_log
+        var originalUsername = user.Username;
+        var originalStatus = user.Status;
+        var suffix = $"#deleted_{user.Id}";
+        var archivedUsername = originalUsername.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)
+            ? originalUsername
+            : (originalUsername.Length + suffix.Length <= 100
+                ? originalUsername + suffix
+                : originalUsername[..(100 - suffix.Length)] + suffix);
+
+        if (user.UserRoles.Any())
+        {
+            _dbContext.UserRoles.RemoveRange(user.UserRoles);
+        }
+
+        user.Username = archivedUsername;
+        user.Status = "DELETED";
+        user.DeletedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
         InvalidateUsersCache();
         RoleService.InvalidateMatrixCache();
 
         await _auditLogService.LogAsync(
-            "DELETE", "USER_ACCOUNT", user.Id, "Username",
-            user.Username, null, currentUserId, ipAddress, cancellationToken: cancellationToken);
+            "DELETE",
+            "USER_ACCOUNT",
+            user.Id,
+            "Status",
+            System.Text.Json.JsonSerializer.Serialize(new { Username = originalUsername, Status = originalStatus, EmployeeId = user.EmployeeId }),
+            System.Text.Json.JsonSerializer.Serialize(new { Status = "DELETED", DeletedAt = user.DeletedAt, EmployeeId = user.EmployeeId }),
+            currentUserId,
+            ipAddress,
+            cancellationToken: cancellationToken);
 
         return true;
     }

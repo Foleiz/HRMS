@@ -69,6 +69,12 @@ function formatTimeFromApi(dateOrTimeStr?: string | null): string {
 /** ชื่อกลุ่มหมวดหมู่ในแถบข้างที่เป็นเพียงป้ายจัดกลุ่ม (ไม่ใช่หน้าจริง ไม่ควรแสดงใน breadcrumb) */
 const SIDEBAR_CATEGORY_HEADERS = new Set([
   'ภาพรวม',
+  'ข้อมูลส่วนตัว',
+  'เอกสาร',
+  'เวลาการทำงาน',
+  'เงินเดือนและสวัสดิการ',
+  'องค์กรและบุคลากร',
+  'รายงานและสถิติ',
   'บริการตนเอง (ESS)',
   'บริการตนเอง',
   'การเงินและค่าตอบแทน',
@@ -252,7 +258,7 @@ export const Navbar: React.FC = () => {
 
     // 5. ยื่นเอกสาร (Documents) & การลา
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
-    if (pathname.startsWith('/documents/leave')) return { page: 'การลา' };
+    if (pathname.startsWith('/documents/leave')) return { section: 'การลา', page: 'ยื่นใบลา' };
     if (pathname.startsWith('/documents/certificate')) return { section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' };
     if (pathname.startsWith('/documents/resignation')) return { section: 'ยื่นเอกสาร', page: 'เอกสารขอลาออก' };
     if (pathname.startsWith('/documents/general')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' };
@@ -289,7 +295,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/settings')) return { section: 'ตั้งค่าระบบ', page: 'ผู้ใช้งาน' };
 
     // 14. หน้าเดี่ยวอื่นๆ
-    if (pathname.startsWith('/guide')) return { page: 'วิธีการใช้งาน' };
+    if (pathname.startsWith('/guide')) return { page: 'ตัวช่วยงาน' };
     if (pathname.startsWith('/my-news')) return { page: 'ข่าวสารสำหรับฉัน' };
     if (pathname.startsWith('/org-chart')) return { page: 'แผนผังองค์กร' };
     if (pathname.startsWith('/announcements')) return { section: 'จัดการประกาศ', page: 'ประกาศข่าวสารทั่วไป' };

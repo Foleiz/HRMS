@@ -146,19 +146,20 @@ public class RoleService : IRoleService
         new("SETTINGS_USERS", "ผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
         new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
         new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
+        new("SETTINGS_AUDIT_SENSITIVE", "ข้อมูลเชิงลึกในบันทึกการใช้งานระบบ (เงินเดือน/PDPA)", "SETTINGS_AUDIT_SENSITIVE", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
 
         // 20. วิธีการใช้งาน (GUIDE)
-        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_PAYROLL_HR", "ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)", "GUIDE_PAYROLL_HR", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_PAYROLL_FINANCE", "ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)", "GUIDE_PAYROLL_FINANCE", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_PAYROLL_CEO", "ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)", "GUIDE_PAYROLL_CEO", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
-        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE")
+        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_PAYROLL_HR", "ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)", "GUIDE_PAYROLL_HR", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_FINANCE", "ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)", "GUIDE_PAYROLL_FINANCE", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_CEO", "ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)", "GUIDE_PAYROLL_CEO", "GUIDE", "ตัวช่วยงาน", "GUIDE_PAYROLL"),
+        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "ตัวช่วยงาน", "GUIDE"),
+        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "ตัวช่วยงาน", "GUIDE")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)
@@ -963,6 +964,30 @@ public class RoleService : IRoleService
         }
 
         var (permMap, relevantPermIds) = await GetOrInitPermissionsCacheAsync(cancellationToken);
+        var idToPermCode = permMap.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        // อ่านรายการสิทธิ์และขอบเขตข้อมูลเดิมก่อนสั่ง ExecuteDeleteAsync เพื่อบันทึก Diff ลง Audit Log อย่างครบถ้วน
+        var previousPermIds = await _dbContext.RolePermissions
+            .AsNoTracking()
+            .Where(rp => rp.RoleId == role.Id && relevantPermIds.Contains(rp.PermissionId))
+            .Select(rp => rp.PermissionId)
+            .ToListAsync(cancellationToken);
+
+        var previousScopes = await _dbContext.RoleDataScopes
+            .AsNoTracking()
+            .Where(rds => rds.RoleId == role.Id && relevantPermIds.Contains(rds.PermissionId))
+            .Select(rds => new { rds.PermissionId, rds.DataVisibilityScope })
+            .ToListAsync(cancellationToken);
+
+        var previousPermCodes = previousPermIds
+            .Select(id => idToPermCode.TryGetValue(id, out var code) ? code : $"#{id}")
+            .OrderBy(c => c)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var previousScopeLabels = previousScopes
+            .Select(s => $"{(idToPermCode.TryGetValue(s.PermissionId, out var code) ? code : $"#{s.PermissionId}")}:{s.DataVisibilityScope}")
+            .OrderBy(s => s)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Fast set-based delete in PostgreSQL - NO 86,000-row Cartesian product!
         await _dbContext.RoleDataScopes
@@ -1100,16 +1125,48 @@ public class RoleService : IRoleService
             _dbContext.RoleDataScopes.AddRange(newScopes);
         }
 
-        // Log audit trail in the same transaction
+        var newScopeLabels = addedScopes
+            .Select(s => $"{s.PermCode}:{s.Scope}")
+            .OrderBy(s => s)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var grantedPerms = addedPermCodes.Except(previousPermCodes, StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+        var revokedPerms = previousPermCodes.Except(addedPermCodes, StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+        var addedScopeDiff = newScopeLabels.Except(previousScopeLabels, StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+        var removedScopeDiff = previousScopeLabels.Except(newScopeLabels, StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+
+        // Log audit trail in the same transaction พร้อมรายละเอียดสิทธิ์ที่เพิ่ม/ถอดจริง
         _dbContext.AuditLogs.Add(new AuditLog
         {
             Action = "UPDATE",
             EntityType = "ROLE_PERMISSIONS",
             EntityId = role.Id,
             FieldName = "PermissionMatrix",
-            OldValue = "{}",
-            NewValue = System.Text.Json.JsonSerializer.Serialize(new { message = $"Updated matrix with {request.Modules.Count} modules" }),
+            OldValue = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                roleCode = role.RoleCode,
+                roleName = role.RoleName,
+                permissionCount = previousPermCodes.Count,
+                revokedPermissions = revokedPerms,
+                removedScopes = removedScopeDiff
+            }),
+            NewValue = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                roleCode = role.RoleCode,
+                roleName = role.RoleName,
+                permissionCount = addedPermCodes.Count,
+                grantedPermissions = grantedPerms,
+                addedScopes = addedScopeDiff
+            }),
+            Metadata = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                grantedCount = grantedPerms.Count,
+                revokedCount = revokedPerms.Count,
+                scopeAddedCount = addedScopeDiff.Count,
+                scopeRemovedCount = removedScopeDiff.Count
+            }),
             UserId = currentUserId,
+            ActorType = currentUserId.HasValue ? "USER" : "SYSTEM",
             IpAddress = ipAddress,
             CreatedAt = DateTime.UtcNow
         });

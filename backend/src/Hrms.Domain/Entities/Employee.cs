@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -17,9 +18,11 @@ public class Employee : BaseEntity
     public string LastName { get; set; } = string.Empty;
 
     // ข้อมูล PDPA ที่มีความอ่อนไหวสูง (Sensitive Data)
+    [AuditSensitive(AuditMaskMode.KeepLast4)]
     public string? CitizenId { get; set; }
     public string? CitizenIdMasked { get; set; }
 
+    [AuditSensitive(AuditMaskMode.PersonalPii)]
     public DateOnly? BirthDate { get; set; }
     public string? Gender { get; set; }
     public long? GenderId { get; set; }

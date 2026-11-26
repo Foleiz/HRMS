@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -10,6 +11,8 @@ public class EmployeeBankAccount : BaseEntity
 {
     public long EmployeeId { get; set; }
     public long BankId { get; set; }
+
+    [AuditSensitive(AuditMaskMode.KeepLast4)]
     public string AccountNumber { get; set; } = string.Empty;
     public string? AccountType { get; set; }
     public string? AccountName { get; set; }
@@ -17,6 +20,7 @@ public class EmployeeBankAccount : BaseEntity
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, PENDING_VERIFY, REJECTED
 
     /// <summary>HMAC ของเลขบัญชี (ใช้ตรวจเลขซ้ำ เพราะ AccountNumber ถูกเข้ารหัสแบบสุ่ม IV)</summary>
+    [AuditSensitive(AuditMaskMode.Redacted)]
     public string? AccountHash { get; set; }
 
     /// <summary>ผู้ขอเปลี่ยนบัญชี / เวลา (บัญชีที่รอยืนยัน)</summary>
