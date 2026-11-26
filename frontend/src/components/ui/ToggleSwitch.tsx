@@ -26,7 +26,7 @@ export const ToggleSwitch: React.FC<{
     }}
     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-all duration-200 ease-in-out focus:outline-none ${
       checked
-        ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-[0_0_8px_rgba(59,130,246,0.45)]'
+        ? 'bg-primary hover:bg-primary-hover'
         : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border dark:border-slate-600/60'
     } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
   >
