@@ -33,6 +33,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { contractService, DEFAULT_CONTRACT_SETTINGS } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
+import { employeeTypeService } from '@/services/employeeTypeService';
 import {
   EmploymentContract,
   ContractSummaryStats,
@@ -41,6 +42,7 @@ import {
   ContractSettings,
 } from '@/types/contract';
 import { Employee } from '@/types/employee';
+import { EmployeeType } from '@/types/employeeType';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import RenewContractModal from '@/components/contracts/RenewContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
@@ -59,6 +61,7 @@ function ContractsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [preselectedEmployeeId, setPreselectedEmployeeId] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [contractSettings, setContractSettings] = useState<ContractSettings>(() =>
     contractService.getSettings(),
@@ -80,6 +83,7 @@ function ContractsPageContent() {
     totalActiveCount: 0,
   });
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeTypes, setEmployeeTypes] = useState<EmployeeType[]>([]);
   // รูปโปรไฟล์/คำนำหน้าจากรายชื่อพนักงาน (ใช้แทนเมื่อข้อมูลสัญญายังไม่มีมาให้)
   const employeeById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
   const [loading, setLoading] = useState(true);
@@ -127,13 +131,14 @@ function ContractsPageContent() {
     try {
       setLoading(true);
 
-      const [contractsData, statsData, employeesData] = await Promise.all([
+      const [contractsData, statsData, employeesData, employeeTypesData] = await Promise.all([
         contractService.getAll(),
         contractService.getStats({
           probationAlertDays: activeSettings.probationAlertDays,
           contractAlertDays: activeSettings.contractAlertDays,
         }),
         employeeService.getAll(),
+        employeeTypeService.getAll({ status: 'ACTIVE' }).catch(() => []),
       ]);
 
       // ไม่ให้พนักงานคนเดิมขึ้นแถวซ้ำ โดยเลือกสัญญาหลักปัจจุบันเพียงสัญญาเดียวต่อพนักงาน 1 คน (ACTIVE ก่อน)
@@ -169,6 +174,7 @@ function ContractsPageContent() {
       }).length;
 
       setContracts(uniqueList);
+      setEmployeeTypes(employeeTypesData || []);
       setStats({
         ...statsData,
         totalActiveCount: uniqueList.filter((c) => c.status === 'ACTIVE').length,
@@ -220,8 +226,41 @@ function ContractsPageContent() {
     await fetchData();
   };
 
+  // Helper ค้นหาพนักงาน/สัญญาจ้าง (รองรับคำนำหน้า, ชื่อ-สกุล, รหัสพนักงานทั้งมี/ไม่มีขีด, แผนก, ตำแหน่ง)
+  const matchesEmployeeSearch = (
+    fields: { prefix?: string; name?: string; code?: string; dept?: string; pos?: string; extra?: string },
+    term: string,
+    termClean: string
+  ) => {
+    const prefix = (fields.prefix ?? '').toLowerCase();
+    const name = (fields.name ?? '').toLowerCase();
+    const code = (fields.code ?? '').toLowerCase();
+    const codeClean = code.replace(/[-\s]/g, '');
+    const fullNameWithPrefix = `${prefix} ${name}`.trim();
+    const fullNameTight = `${prefix}${name}`.replace(/\s+/g, '');
+    const dept = (fields.dept ?? '').toLowerCase();
+    const pos = (fields.pos ?? '').toLowerCase();
+    const extra = (fields.extra ?? '').toLowerCase();
+
+    return (
+      name.includes(term) ||
+      fullNameWithPrefix.includes(term) ||
+      fullNameTight.includes(termClean) ||
+      code.includes(term) ||
+      (termClean.length > 0 && codeClean.includes(termClean)) ||
+      prefix.includes(term) ||
+      dept.includes(term) ||
+      pos.includes(term) ||
+      (extra.length > 0 && extra.includes(term))
+    );
+  };
+
   // Filter and Search Contracts
+  const isNoContractFilter = selectedStatus === 'NO_CONTRACT';
+
   const filteredContracts = useMemo(() => {
+    if (isNoContractFilter) return [];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -254,52 +293,39 @@ function ContractsPageContent() {
 
       // 2. Contract Type Filter
       if (selectedContractType !== 'ALL') {
-        if (c.contractType !== selectedContractType) return false;
+        const isNumeric = /^\d+$/.test(selectedContractType);
+        if (isNumeric) {
+          const selectedId = Number(selectedContractType);
+          const typeObj = employeeTypes.find((t) => t.id === selectedId);
+          const matchId = c.employeeTypeId === selectedId;
+          const matchName = Boolean(typeObj && c.employeeTypeName === typeObj.typeName);
+          if (!matchId && !matchName) return false;
+        } else {
+          if (c.contractType !== selectedContractType) return false;
+        }
       }
 
-      // 3. Search Filter (รองรับคำนำหน้า, ชื่อ-สกุล, รหัสพนักงานทั้งมี/ไม่มีขีด, แผนก, ตำแหน่ง, ประเภทสัญญา)
+      // 3. Search Filter
       if (term) {
         const emp = employeeById.get(c.employeeId);
-        const prefix = (c.employeePrefix ?? emp?.prefix ?? '').toLowerCase();
-        const name = (c.employeeName || '').toLowerCase();
-        const code = (c.employeeCode || emp?.employeeCode || '').toLowerCase();
-        const codeClean = code.replace(/[-\s]/g, '');
-        const fullNameWithPrefix = `${prefix} ${name}`.trim();
-        const fullNameTight = `${prefix}${name}`.replace(/\s+/g, '');
-        const dept = (c.departmentName || emp?.departmentName || '').toLowerCase();
-        const pos = (c.positionTitle || emp?.positionName || '').toLowerCase();
-        const typeName = (c.employeeTypeName || c.contractTypeDisplay || '').toLowerCase();
-
-        const match =
-          name.includes(term) ||
-          fullNameWithPrefix.includes(term) ||
-          fullNameTight.includes(termClean) ||
-          code.includes(term) ||
-          (termClean.length > 0 && codeClean.includes(termClean)) ||
-          prefix.includes(term) ||
-          dept.includes(term) ||
-          pos.includes(term) ||
-          typeName.includes(term);
-
+        const match = matchesEmployeeSearch(
+          {
+            prefix: c.employeePrefix ?? emp?.prefix,
+            name: c.employeeName,
+            code: c.employeeCode || emp?.employeeCode,
+            dept: c.departmentName || emp?.departmentName,
+            pos: c.positionTitle || emp?.positionName,
+            extra: c.employeeTypeName || c.contractTypeDisplay,
+          },
+          term,
+          termClean
+        );
         if (!match) return false;
       }
 
       return true;
     });
-  }, [contracts, searchTerm, selectedContractType, selectedStatus, contractSettings, employeeById]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredContracts.length / pageSize) || 1;
-  const paginatedContracts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredContracts.slice(start, start + pageSize);
-  }, [filteredContracts, currentPage, pageSize]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
+  }, [contracts, searchTerm, selectedContractType, selectedStatus, contractSettings, employeeById, isNoContractFilter]);
 
   // รายชื่อพนักงานที่ยังไม่มีสัญญาจ้างที่ใช้งานอยู่ (สำหรับสร้างสัญญาใหม่)
   const employeesWithoutContract = useMemo(() => {
@@ -310,6 +336,52 @@ function ContractsPageContent() {
     );
     return employees.filter((emp) => !contractedEmpIds.has(emp.id));
   }, [employees, contracts]);
+
+  // พนักงานที่ยังทำงานอยู่แต่ยังไม่มีสัญญาจ้างที่ใช้งานอยู่ (สำหรับฟิลเตอร์ "ไม่มีสัญญาจ้าง")
+  const filteredNoContractEmployees = useMemo(() => {
+    if (!isNoContractFilter) return [];
+
+    const term = searchTerm.trim().toLowerCase();
+    const termClean = term.replace(/[-\s]/g, '');
+
+    return employeesWithoutContract.filter((emp) => {
+      if (emp.employmentStatus !== 'ACTIVE') return false;
+      if (!term) return true;
+
+      return matchesEmployeeSearch(
+        {
+          prefix: emp.prefix,
+          name: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+          code: emp.employeeCode,
+          dept: emp.departmentName,
+          pos: emp.positionName,
+        },
+        term,
+        termClean
+      );
+    });
+  }, [isNoContractFilter, employeesWithoutContract, searchTerm]);
+
+  // Pagination logic
+  const totalFilteredCount = isNoContractFilter
+    ? filteredNoContractEmployees.length
+    : filteredContracts.length;
+  const totalPages = Math.ceil(totalFilteredCount / pageSize) || 1;
+  const paginatedContracts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredContracts.slice(start, start + pageSize);
+  }, [filteredContracts, currentPage, pageSize]);
+
+  const paginatedNoContractEmployees = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredNoContractEmployees.slice(start, start + pageSize);
+  }, [filteredNoContractEmployees, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW');
@@ -519,6 +591,45 @@ function ContractsPageContent() {
     return items;
   };
 
+  const getNoContractActionItems = (emp: Employee): ActionDropdownItem[] => {
+    const items: ActionDropdownItem[] = [];
+
+    if (canCreateContracts) {
+      items.push({
+        label: 'สร้างสัญญาจ้าง',
+        icon: <Plus className="w-4 h-4 text-primary shrink-0" />,
+        onClick: () => {
+          setPreselectedEmployeeId(emp.id);
+          setIsCreateModalOpen(true);
+        },
+      });
+      items.push({ divider: true, label: '' });
+    }
+
+    items.push({
+      label: 'ดูข้อมูลพนักงาน',
+      icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+      onClick: () => {
+        router.push(`/employees/${emp.id}`);
+      },
+    });
+
+    items.push({
+      label: 'ประวัติรายบุคคล',
+      icon: <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+      onClick: () => {
+        setSelectedTimelineEmployee({
+          id: emp.id,
+          name: emp.fullName || `${emp.firstName} ${emp.lastName}`,
+          code: emp.employeeCode,
+        });
+        setIsTimelineModalOpen(true);
+      },
+    });
+
+    return items;
+  };
+
   if (!canViewContracts) {
     return (
       <AccessDenied
@@ -556,12 +667,28 @@ function ContractsPageContent() {
         {/* Card 2: สัญญาจ้างชั่วคราวทั้งหมด (Fixed-Term) */}
         <div
           onClick={() => {
-            setSelectedContractType((prev) => (prev === 'FIXED_TERM' ? 'ALL' : 'FIXED_TERM'));
+            const fixedType = employeeTypes.find(
+              (t) =>
+                t.typeCode?.toUpperCase().includes('CONT') ||
+                t.typeCode?.toUpperCase().includes('FIXED') ||
+                t.typeName.includes('สัญญาจ้าง')
+            );
+            const targetVal = fixedType ? String(fixedType.id) : 'FIXED_TERM';
+            setSelectedContractType((prev) => (prev === targetVal ? 'ALL' : targetVal));
             setSelectedStatus('ALL');
             setCurrentPage(1);
           }}
           className={`bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
-            selectedContractType === 'FIXED_TERM' ? 'ring-2 ring-indigo-500 shadow-md' : ''
+            selectedContractType === 'FIXED_TERM' ||
+            employeeTypes.some(
+              (t) =>
+                String(t.id) === selectedContractType &&
+                (t.typeCode?.toUpperCase().includes('CONT') ||
+                  t.typeCode?.toUpperCase().includes('FIXED') ||
+                  t.typeName.includes('สัญญาจ้าง'))
+            )
+              ? 'ring-2 ring-indigo-500 shadow-md'
+              : ''
           }`}
           title="คลิกเพื่อกรองสัญญาจ้างชั่วคราว/มีกำหนดเวลา"
         >
@@ -637,23 +764,31 @@ function ContractsPageContent() {
                 <CustomSelect
                   value={selectedContractType}
                   onChange={(val) => {
-                    setSelectedContractType(String(val));
+                    const nextType = String(val);
+                    setSelectedContractType(nextType);
+                    if (nextType !== 'ALL' && selectedStatus === 'NO_CONTRACT') {
+                      setSelectedStatus('ALL');
+                    }
                     setCurrentPage(1);
                   }}
                   placeholder="ประเภทสัญญาทั้งหมด"
-                  className="min-w-[170px]"
+                  className="min-w-[195px]"
                   options={[
                     { value: 'ALL', label: 'ประเภทสัญญาทั้งหมด' },
-                    { value: 'PROBATION', label: 'ทดลองงาน' },
-                    { value: 'PERMANENT', label: 'ประจำ' },
-                    { value: 'FIXED_TERM', label: 'สัญญาจ้าง' },
-                    { value: 'OTHER', label: 'อื่นๆ / ฝึกงาน' },
+                    ...employeeTypes.map((t) => ({
+                      value: String(t.id),
+                      label: t.typeName,
+                    })),
                   ]}
                 />
                 <CustomSelect
                   value={selectedStatus}
                   onChange={(val) => {
-                    setSelectedStatus(String(val));
+                    const nextStatus = String(val);
+                    setSelectedStatus(nextStatus);
+                    if (nextStatus === 'NO_CONTRACT') {
+                      setSelectedContractType('ALL');
+                    }
                     setCurrentPage(1);
                   }}
                   placeholder="สถานะทั้งหมด"
@@ -664,6 +799,7 @@ function ContractsPageContent() {
                     { value: 'CONTRACT_EXPIRING', label: `2. ใกล้สิ้นสุดสัญญา (${contractSettings.contractAlertDays} วัน)` },
                     { value: 'PROBATION_EXPIRING', label: `3. ใกล้ครบทดลองงาน (${contractSettings.probationAlertDays} วัน)` },
                     { value: 'TERMINATED', label: '4. สิ้นสุดสัญญาแล้ว' },
+                    { value: 'NO_CONTRACT', label: '5. ไม่มีสัญญาจ้าง' },
                   ]}
                 />
               </>
@@ -712,6 +848,45 @@ function ContractsPageContent() {
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   <TableLoading colSpan={5} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
+                ) : isNoContractFilter ? (
+                  paginatedNoContractEmployees.length === 0 ? (
+                    <TableEmpty colSpan={5} text="ไม่พบพนักงานที่ไม่มีสัญญาจ้าง" />
+                  ) : (
+                    paginatedNoContractEmployees.map((emp, index) => (
+                      <tr key={emp.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <Link
+                            href={`/employees/${emp.id}`}
+                            className="inline-flex hover:opacity-80 transition-opacity"
+                            title={emp.employeeCode}
+                          >
+                            <AvatarName
+                              id={emp.id}
+                              name={`${emp.firstName} ${emp.lastName}`}
+                              prefix={emp.prefix}
+                              avatarUrl={emp.avatarUrl ?? undefined}
+                            />
+                          </Link>
+                        </td>
+                        <td className="py-4 px-6 text-slate-400 dark:text-slate-500 whitespace-nowrap">-</td>
+                        <td className="py-4 px-6 text-slate-400 dark:text-slate-500 whitespace-nowrap">-</td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full border border-amber-200/70 dark:border-amber-800/40">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            ไม่มีสัญญาจ้าง
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right whitespace-nowrap">
+                          <ActionDropdown
+                            id={index === 0 ? 'tour-contract-action-btn' : undefined}
+                            dataTour="tour-contract-action-btn"
+                            menuClassName="w-52"
+                            items={getNoContractActionItems(emp)}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )
                 ) : paginatedContracts.length === 0 ? (
                   <TableEmpty colSpan={5} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
                 ) : (
@@ -765,9 +940,9 @@ function ContractsPageContent() {
           </div>
 
           {/* Table Footer with TablePagination มาตรฐานระบบ */}
-          {filteredContracts.length > 0 && (
+          {totalFilteredCount > 0 && (
             <TablePagination
-              total={filteredContracts.length}
+              total={totalFilteredCount}
               page={currentPage}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
@@ -803,10 +978,14 @@ function ContractsPageContent() {
 
       <CreateContractModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setPreselectedEmployeeId(null);
+        }}
         onSubmit={handleCreateContract}
         employees={employeesWithoutContract}
         contractSettings={contractSettings}
+        defaultEmployeeId={preselectedEmployeeId}
       />
 
       <ContractDetailModal

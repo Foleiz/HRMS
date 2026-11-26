@@ -29,6 +29,7 @@ interface CreateContractModalProps {
   onSubmit: (data: CreateContractRequest) => Promise<void>;
   employees: Employee[];
   contractSettings?: ContractSettings;
+  defaultEmployeeId?: number | null;
 }
 
 export default function CreateContractModal({
@@ -37,6 +38,7 @@ export default function CreateContractModal({
   onSubmit,
   employees,
   contractSettings,
+  defaultEmployeeId,
 }: CreateContractModalProps) {
   const toast = useToast();
   const [employeeId, setEmployeeId] = useState<number | ''>('');
@@ -68,7 +70,11 @@ export default function CreateContractModal({
   // โหลดรายการประเภทสัญญา/การจ้างงานแบบไดนามิกจากระบบ
   useEffect(() => {
     if (isOpen) {
-      setEmployeeId(employees.length > 0 ? employees[0].id : '');
+      const hasDefault =
+        defaultEmployeeId != null && employees.some((e) => e.id === defaultEmployeeId);
+      setEmployeeId(
+        hasDefault ? defaultEmployeeId! : employees.length > 0 ? employees[0].id : ''
+      );
       const todayStr = new Date().toISOString().split('T')[0];
       setStartDate(todayStr);
 
@@ -248,32 +254,30 @@ export default function CreateContractModal({
             />
           </div>
 
-          {/* 2. ประเภทพนักงาน * */}
+          {/* 2. ประเภทสัญญา * */}
           <div id="tour-contract-type-field">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              ประเภทพนักงาน <span className="text-rose-500">*</span>
+              ประเภทสัญญา <span className="text-rose-500">*</span>
             </label>
 
             <CustomSelect
-              value={employeeTypeId || ''}
-              onChange={(e) => handleTypeSelectChange(e.target.value)}
-              required
-              className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500 transition-all"
-            >
-              {employeeTypes.length > 0 ? (
-                employeeTypes.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.typeName}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="2">ทดลองงาน</option>
-                  <option value="1">ประจำ</option>
-                  <option value="3">สัญญาจ้าง</option>
-                </>
-              )}
-            </CustomSelect>
+              value={employeeTypeId ? String(employeeTypeId) : ''}
+              onChange={(val) => handleTypeSelectChange(String(val))}
+              placeholder="เลือกประเภทสัญญา..."
+              options={
+                employeeTypes.length > 0
+                  ? employeeTypes.map((t) => ({
+                      value: String(t.id),
+                      label: t.typeName,
+                    }))
+                  : [
+                      { value: '2', label: 'พนักงานทดลองงาน' },
+                      { value: '1', label: 'พนักงานประจำ' },
+                      { value: '3', label: 'พนักงานสัญญาจ้าง' },
+                    ]
+              }
+              className="w-full"
+            />
           </div>
 
           {/* 3–4. วันที่เริ่ม / วันที่สิ้นสุด (แถวเดียวกัน) */}
