@@ -164,22 +164,6 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    category: 'เอกสาร',
-    items: [
-      {
-        title: 'ยื่นเอกสาร',
-        href: '/documents',
-        matchPrefix: '/documents',
-        icon: FileText,
-        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE', 'ESS_DOCS_HISTORY_VIEW'],
-        children: [
-          { title: 'รายการเอกสาร', href: '/documents', icon: FileText, requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'] },
-          { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW'] },
-        ],
-      },
-    ],
-  },
-  {
     category: 'การลา',
     items: [
       {
@@ -221,6 +205,22 @@ const menuGroups: MenuGroup[] = [
           { title: 'ประเภทการลา', href: '/leave?tab=types', icon: ListChecks, requiredPermissions: ['LEAVE_TYPE_VIEW'] },
           { title: 'กำหนดสิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
           { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', icon: Wallet, requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'เอกสาร',
+    items: [
+      {
+        title: 'ยื่นเอกสาร',
+        href: '/documents',
+        matchPrefix: '/documents',
+        icon: FileText,
+        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE', 'ESS_DOCS_HISTORY_VIEW'],
+        children: [
+          { title: 'รายการเอกสาร', href: '/documents', icon: FileText, requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'] },
+          { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW'] },
         ],
       },
     ],

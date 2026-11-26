@@ -13,6 +13,10 @@ export const ROUTE_RULES: RouteRule[] = [
     title: 'ตัวช่วยงาน',
   },
   {
+    matchPrefix: '/manual',
+    title: 'คู่มือการใช้งาน',
+  },
+  {
     matchPrefix: '/employees/contracts',
     title: 'สัญญาจ้างงาน',
     requiredPermissions: ['EMP_CONTRACT_VIEW', 'EMP_MANAGE'],

@@ -177,12 +177,7 @@ export const Navbar: React.FC = () => {
   const handleUserManual = (e: React.MouseEvent) => {
     e.stopPropagation();
     setDropdownOpen(false);
-    hrmsSwal.fire({
-      title: 'คู่มือการใช้งาน',
-      text: 'คู่มือการใช้งานระบบฉบับสมบูรณ์กำลังเตรียมเปิดให้ดาวน์โหลดเร็วๆ นี้',
-      icon: 'info',
-      confirmButtonText: 'ตกลง',
-    });
+    router.push('/manual');
   };
 
   // Avoid hydration mismatch
@@ -295,6 +290,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/settings')) return { section: 'ตั้งค่าระบบ', page: 'ผู้ใช้งาน' };
 
     // 14. หน้าเดี่ยวอื่นๆ
+    if (pathname.startsWith('/manual')) return { page: 'คู่มือการใช้งาน' };
     if (pathname.startsWith('/guide')) return { page: 'ตัวช่วยงาน' };
     if (pathname.startsWith('/my-news')) return { page: 'ข่าวสารสำหรับฉัน' };
     if (pathname.startsWith('/org-chart')) return { page: 'แผนผังองค์กร' };
