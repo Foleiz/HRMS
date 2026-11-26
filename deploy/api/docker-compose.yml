@@ -1,0 +1,23 @@
+# วางที่ /home/syaco/backend/hrms-api/docker-compose.yml บน 112 (ส่งโดย deploy/scripts/ship-api.sh)
+# ความลับทั้งหมดอยู่ใน /home/syaco/backend/hrms-api/hrms-api.env (chmod 600, ไม่อยู่ใน git)
+services:
+  api:
+    image: hrms-api:current
+    container_name: hrms-api
+    restart: unless-stopped
+    env_file: ./hrms-api.env
+    ports:
+      - "127.0.0.1:5229:8080"   # เปิดเฉพาะในเครื่อง ให้ nginx เรียกเท่านั้น
+    # จำกัดทรัพยากร (112 เป็น production ใช้ร่วมกับระบบอื่น RAM ว่างราว 0.8GB): เกิน limit ถูก kill เฉพาะ container นี้ ไม่กระทบตัวอื่น
+    volumes:
+      - /var/run/postgresql:/var/run/postgresql:ro   # ต่อ PostgreSQL ผ่าน unix socket (ไม่ผ่านเครือข่าย/IP/firewall)
+    mem_limit: 512m
+    memswap_limit: 512m          # = mem_limit เพื่อไม่ใช้ swap
+    mem_reservation: 256m
+    cpus: 2.0
+    pids_limit: 256
+    environment:
+      DOTNET_GCHeapHardLimit: "0x18000000"   # 384MB เพดาน heap ของ .NET ต่ำกว่า limit ให้ GC ทำงานก่อนโดน OOM-kill
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
