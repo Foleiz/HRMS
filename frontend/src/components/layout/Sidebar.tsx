@@ -877,7 +877,7 @@ export const Sidebar: React.FC = () => {
               className={`transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap select-none ${
                 isCollapsed && isDesktop
                   ? 'max-h-0 opacity-0 pointer-events-none'
-                  : 'max-h-8 opacity-100 px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider'
+                  : 'max-h-8 opacity-100 px-3 pt-2 pb-1 text-[11px] font-bold text-primary dark:text-blue-300 uppercase tracking-wider'
               }`}
             >
               {group.category}
