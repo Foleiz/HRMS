@@ -10,6 +10,9 @@ WORKDIR /app
 COPY --from=build /app .
 # แทนที่ appsettings.json ของ repo (มีรหัส/คีย์ dev) ด้วยไฟล์เปล่า: ความลับและค่าตั้งทั้งหมดมาจาก env ของ container เท่านั้น (ดู deploy/api/hrms-api.env.example)
 COPY appsettings.docker.json /app/appsettings.json
+# Program.cs รัน migration ตอนสตาร์ท โดยหาไฟล์ที่ <ContentRoot>/backend/scripts/ ต้องใส่ไว้ใน image ไม่งั้นข้ามไปเงียบๆ แล้ว audit_log ขาดคอลัมน์ใหม่
+# (ใส่เฉพาะไฟล์นี้ ไม่ใส่ scripts อื่นเพราะมี seed/ข้อมูลทดสอบ)
+COPY scripts/audit_log_hardening_v2.sql /app/backend/scripts/audit_log_hardening_v2.sql
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_gcServer=0 \
