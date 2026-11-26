@@ -25,10 +25,10 @@ const PAYOUTS = [
 ] as const;
 
 const FREQUENCIES = [
-  { key: 'YEARLY', label: 'ปี' },
-  { key: 'MONTHLY', label: 'เดือน' },
-  { key: 'DAILY', label: 'วัน' },
-  { key: 'PER_OCCURRENCE', label: 'ครั้ง' },
+  { key: 'YEARLY', label: 'ต่อปี', desc: 'วงเงินรวมตลอดทั้งปี (รีเซ็ตใหม่ทุกปี)' },
+  { key: 'MONTHLY', label: 'ต่อเดือน', desc: 'วงเงินรวมต่อเดือน (รีเซ็ตใหม่ทุกเดือน)' },
+  { key: 'DAILY', label: 'ต่อวัน', desc: 'จำกัดวงเงินสูงสุดต่อวัน' },
+  { key: 'PER_OCCURRENCE', label: 'ต่อครั้ง', desc: 'จำกัดวงเงินสูงสุดต่อการยื่นเบิก 1 ครั้ง' },
 ];
 
 /**
@@ -163,9 +163,9 @@ export function BenefitPolicyFields({
         </div>
       ) : (
         <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             <div>
-              <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center justify-between gap-2 mb-1 min-h-[20px]">
                 <label htmlFor="benefit-amount" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                   {isClaim ? 'วงเงิน (บาท)' : 'จำนวนเงินต่องวด (บาท)'}
                 </label>
@@ -197,7 +197,9 @@ export function BenefitPolicyFields({
             </div>
             {isClaim && (
               <div>
-                <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">รอบวงเงิน</span>
+                <div className="flex items-center mb-1 min-h-[20px]">
+                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">รอบวงเงิน</span>
+                </div>
                 <div className="grid grid-cols-4 gap-1 p-[3px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
                   {FREQUENCIES.map((f) => {
                     const on = (value.defaultFrequency || 'YEARLY') === f.key;
@@ -205,9 +207,10 @@ export function BenefitPolicyFields({
                       <button
                         key={f.key}
                         type="button"
+                        title={f.desc}
                         aria-pressed={on}
                         onClick={() => onChange({ defaultFrequency: f.key })}
-                        className={`h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                           on ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
                         }`}
                       >
@@ -216,6 +219,9 @@ export function BenefitPolicyFields({
                     );
                   })}
                 </div>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  {FREQUENCIES.find((f) => f.key === (value.defaultFrequency || 'YEARLY'))?.desc}
+                </p>
               </div>
             )}
           </div>
