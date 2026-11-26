@@ -375,13 +375,28 @@ function DocumentHistoryPageContent() {
   // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState(isLeaveOnly ? 'LEAVE' : 'ALL');
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
 
   useEffect(() => {
     setSourceFilter(isLeaveOnly ? 'LEAVE' : 'ALL');
+    setLeaveTypeFilter('ALL');
   }, [isLeaveOnly]);
   const { sortField, sortDirection, handleSort } = useTableSort<DocSortField>();
+
+  const leaveTypeOptions = useMemo(() => {
+    const names = new Set<string>();
+    leaveRequests.forEach((r) => {
+      if (r.leaveTypeName) names.add(r.leaveTypeName);
+    });
+    return [
+      { value: 'ALL', label: 'ทุกประเภทการลา' },
+      ...Array.from(names)
+        .sort((a, b) => a.localeCompare(b, 'th'))
+        .map((n) => ({ value: n, label: n })),
+    ];
+  }, [leaveRequests]);
 
   // ปี พ.ศ. ที่มีเอกสาร (จากวันที่ยื่น) — ใหม่สุดก่อน
   const yearOptions = useMemo(() => {
@@ -408,6 +423,7 @@ function DocumentHistoryPageContent() {
         if (!matchCode && !matchType && !matchDetail) return false;
       }
       if (sourceFilter !== 'ALL' && d.source !== sourceFilter) return false;
+      if (isLeaveOnly && leaveTypeFilter !== 'ALL' && d.subType !== leaveTypeFilter) return false;
       if (statusFilter !== 'ALL' && normalizeStatus(d.status) !== statusFilter) return false;
       if (yearFilter !== 'ALL') {
         const ts = toTs(d.submittedDate ?? d.lastActivityAt);
@@ -430,13 +446,18 @@ function DocumentHistoryPageContent() {
           return 0;
       }
     });
-  }, [documents, searchQuery, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
+  }, [documents, searchQuery, sourceFilter, isLeaveOnly, leaveTypeFilter, statusFilter, yearFilter, sortField, sortDirection]);
 
-  const hasActiveFilter = !!searchQuery.trim() || (!isLeaveOnly && sourceFilter !== 'ALL') || statusFilter !== 'ALL' || yearFilter !== 'ALL';
+  const hasActiveFilter =
+    !!searchQuery.trim() ||
+    (!isLeaveOnly && sourceFilter !== 'ALL') ||
+    (isLeaveOnly && leaveTypeFilter !== 'ALL') ||
+    statusFilter !== 'ALL' ||
+    yearFilter !== 'ALL';
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, sourceFilter, statusFilter, yearFilter]);
+  }, [searchQuery, sourceFilter, leaveTypeFilter, statusFilter, yearFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleDocuments.length / pageSize));
   const pagedDocuments = visibleDocuments.slice((page - 1) * pageSize, page * pageSize);
@@ -923,7 +944,14 @@ function DocumentHistoryPageContent() {
             searchPlaceholder="ค้นหารหัส หรือประเภทเอกสาร..."
             filters={
               <>
-                {!isLeaveOnly && (
+                {isLeaveOnly ? (
+                  <CustomSelect
+                    value={leaveTypeFilter}
+                    onChange={(val) => setLeaveTypeFilter(String(val))}
+                    className="min-w-[170px]"
+                    options={leaveTypeOptions}
+                  />
+                ) : (
                   <CustomSelect
                     value={sourceFilter}
                     onChange={(val) => setSourceFilter(String(val))}
@@ -950,6 +978,7 @@ function DocumentHistoryPageContent() {
                     onClick={() => {
                       setSearchQuery('');
                       if (!isLeaveOnly) setSourceFilter('ALL');
+                      if (isLeaveOnly) setLeaveTypeFilter('ALL');
                       setStatusFilter('ALL');
                       setYearFilter('ALL');
                     }}
