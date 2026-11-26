@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, Gift, Info, ReceiptText, Wallet } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
@@ -46,6 +46,19 @@ export function BenefitPolicyFields({
   categories: { value: string; label: string }[];
 }) {
   const [unlimited, setUnlimited] = useState(() => !value.defaultCoverageAmount);
+  const [showFreqInfo, setShowFreqInfo] = useState(false);
+  const freqInfoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFreqInfo) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (freqInfoRef.current && !freqInfoRef.current.contains(e.target as Node)) {
+        setShowFreqInfo(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [showFreqInfo]);
   const noClaim = !!value.isStatutory || NO_CLAIM_CATEGORIES.includes(value.category);
   const payout = value.payoutType || 'REIMBURSEMENT';
   const isClaim = payout === 'REIMBURSEMENT';
@@ -197,8 +210,35 @@ export function BenefitPolicyFields({
             </div>
             {isClaim && (
               <div>
-                <div className="flex items-center mb-1 min-h-[20px]">
+                <div className="flex items-center gap-1.5 mb-1 min-h-[20px]">
                   <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">รอบวงเงิน</span>
+                  <div ref={freqInfoRef} className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowFreqInfo((v) => !v)}
+                      aria-label="คำอธิบายรอบวงเงิน"
+                      aria-expanded={showFreqInfo}
+                      title="คลิกเพื่อดูคำอธิบายรอบวงเงิน"
+                      className="text-slate-400 hover:text-primary dark:hover:text-blue-300 transition-colors cursor-pointer"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                    {showFreqInfo && (
+                      <div className="absolute right-0 bottom-full mb-2 w-72 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg z-30 text-[11px] space-y-1.5">
+                        <div className="font-bold text-slate-800 dark:text-slate-100 pb-1 border-b border-slate-100 dark:border-slate-700">
+                          คำอธิบายรอบวงเงิน
+                        </div>
+                        {FREQUENCIES.map((f) => (
+                          <div key={f.key} className="flex items-start gap-1.5 leading-snug">
+                            <span className="font-semibold text-primary dark:text-blue-300 shrink-0 min-w-[44px]">
+                              {f.label}:
+                            </span>
+                            <span className="text-slate-600 dark:text-slate-300">{f.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 gap-1 p-[3px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
                   {FREQUENCIES.map((f) => {
@@ -219,9 +259,6 @@ export function BenefitPolicyFields({
                     );
                   })}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  {FREQUENCIES.find((f) => f.key === (value.defaultFrequency || 'YEARLY'))?.desc}
-                </p>
               </div>
             )}
           </div>
