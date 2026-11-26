@@ -163,29 +163,26 @@ export function BenefitPolicyFields({
         </div>
       ) : (
         <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {isClaim ? 'วงเงินเริ่มต้น' : 'จำนวนเงินเริ่มต้นต่องวด'}
-            </span>
-            {isClaim && (
-              <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                ไม่จำกัดวงเงิน
-                <ToggleSwitch
-                  checked={unlimited}
-                  ariaLabel="ไม่จำกัดวงเงิน"
-                  onChange={(v) => {
-                    setUnlimited(v);
-                    if (v) onChange({ defaultCoverageAmount: 0 });
-                  }}
-                />
-              </label>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
             <div>
-              <label htmlFor="benefit-amount" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                {isClaim ? 'วงเงิน (บาท)' : 'จำนวนเงินต่องวด (บาท)'}
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label htmlFor="benefit-amount" className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  {isClaim ? 'วงเงิน (บาท)' : 'จำนวนเงินต่องวด (บาท)'}
+                </label>
+                {isClaim && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+                    ไม่จำกัดวงเงิน
+                    <ToggleSwitch
+                      checked={unlimited}
+                      ariaLabel="ไม่จำกัดวงเงิน"
+                      onChange={(v) => {
+                        setUnlimited(v);
+                        if (v) onChange({ defaultCoverageAmount: 0 });
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
               <input
                 id="benefit-amount"
                 type="number"
