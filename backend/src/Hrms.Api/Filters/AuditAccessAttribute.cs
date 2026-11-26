@@ -244,7 +244,7 @@ public sealed class AuditAccessFilter : IAsyncActionFilter
                 .Where(r => r.Id == id)
                 .Select(r => (long?)r.EmployeeId)
                 .FirstOrDefaultAsync(cancellationToken),
-            "employee_transfer" => await _dbContext.EmployeeTransfers.AsNoTracking()
+            "employee_transfer" => await _dbContext.EmployeeTransferRequests.AsNoTracking()
                 .Where(t => t.Id == id)
                 .Select(t => (long?)t.EmployeeId)
                 .FirstOrDefaultAsync(cancellationToken),

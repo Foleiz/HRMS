@@ -5,6 +5,7 @@ using Hrms.Application.Features.MasterData.Services;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Hrms.Application.Features.Payroll.Services;
 
