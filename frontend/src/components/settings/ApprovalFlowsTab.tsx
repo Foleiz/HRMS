@@ -1313,11 +1313,6 @@ export const ApprovalFlowsTab: React.FC = () => {
                         >
                           {flow.flowName}
                         </h3>
-                        {isInactive && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200/80 text-slate-600 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600">
-                            ปิดใช้งาน
-                          </span>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
@@ -1341,6 +1336,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      {isInactive && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-200/80 text-slate-600 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600">
+                          ปิดใช้งาน
+                        </span>
+                      )}
                       <RowActions>
                         <RowActionButton
                           action="edit"
