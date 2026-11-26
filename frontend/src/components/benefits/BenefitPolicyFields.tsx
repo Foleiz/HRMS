@@ -224,18 +224,13 @@ export function BenefitPolicyFields({
                       <Info className="w-3.5 h-3.5" />
                     </button>
                     {showFreqInfo && (
-                      <div className="absolute right-0 bottom-full mb-2 w-72 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg z-30 text-[11px] space-y-1.5">
+                      <div className="absolute right-0 bottom-full mb-2 w-72 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg z-30 text-[11px] space-y-2">
                         <div className="font-bold text-slate-800 dark:text-slate-100 pb-1 border-b border-slate-100 dark:border-slate-700">
                           คำอธิบายรอบวงเงิน
                         </div>
-                        {FREQUENCIES.map((f) => (
-                          <div key={f.key} className="flex items-start gap-1.5 leading-snug">
-                            <span className="font-semibold text-primary dark:text-blue-300 shrink-0 min-w-[44px]">
-                              {f.label}:
-                            </span>
-                            <span className="text-slate-600 dark:text-slate-300">{f.desc}</span>
-                          </div>
-                        ))}
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          ระยะเวลาหรือเงื่อนไขการรีเซ็ตวงเงินของสวัสดิการแบบเบิกตามจริง ว่าพนักงานสามารถเบิกได้ไม่เกินวงเงินที่ตั้งไว้ ต่อหน่วยที่กำหนด
+                        </p>
                       </div>
                     )}
                   </div>
