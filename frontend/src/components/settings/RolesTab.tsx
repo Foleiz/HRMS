@@ -114,7 +114,7 @@ const ToggleSwitch: React.FC<{
         isSm ? 'h-5 w-9' : 'h-6 w-11'
       } ${
         checked
-          ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 dark:shadow-[0_0_8px_rgba(59,130,246,0.45)]'
+          ? 'bg-primary hover:bg-primary-hover'
           : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border dark:border-slate-600/60'
       }`}
     >
