@@ -58,13 +58,13 @@ public class MySalaryService : IMySalaryService
         var overviewHint = PayslipHelper.ResolvePassword(
             empForHint?.CitizenId, empForHint?.BirthDate, empForHint?.EmployeeCode, _encryptionService).Hint;
 
-        // 2. Fetch all payroll records for this employee (กรองเฉพาะงวดที่อนุมัติแล้วขึ้นไป)
+        // 2. Fetch all payroll records for this employee (กรองเฉพาะรายการที่โอนแล้วเท่านั้น)
         var payrollQuery = _context.Payrolls
             .Include(p => p.Period)
             .Where(p => p.EmployeeId == employeeId &&
                         p.Status != "DRAFT" && // DRAFT = ไม่ได้คำนวณ (เช่น ไม่มีฐานเงินเดือน) → ไม่มีสลิป
                         p.Period != null &&
-                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status));
+                        (p.PaymentStatus == "TRANSFERRED" || p.Period.Status == "PAID" || p.Period.Status == "CLOSED"));
 
         var allPayrolls = await payrollQuery
             .OrderByDescending(p => p.Period!.Year)
@@ -218,7 +218,8 @@ public class MySalaryService : IMySalaryService
             .Include(p => p.Employee)
             .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
 
-        if (payroll == null || payroll.Period == null || payroll.Status == "DRAFT" || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
+        if (payroll == null || payroll.Period == null || payroll.Status == "DRAFT" ||
+            (payroll.PaymentStatus != "TRANSFERRED" && payroll.Period.Status != "PAID" && payroll.Period.Status != "CLOSED"))
         {
             throw new NotFoundException("Payroll", payrollId);
         }
@@ -294,7 +295,7 @@ public class MySalaryService : IMySalaryService
                         p.Period.Year == pYear &&
                         p.Period.Month <= pMonth &&
                         p.Status != "DRAFT" &&
-                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status))
+                        (p.PaymentStatus == "TRANSFERRED" || p.Period.Status == "PAID" || p.Period.Status == "CLOSED"))
             .ToListAsync(cancellationToken);
 
         decimal ytdGross = ytdPayrolls.Sum(p => p.TotalGrossIncome);
