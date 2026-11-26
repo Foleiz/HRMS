@@ -1009,8 +1009,17 @@ function DocumentHistoryPageContent() {
                     <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
                       <SortableTh label="รหัสเอกสาร" field="code" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                       <SortableTh label="วันที่ยื่นเอกสาร" field="submittedDate" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
-                      <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      {isLeaveOnly ? (
+                        <>
+                          <SortableTh label="ประเภทการลา" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                          <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ขอลา</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
+                          <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                        </>
+                      )}
                       <SortableTh label="สถานะเอกสาร" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                       <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
                     </tr>
@@ -1041,19 +1050,38 @@ function DocumentHistoryPageContent() {
                               </button>
                             </td>
                             <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                            <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {doc.subType && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                    {doc.subType}
-                                  </span>
-                                )}
-                                <span className="whitespace-nowrap">{doc.detailDate}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <SourceBadge source={doc.source} />
-                            </td>
+                            {isLeaveOnly ? (
+                              <>
+                                <td className="px-4 py-4">
+                                  {doc.subType ? (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                      {doc.subType}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">
+                                  {doc.detailDate}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {doc.subType && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                        {doc.subType}
+                                      </span>
+                                    )}
+                                    <span className="whitespace-nowrap">{doc.detailDate}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <SourceBadge source={doc.source} />
+                                </td>
+                              </>
+                            )}
                             <td className="px-4 py-4">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
                                 {statusConf.icon}
