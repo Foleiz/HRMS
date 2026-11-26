@@ -62,6 +62,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<UserAccessLoader>();
 builder.Services.AddScoped<IDataScopeService, DataScopeService>();
+builder.Services.AddHostedService<AuditLogRetentionHostedService>();
 
 // 3. Application Services DI
 builder.Services.AddScoped<IBankService, BankService>();
@@ -451,6 +452,20 @@ using (var scope = app.Services.CreateScope())
             );
             CREATE INDEX IF NOT EXISTS idx_role_data_scope_role_id ON hrms.role_data_scope(role_id);
         ");
+
+        // อัปเกรดสคีมาและความปลอดภัยของระบบ Audit Log (Actor Snapshot, Write-time Subject, Immutability Trigger, FK RESTRICT)
+        var candidateSqlPaths = new[]
+        {
+            Path.Combine(app.Environment.ContentRootPath, "..", "..", "scripts", "audit_log_hardening_v2.sql"),
+            Path.Combine(app.Environment.ContentRootPath, "backend", "scripts", "audit_log_hardening_v2.sql"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "scripts", "audit_log_hardening_v2.sql")
+        };
+        var auditHardeningSqlPath = candidateSqlPaths.Select(Path.GetFullPath).FirstOrDefault(File.Exists);
+        if (auditHardeningSqlPath != null)
+        {
+            var auditHardeningSql = await File.ReadAllTextAsync(auditHardeningSqlPath);
+            await db.Database.ExecuteSqlRawAsync(auditHardeningSql);
+        }
 
         // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot
         var unSnapshottedInstances = await db.ApprovalInstances

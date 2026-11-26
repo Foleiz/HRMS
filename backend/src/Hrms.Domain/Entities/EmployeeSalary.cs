@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -9,6 +10,8 @@ namespace Hrms.Domain.Entities;
 public class EmployeeSalary : BaseEntity
 {
     public long EmployeeId { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal BaseSalary { get; set; }
     public DateOnly EffectiveFrom { get; set; }
     public DateOnly? EffectiveTo { get; set; }

@@ -18,6 +18,9 @@ public interface IAuditLogService
         long? userId = null,
         string? ipAddress = null,
         string? userAgent = null,
+        string? metadata = null,
+        long? subjectEmployeeId = null,
+        string? actorType = null,
         CancellationToken cancellationToken = default);
 
     Task<PagedResult<AuditLogDto>> GetLogsAsync(AuditLogQueryFilter filter, CancellationToken cancellationToken = default);

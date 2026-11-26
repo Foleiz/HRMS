@@ -34,6 +34,7 @@ public class AuditLogsController : ControllerBase
     }
 
     [HttpGet("export")]
+    [AuditAccess("EXPORT", "audit_log", null, "ส่งออกประวัติการใช้งานระบบ")]
     [RequirePermission("SETTINGS_AUDIT_VIEW")]
     public async Task<IActionResult> ExportAuditLogs(
         [FromQuery] AuditLogQueryFilter filter,

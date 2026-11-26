@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -8,6 +9,8 @@ namespace Hrms.Domain.Entities;
 public class EmployeeSignature : BaseEntity
 {
     public long EmployeeId { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Redacted)]
     public byte[] SignatureData { get; set; } = Array.Empty<byte>();
     public string? FileName { get; set; }
     public int? FileSize { get; set; }

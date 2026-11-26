@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -9,7 +10,11 @@ namespace Hrms.Domain.Entities;
 public class EmployeeContact : BaseEntity
 {
     public long EmployeeId { get; set; }
+
+    [AuditSensitive(AuditMaskMode.PersonalPii)]
     public string? PersonalPhone { get; set; }
+
+    [AuditSensitive(AuditMaskMode.PersonalPii)]
     public string? PersonalEmail { get; set; }
     public string? OrganizationEmail { get; set; }
 

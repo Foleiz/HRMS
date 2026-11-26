@@ -61,11 +61,54 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
+            _dbContext.AuditLogs.Add(new AuditLog
+            {
+                Action = "LOGIN_FAILED",
+                EntityType = "AUTH",
+                EntityId = null,
+                FieldName = "เข้าสู่ระบบไม่สำเร็จ (ไม่พบบัญชีผู้ใช้)",
+                OldValue = null,
+                NewValue = JsonSerializer.Serialize(new { status = "FAILED", username = request.Username.Trim(), reason = "USER_NOT_FOUND" }),
+                UserId = null,
+                ActorType = "ANONYMOUS",
+                ActorUsername = request.Username.Trim(),
+                ActorName = request.Username.Trim(),
+                IpAddress = _currentUserService.IpAddress,
+                UserAgent = _currentUserService.UserAgent,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _dbContext.SaveChangesAsync(cancellationToken);
             throw new ValidationException("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
         }
 
         if (user.Status != "ACTIVE")
         {
+            var actorFullName = user.Employee != null ? $"{user.Employee.FirstName} {user.Employee.LastName}".Trim() : user.Username;
+            _dbContext.AuditLogs.Add(new AuditLog
+            {
+                Action = "LOGIN_FAILED",
+                EntityType = "AUTH",
+                EntityId = user.Id,
+                FieldName = $"เข้าสู่ระบบถูกปฏิเสธ (สถานะ {user.Status})",
+                OldValue = null,
+                NewValue = JsonSerializer.Serialize(new { status = "FAILED", username = user.Username, accountStatus = user.Status }),
+                UserId = user.Id,
+                ActorType = "USER",
+                ActorUsername = user.Username,
+                ActorName = actorFullName,
+                SubjectEmployeeId = user.EmployeeId,
+                SubjectEmployeeCode = user.Employee?.EmployeeCode,
+                SubjectEmployeeName = actorFullName,
+                IpAddress = _currentUserService.IpAddress,
+                UserAgent = _currentUserService.UserAgent,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (user.Status == "DELETED")
+            {
+                throw new ValidationException("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
+            }
             throw new BusinessRuleException($"บัญชีนี้อยู่ในสถานะ {user.Status} ไม่สามารถเข้าสู่ระบบได้");
         }
 
@@ -80,17 +123,25 @@ public class AuthService : IAuthService
             passwordValid = false;
         }
 
+        var fullName = user.Employee != null ? $"{user.Employee.FirstName} {user.Employee.LastName}".Trim() : user.Username;
+
         if (!passwordValid)
         {
             var failLog = new AuditLog
             {
-                Action = "LOGIN",
+                Action = "LOGIN_FAILED",
                 EntityType = "AUTH",
                 EntityId = user.Id,
-                FieldName = "เข้าสู่ระบบไม่สำเร็จ",
+                FieldName = "เข้าสู่ระบบไม่สำเร็จ (รหัสผ่านไม่ถูกต้อง)",
                 OldValue = null,
-                NewValue = JsonSerializer.Serialize(new { status = "FAILED", username = user.Username }),
+                NewValue = JsonSerializer.Serialize(new { status = "FAILED", username = user.Username, reason = "INVALID_PASSWORD" }),
                 UserId = user.Id,
+                ActorType = "USER",
+                ActorUsername = user.Username,
+                ActorName = fullName,
+                SubjectEmployeeId = user.EmployeeId,
+                SubjectEmployeeCode = user.Employee?.EmployeeCode,
+                SubjectEmployeeName = fullName,
                 IpAddress = _currentUserService.IpAddress,
                 UserAgent = _currentUserService.UserAgent,
                 CreatedAt = DateTime.UtcNow
@@ -104,6 +155,9 @@ public class AuthService : IAuthService
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
 
+        // 3. โหลดสิทธิ์และโปรไฟล์แบบแยกคิวรีที่รวดเร็ว
+        var userInfo = await BuildUserInfoDtoAsync(user.Id, cancellationToken);
+
         var loginLog = new AuditLog
         {
             Action = "LOGIN",
@@ -113,6 +167,13 @@ public class AuthService : IAuthService
             OldValue = null,
             NewValue = JsonSerializer.Serialize(new { username = user.Username }),
             UserId = user.Id,
+            ActorType = "USER",
+            ActorUsername = user.Username,
+            ActorName = fullName,
+            ActorRole = userInfo.Roles.Count > 0 ? string.Join(", ", userInfo.Roles) : null,
+            SubjectEmployeeId = user.EmployeeId,
+            SubjectEmployeeCode = user.Employee?.EmployeeCode,
+            SubjectEmployeeName = fullName,
             IpAddress = _currentUserService.IpAddress,
             UserAgent = _currentUserService.UserAgent,
             CreatedAt = DateTime.UtcNow
@@ -120,9 +181,6 @@ public class AuthService : IAuthService
         _dbContext.AuditLogs.Add(loginLog);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // 3. โหลดสิทธิ์และโปรไฟล์แบบแยกคิวรีที่รวดเร็ว
-        var userInfo = await BuildUserInfoDtoAsync(user.Id, cancellationToken);
 
         // 4. ออก JWT Token
         var (token, expiresAt) = _tokenService.GenerateToken(userInfo);

@@ -308,6 +308,7 @@ public class AttendanceDailyController : ControllerBase
     /// ส่งออกรายงานสรุปเวลาทำงานรายเดือนเป็นไฟล์ CSV (UTF-8 with BOM)
     /// </summary>
     [HttpGet("monthly-summary/export")]
+    [AuditAccess("EXPORT", "attendance_daily", null, "ส่งออกรายงานสรุปเวลาทำงานประจำเดือน")]
     [RequirePermission("TIME_DAILY_VIEW")]
     public async Task<IActionResult> ExportMonthlyAttendanceCsv(
         [FromQuery] int? year,

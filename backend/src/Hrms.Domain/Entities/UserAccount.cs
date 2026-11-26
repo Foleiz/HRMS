@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -10,11 +11,17 @@ public class UserAccount : BaseEntity
 {
     public long EmployeeId { get; set; }
     public string Username { get; set; } = string.Empty;
+
+    [AuditSensitive(AuditMaskMode.Redacted)]
     public string PasswordHash { get; set; } = string.Empty;
+
     /// <summary>รหัส PIN 6 หลักสำหรับเข้าดูข้อมูลเงินเดือน (BCrypt hash)</summary>
+    [AuditSensitive(AuditMaskMode.Redacted)]
     public string? SalaryPinHash { get; set; }
-    public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, LOCKED
+
+    public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, LOCKED, DELETED
     public DateTime? LastLoginAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

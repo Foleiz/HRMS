@@ -38,6 +38,7 @@ public class MySalaryController : ControllerBase
     /// ดึงรายละเอียดแจกแจงรายได้-รายหักของสลิปเงินเดือนรายงวด (ESS My Salary Slip Detail)
     /// </summary>
     [HttpGet("slips/{payrollId}")]
+    [AuditAccess("VIEW", "my_payslip", "payrollId", "เปิดดูรายละเอียดสลิปเงินเดือนตนเอง")]
     public async Task<ActionResult<ApiResponse<MySalaryDetailDto>>> GetMySalaryDetail(
         [FromRoute] long payrollId,
         CancellationToken cancellationToken)
@@ -50,6 +51,7 @@ public class MySalaryController : ControllerBase
     /// ดาวน์โหลดสลิปเงินเดือน E-Payslip PDF (พร้อมเข้ารหัสผ่าน) ของตนเอง
     /// </summary>
     [HttpGet("slips/{payrollId}/download")]
+    [AuditAccess("DOWNLOAD", "my_payslip", "payrollId", "ดาวน์โหลดสลิปเงินเดือน PDF ตนเอง")]
     public async Task<IActionResult> DownloadMyPayslip(
         [FromRoute] long payrollId,
         CancellationToken cancellationToken)

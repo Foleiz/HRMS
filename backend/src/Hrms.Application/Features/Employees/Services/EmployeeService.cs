@@ -952,6 +952,14 @@ public class EmployeeService : IEmployeeService
             throw new NotFoundException("Employee", id);
         }
 
+        var hasAuditProtectedAccount = await _dbContext.UserAccounts
+            .AsNoTracking()
+            .AnyAsync(u => u.EmployeeId == employee.Id && _dbContext.AuditLogs.Any(a => a.UserId == u.Id), cancellationToken);
+        if (hasAuditProtectedAccount)
+        {
+            throw new BusinessRuleException("ไม่สามารถลบข้อมูลพนักงานถาวรได้เนื่องจากมีประวัติการปฏิบัติงานในระบบ (Audit Trail) กรุณาเปลี่ยนสถานะพนักงานเป็น 'ไม่ได้ทำงาน (INACTIVE)' แทน");
+        }
+
         _dbContext.Employees.Remove(employee);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

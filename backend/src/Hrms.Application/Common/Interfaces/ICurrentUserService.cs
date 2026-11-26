@@ -7,6 +7,8 @@ public interface ICurrentUserService
 {
     long? UserId { get; }
     string? Username { get; }
+    string? FullName { get; }
+    string? EmployeeCode { get; }
     long? EmployeeId { get; }
     List<string> Roles { get; }
     bool IsAuthenticated { get; }

@@ -1,4 +1,5 @@
 using Hrms.Domain.Common;
+using Hrms.Domain.Common.Attributes;
 
 namespace Hrms.Domain.Entities;
 
@@ -11,7 +12,11 @@ public class PayrollDetail : BaseEntity
     public long PayrollId { get; set; }
     public long PayrollItemId { get; set; }
     public decimal? Quantity { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal? Rate { get; set; }
+
+    [AuditSensitive(AuditMaskMode.Financial)]
     public decimal Amount { get; set; }
     public string? CalculationSource { get; set; }
 
