@@ -12,6 +12,7 @@ import {
   GripVertical,
   X,
   CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { approvalService } from '@/services/approvalService';
@@ -35,7 +36,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button , TableToolbar } from '@/components/ui';
+import { Button, TableToolbar, StatusBadge, RowActions, RowActionButton } from '@/components/ui';
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
 const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
@@ -131,6 +132,7 @@ interface FlowCardEditorProps {
   onSave: (data: CreateApprovalFlowPayload, flowId?: number) => Promise<void>;
   onDelete?: (flow: ApprovalFlow) => void;
   onCancelNew?: () => void;
+  onCancelEdit?: () => void;
 }
 
 const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
@@ -143,6 +145,7 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
   onSave,
   onDelete,
   onCancelNew,
+  onCancelEdit,
 }) => {
   const { error } = useToast();
 
@@ -339,6 +342,10 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
       onCancelNew?.();
       return;
     }
+    if (onCancelEdit) {
+      onCancelEdit();
+      return;
+    }
     if (flow) {
       setForm({
         flowCode: flow.flowCode,
@@ -451,18 +458,20 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
           </div>
         )}
 
-        {/* ปุ่มกากบาทขวาบน: สำหรับสายเดิม = ลบรายการได้เลย, สำหรับเพิ่มใหม่ = ยกเลิกแบบร่าง */}
+        {/* ปุ่มกากบาทขวาบน: ปิดโหมดเพิ่ม/แก้ไข */}
         <button
           type="button"
           onClick={() => {
             if (isNew) {
               onCancelNew?.();
+            } else if (onCancelEdit) {
+              onCancelEdit();
             } else if (flow && onDelete) {
               onDelete(flow);
             }
           }}
-          className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-          title={isNew ? 'ยกเลิกการเพิ่ม' : 'ลบสายการอนุมัตินี้'}
+          className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          title={isNew ? 'ยกเลิกการเพิ่ม' : 'ปิดหน้าต่างแก้ไข'}
         >
           <X className="w-4 h-4" />
         </button>
@@ -1051,8 +1060,9 @@ export const ApprovalFlowsTab: React.FC = () => {
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  // New Flow Draft State
+  // New Flow Draft & Edit State
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [editingFlowId, setEditingFlowId] = useState<number | null>(null);
 
   // Common Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
@@ -1152,6 +1162,7 @@ export const ApprovalFlowsTab: React.FC = () => {
           steps: data.steps,
         });
         success('บันทึกการแก้ไขสายการอนุมัติสำเร็จ');
+        setEditingFlowId(null);
       } else {
         await approvalService.createFlow(data);
         success('สร้างสายการอนุมัติสำเร็จ');
@@ -1256,19 +1267,100 @@ export const ApprovalFlowsTab: React.FC = () => {
               />
             )}
 
-            {/* หน้ารายการเริ่มแรกแสดงเป็นแบบการ์ดพร้อมแก้ไขได้ทันที ไม่ต้องมีปุ่มเพื่อแก้ไข */}
-            {filteredFlows.map((flow) => (
-              <FlowCardEditor
-                key={flow.id}
-                flow={flow}
-                departments={departments}
-                levels={levels}
-                employees={employees}
-                roles={roles}
-                onSave={handleSaveFlow}
-                onDelete={handleDeleteFlow}
-              />
-            ))}
+            {/* หน้ารายการเริ่มแรกแสดงเป็นการ์ดสรุป กด "แก้ไข" เพื่อเปิดฟอร์มแก้ไข */}
+            {filteredFlows.map((flow) => {
+              if (editingFlowId === flow.id) {
+                return (
+                  <FlowCardEditor
+                    key={flow.id}
+                    flow={flow}
+                    departments={departments}
+                    levels={levels}
+                    employees={employees}
+                    roles={roles}
+                    onSave={handleSaveFlow}
+                    onDelete={handleDeleteFlow}
+                    onCancelEdit={() => setEditingFlowId(null)}
+                  />
+                );
+              }
+
+              const sortedSteps = flow.steps.slice().sort((a, b) => a.stepNo - b.stepNo);
+              const deptName = departments.find((d) => d.id === flow.departmentId)?.departmentName ?? 'ทุกแผนก';
+              const levelName = levels.find((l) => l.id === flow.levelId)?.levelName ?? 'ทุกระดับตำแหน่ง';
+              const docLabel = DOCUMENT_TYPE_LABELS[flow.documentType] || flow.documentType;
+
+              return (
+                <div
+                  key={flow.id}
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
+                          {flow.flowName}
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+                          {docLabel}
+                        </span>
+                        <StatusBadge tone={flow.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                          {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
+                        </StatusBadge>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                          <span>{deptName}</span>
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                        <span className="inline-flex items-center gap-1">
+                          <UserCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                          <span>{levelName}</span>
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                        <span>{sortedSteps.length} ขั้นตอน</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <RowActions>
+                        <RowActionButton
+                          action="edit"
+                          onClick={() => setEditingFlowId(flow.id)}
+                          title="แก้ไขสายการอนุมัติ"
+                        />
+                        <RowActionButton
+                          action="delete"
+                          onClick={() => handleDeleteFlow(flow)}
+                          title="ลบสายการอนุมัติ"
+                        />
+                      </RowActions>
+                    </div>
+                  </div>
+
+                  {/* Step Summary Flow */}
+                  {sortedSteps.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center gap-1.5 flex-wrap text-xs">
+                      {sortedSteps.map((step, idx) => (
+                        <React.Fragment key={step.id || idx}>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium">
+                            <span className="w-4 h-4 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {step.stepNo}
+                            </span>
+                            <span>{getApproverDisplay(step, employees, roles)}</span>
+                          </span>
+                          {idx < sortedSteps.length - 1 && (
+                            <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
