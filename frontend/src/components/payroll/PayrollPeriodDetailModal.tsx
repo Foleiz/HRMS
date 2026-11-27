@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { PayrollPeriod, PayrollRecord } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { TablePagination, PageSizeSelect } from '@/components/ui/TablePagination';
 import { ModalShell, Button, CountBadge } from '@/components/ui';
 
 interface PayrollPeriodDetailModalProps {
@@ -282,18 +282,28 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
                 <CountBadge count={filteredPayrolls.length} />
               </div>
 
-              <div className="relative min-w-[220px]">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัส, ชื่อ หรือแผนก..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+              <div className="flex items-center gap-2.5">
+                <PageSizeSelect
+                  pageSize={pageSize}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
                     setPage(1);
                   }}
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  pageSizeOptions={[10, 20, 50]}
                 />
+                <div className="relative min-w-[220px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส, ชื่อ หรือแผนก..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </div>
             </div>
 
@@ -410,6 +420,7 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
                       setPage(1);
                     }}
                     pageSizeOptions={[10, 20, 50]}
+                    hidePageSizeSelector
                   />
                 </div>
               )}

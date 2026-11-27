@@ -918,6 +918,14 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
           searchPlaceholder="ค้นหาชื่อกิจกรรม หรือรายละเอียด..."
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
+          pageSizeControl={{
+            pageSize,
+            onPageSizeChange: (newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            },
+            pageSizeOptions: [10, 20, 50, 100],
+          }}
           filters={
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               {/* Year Selector */}
@@ -1157,6 +1165,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                   setPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
           </div>

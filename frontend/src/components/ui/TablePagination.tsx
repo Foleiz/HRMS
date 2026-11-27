@@ -6,6 +6,37 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 
+export interface PageSizeSelectProps {
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
+  className?: string;
+}
+
+/** ตัวเลือกจำนวนแถวต่อหน้าแบบกะทัดรัด (สำหรับวางข้างหน้าช่องค้นหา) */
+export const PageSizeSelect: React.FC<PageSizeSelectProps> = ({
+  pageSize,
+  onPageSizeChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
+  className = '',
+}) => (
+  <div className={`flex items-center shrink-0 ${className}`}>
+    <CustomSelect
+      value={pageSize}
+      onChange={(e) => onPageSizeChange(Number(e.target.value))}
+      numbered={false}
+      size="sm"
+      className="w-[68px] min-w-[64px]"
+    >
+      {pageSizeOptions.map((n) => (
+        <option key={n} value={n}>
+          {n}
+        </option>
+      ))}
+    </CustomSelect>
+  </div>
+);
+
 interface Props {
   total: number;
   page: number;
@@ -15,6 +46,8 @@ interface Props {
   pageSizeOptions?: number[];
   className?: string;
   totalLabel?: string;
+  /** ซ่อนตัวเลือกจำนวนแถวต่อหน้าด้านล่าง (กรณีวางไว้ข้างหน้าช่องค้นหาด้านบนแล้ว) */
+  hidePageSizeSelector?: boolean;
 }
 
 /** แสดงเลขหน้าแบบย่อ เช่น 1 … 4 5 6 … 12 */
@@ -40,6 +73,7 @@ export const TablePagination: React.FC<Props> = ({
   pageSizeOptions = PAGE_SIZE_OPTIONS,
   className = '',
   totalLabel = 'รายการ',
+  hidePageSizeSelector = false,
 }) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(Math.max(1, page), totalPages);
@@ -48,26 +82,30 @@ export const TablePagination: React.FC<Props> = ({
     <div className={`flex flex-wrap items-center justify-between gap-3 pt-3 text-xs text-slate-500 dark:text-slate-400 ${className}`}>
       {/* ซ้ายล่าง: เลือกจำนวนแถวต่อหน้า + สรุปจำนวนทั้งหมด */}
       <div className="flex items-center gap-2">
-        <span>แสดง</span>
-        <CustomSelect
-          value={pageSize}
-          onChange={(e) => {
-            onPageSizeChange(Number(e.target.value));
-            onPageChange(1);
-          }}
-          numbered={false}
-          size="sm"
-          className="w-[68px] min-w-[64px]"
-        >
-          {pageSizeOptions.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </CustomSelect>
-        <span>แถวต่อหน้า</span>
-        <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-          (ทั้งหมด {total.toLocaleString()} {totalLabel})
+        {!hidePageSizeSelector && (
+          <>
+            <span>แสดง</span>
+            <CustomSelect
+              value={pageSize}
+              onChange={(e) => {
+                onPageSizeChange(Number(e.target.value));
+                onPageChange(1);
+              }}
+              numbered={false}
+              size="sm"
+              className="w-[68px] min-w-[64px]"
+            >
+              {pageSizeOptions.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </CustomSelect>
+            <span>แถวต่อหน้า</span>
+          </>
+        )}
+        <span className={`text-slate-400 dark:text-slate-500 text-[11px] ${hidePageSizeSelector ? '' : 'ml-1'}`}>
+          ทั้งหมด {total.toLocaleString()} {totalLabel}
         </span>
       </div>
 

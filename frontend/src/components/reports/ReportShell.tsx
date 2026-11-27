@@ -499,6 +499,7 @@ export function ReportTableCard({
   pagination,
 }: ReportTableCardProps) {
   const showToolbar = searchValue !== undefined || filters !== undefined || actions !== undefined;
+  const hasSearchInToolbar = searchValue !== undefined;
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
       {showToolbar && (
@@ -507,6 +508,18 @@ export function ReportTableCard({
             searchValue={searchValue}
             onSearchChange={onSearchChange}
             searchPlaceholder={searchPlaceholder}
+            pageSizeControl={
+              hasSearchInToolbar && pagination
+                ? {
+                    pageSize: pagination.pageSize,
+                    onPageSizeChange: (size) => {
+                      pagination.onPageSizeChange(size);
+                      pagination.onPageChange(1);
+                    },
+                    pageSizeOptions: pagination.pageSizeOptions,
+                  }
+                : undefined
+            }
             filters={filters}
             actions={actions}
           />
@@ -531,6 +544,7 @@ export function ReportTableCard({
             onPageSizeChange={pagination.onPageSizeChange}
             pageSizeOptions={pagination.pageSizeOptions}
             totalLabel={pagination.totalLabel}
+            hidePageSizeSelector={hasSearchInToolbar}
           />
         </div>
       )}

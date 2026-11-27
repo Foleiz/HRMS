@@ -748,6 +748,14 @@ export default function ApprovalHistoryPage() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100],
+            }}
             filters={
               <>
                 <CustomSelect
@@ -946,6 +954,7 @@ export default function ApprovalHistoryPage() {
                   setPageSize(newSize);
                   setCurrentPage(1);
                 }}
+                hidePageSizeSelector
               />
             </div>
           )}

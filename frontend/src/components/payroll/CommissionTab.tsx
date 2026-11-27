@@ -53,7 +53,7 @@ import { EmployeeSalaryOverview } from '@/types/payroll';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { confirmAction, hrmsSwal, showError } from '@/lib/sweetalert';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { TablePagination, PageSizeSelect } from '@/components/ui/TablePagination';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getSmartYearRange } from '@/lib/yearUtils';
@@ -979,6 +979,14 @@ export default function CommissionTab() {
             </div>
 
             {/* Search Input */}
+            <PageSizeSelect
+              pageSize={periodsPageSize}
+              onPageSizeChange={(newSize) => {
+                setPeriodsPageSize(newSize);
+                setPeriodsPage(1);
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
             <div className="relative w-56 sm:w-64">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
               <input
@@ -1137,6 +1145,7 @@ export default function CommissionTab() {
             setPeriodsPage(1);
           }}
           pageSizeOptions={[5, 10, 20, 50]}
+          hidePageSizeSelector
         />
       </div>
 
@@ -1678,18 +1687,28 @@ export default function CommissionTab() {
 
               {/* Toolbar */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
-                <div className="relative flex-1 sm:max-w-xs w-full">
-                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
-                    value={batchRecordsSearch}
-                    onChange={(e) => {
-                      setBatchRecordsSearch(e.target.value);
+                <div className="flex items-center gap-2.5 flex-1 w-full">
+                  <PageSizeSelect
+                    pageSize={batchRecordsPageSize}
+                    onPageSizeChange={(newSize) => {
+                      setBatchRecordsPageSize(newSize);
                       setBatchRecordsPage(1);
                     }}
-                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    pageSizeOptions={[10, 20, 50, 100]}
                   />
+                  <div className="relative flex-1 sm:max-w-xs w-full">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
+                      value={batchRecordsSearch}
+                      onChange={(e) => {
+                        setBatchRecordsSearch(e.target.value);
+                        setBatchRecordsPage(1);
+                      }}
+                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
                 </div>
 
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -1809,6 +1828,7 @@ export default function CommissionTab() {
                 onPageChange={setBatchRecordsPage}
                 onPageSizeChange={setBatchRecordsPageSize}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
 
@@ -2086,19 +2106,29 @@ export default function CommissionTab() {
 
               {/* Search Toolbar (Left) & View Switcher Tabs (Right) */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                {/* Left: Search Box */}
-                <div className="relative max-w-sm w-full shrink-0">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหารหัส, ชื่อพนักงาน หรือไฟล์..."
-                    value={periodModalSearch}
-                    onChange={(e) => {
-                      setPeriodModalSearch(e.target.value);
+                {/* Left: Page Size + Search Box */}
+                <div className="flex items-center gap-2.5 flex-1">
+                  <PageSizeSelect
+                    pageSize={periodModalPageSize}
+                    onPageSizeChange={(newSize) => {
+                      setPeriodModalPageSize(newSize);
                       setPeriodModalPage(1);
                     }}
-                    className="w-full pl-9 pr-4 py-2 text-xs bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-800 dark:text-slate-200"
+                    pageSizeOptions={[10, 20, 50, 100]}
                   />
+                  <div className="relative max-w-sm w-full shrink-0">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหารหัส, ชื่อพนักงาน หรือไฟล์..."
+                      value={periodModalSearch}
+                      onChange={(e) => {
+                        setPeriodModalSearch(e.target.value);
+                        setPeriodModalPage(1);
+                      }}
+                      className="w-full pl-9 pr-4 py-2 text-xs bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
                 </div>
 
                 {/* Right: Default Rate + Employee Summary Badge */}
@@ -2291,6 +2321,7 @@ export default function CommissionTab() {
                 onPageChange={setPeriodModalPage}
                 onPageSizeChange={setPeriodModalPageSize}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
 

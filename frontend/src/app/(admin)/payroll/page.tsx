@@ -94,7 +94,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
-import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, TableToolbar } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, TableToolbar, PageSizeSelect } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { BulkAdjustSalaryModal } from '@/components/payroll/BulkAdjustSalaryModal';
@@ -140,6 +140,7 @@ interface TablePaginationProps {
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
   unitText?: string;
+  hidePageSizeSelector?: boolean;
 }
 
 function TablePagination({
@@ -150,6 +151,7 @@ function TablePagination({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50, 100, 200],
   unitText = 'คน',
+  hidePageSizeSelector = false,
 }: TablePaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -183,24 +185,26 @@ function TablePagination({
           แสดง <strong className="font-semibold text-slate-800 dark:text-slate-200">{startIndex} - {endIndex}</strong> จากทั้งหมด{' '}
           <strong className="font-semibold text-slate-800 dark:text-slate-200">{totalCount}</strong> {unitText}
         </span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">แสดงหน้าละ:</span>
-          <CustomSelect
-            value={pageSize}
-            onChange={(e) => {
-              const newSize = Number(e.target.value);
-              onPageSizeChange(newSize);
-              onPageChange(1);
-            }}
-            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs transition-colors"
-          >
-            {pageSizeOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt} {unitText}
-              </option>
-            ))}
-          </CustomSelect>
-        </div>
+        {!hidePageSizeSelector && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400">แสดงหน้าละ:</span>
+            <CustomSelect
+              value={pageSize}
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                onPageSizeChange(newSize);
+                onPageChange(1);
+              }}
+              className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs transition-colors"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} {unitText}
+                </option>
+              ))}
+            </CustomSelect>
+          </div>
+        )}
       </div>
 
       {/* Right: Page Navigation matching Image exactly */}
@@ -2757,6 +2761,14 @@ export default function PayrollPage() {
                     setEmployeeSalaryPage(1);
                   }}
                   searchPlaceholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                  pageSizeControl={{
+                    pageSize: employeeSalaryPageSize,
+                    onPageSizeChange: (newSize) => {
+                      setEmployeeSalaryPageSize(newSize);
+                      setEmployeeSalaryPage(1);
+                    },
+                    pageSizeOptions: [10, 20, 50, 100, 200],
+                  }}
                   filters={
                     <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
                       <div className="w-full sm:w-48">
@@ -2952,6 +2964,7 @@ export default function PayrollPage() {
                   }}
                   pageSizeOptions={[10, 20, 50, 100, 200]}
                   unitText="คน"
+                  hidePageSizeSelector
                 />
               </div>
             );
@@ -3392,6 +3405,14 @@ export default function PayrollPage() {
               {/* ตัวกรองขั้นสูง: เดือน, ปี, ค้นหา, แผนก, โหมดกรอกโบนัส */}
               {showBonusFilters && (
                 <div className="flex flex-wrap items-center gap-2.5 p-3 bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700 rounded-2xl animate-in fade-in duration-150">
+                  <PageSizeSelect
+                    pageSize={bonusPageSize}
+                    onPageSizeChange={(newSize) => {
+                      setBonusPageSize(newSize);
+                      setBonusCurrentPage(1);
+                    }}
+                    pageSizeOptions={[10, 20, 50, 100, 200]}
+                  />
                   {/* Search Input */}
                   <div className="relative min-w-[200px] max-w-xs flex-1">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -3673,6 +3694,7 @@ export default function PayrollPage() {
                         onPageSizeChange={setBonusPageSize}
                         pageSizeOptions={[10, 20, 50, 100, 200]}
                         unitText="คน"
+                        hidePageSizeSelector
                       />
                     )}
                   </div>
@@ -5010,6 +5032,14 @@ export default function PayrollPage() {
                   {/* Filter Toolbar */}
                   <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <PageSizeSelect
+                        pageSize={processPageSize}
+                        onPageSizeChange={(newSize) => {
+                          setProcessPageSize(newSize);
+                          setProcessPage(1);
+                        }}
+                        pageSizeOptions={[10, 20, 50, 100, 200]}
+                      />
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                         <input
@@ -5162,6 +5192,7 @@ export default function PayrollPage() {
                     }}
                     pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
+                    hidePageSizeSelector
                   />
                 </div>
               </div>
@@ -5234,6 +5265,14 @@ export default function PayrollPage() {
                   {/* Filter Toolbar */}
                   <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <PageSizeSelect
+                        pageSize={processPageSize}
+                        onPageSizeChange={(newSize) => {
+                          setProcessPageSize(newSize);
+                          setProcessPage(1);
+                        }}
+                        pageSizeOptions={[10, 20, 50, 100, 200]}
+                      />
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                         <input
@@ -5380,6 +5419,7 @@ export default function PayrollPage() {
                     }}
                     pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
+                    hidePageSizeSelector
                   />
                 </div>
               </div>
@@ -5449,6 +5489,14 @@ export default function PayrollPage() {
                   {/* Filter Toolbar */}
                   <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <PageSizeSelect
+                        pageSize={processPageSize}
+                        onPageSizeChange={(newSize) => {
+                          setProcessPageSize(newSize);
+                          setProcessPage(1);
+                        }}
+                        pageSizeOptions={[10, 20, 50, 100, 200]}
+                      />
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                         <input
@@ -5554,6 +5602,7 @@ export default function PayrollPage() {
                     }}
                     pageSizeOptions={[10, 20, 50, 100, 200]}
                     unitText="คน"
+                    hidePageSizeSelector
                   />
                 </div>
               </div>

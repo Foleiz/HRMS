@@ -1196,6 +1196,13 @@ export const ApprovalFlowsTab: React.FC = () => {
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="ค้นหาสายการอนุมัติ..."
+          pageSizeControl={{
+            pageSize,
+            onPageSizeChange: (newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            },
+          }}
           filters={
             <>
               <div className="w-full sm:w-48">
@@ -1433,6 +1440,7 @@ export const ApprovalFlowsTab: React.FC = () => {
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
+              hidePageSizeSelector
             />
           </div>
         )}

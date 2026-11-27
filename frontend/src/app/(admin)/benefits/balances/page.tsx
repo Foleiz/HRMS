@@ -223,6 +223,13 @@ export default function EmployeeBenefitBalancesPage() {
           searchValue={search}
           onSearchChange={setSearch}
           searchPlaceholder="ค้นหาชื่อ, รหัส, แผนก..."
+          pageSizeControl={{
+            pageSize,
+            onPageSizeChange: (newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            },
+          }}
           filters={
             <>
               {/* Year Select */}
@@ -434,6 +441,7 @@ export default function EmployeeBenefitBalancesPage() {
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
               totalLabel="คน"
+              hidePageSizeSelector
             />
           </div>
         )}

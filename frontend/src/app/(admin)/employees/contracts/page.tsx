@@ -759,6 +759,13 @@ function ContractsPageContent() {
               setCurrentPage(1);
             }}
             searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              },
+            }}
             filters={
               <>
                 <CustomSelect
@@ -950,6 +957,7 @@ function ContractsPageContent() {
                 setPageSize(newSize);
                 setCurrentPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </div>

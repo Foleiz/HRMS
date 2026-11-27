@@ -26,7 +26,7 @@ import { ModalShell } from '@/components/ui/ModalShell';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { TablePagination, PageSizeSelect } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
@@ -784,6 +784,14 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
           {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | สร้างประกาศ (ขวา) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-1">
+              <PageSizeSelect
+                pageSize={pageSize}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+              />
               {/* Search */}
               <div className="relative max-w-sm w-full shrink-0">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -1025,6 +1033,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                 setPage(1);
               }}
               pageSizeOptions={[10, 20, 50, 100, 200]}
+              hidePageSizeSelector
             />
           </div>
         </div>

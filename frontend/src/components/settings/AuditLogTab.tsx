@@ -24,7 +24,7 @@ import {
 import { AuditLogItem, UserAccount } from '@/types/settings';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { TablePagination, PageSizeSelect } from '@/components/ui/TablePagination';
 import { Button } from '@/components/ui/Button';
 import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
@@ -357,6 +357,14 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Left: Search input & Segmented Range */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-1 max-w-2xl">
+          <PageSizeSelect
+            pageSize={pageSize}
+            onPageSizeChange={(newSize) => {
+              if (onPageSizeChange) onPageSizeChange(newSize);
+              onPageChange(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100, 200]}
+          />
           <div className="relative max-w-sm w-full shrink-0">
             <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -750,6 +758,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             onPageChange(1);
           }}
           pageSizeOptions={[10, 20, 50, 100, 200]}
+          hidePageSizeSelector
         />
       </div>
     </div>

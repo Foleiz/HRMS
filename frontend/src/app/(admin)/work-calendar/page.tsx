@@ -598,6 +598,17 @@ function WorkCalendarPageContent() {
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
               searchPlaceholder="ค้นหาชื่อวันหยุด หรือวันที่..."
+              pageSizeControl={
+                holidayView === 'list'
+                  ? {
+                      pageSize: holidayPageSize,
+                      onPageSizeChange: (newSize) => {
+                        setHolidayPageSize(newSize);
+                        setHolidayPage(1);
+                      },
+                    }
+                  : undefined
+              }
               filters={
                 <>
                   <CustomSelect
@@ -777,6 +788,7 @@ function WorkCalendarPageContent() {
                 pageSize={holidayPageSize}
                 onPageChange={setHolidayPage}
                 onPageSizeChange={setHolidayPageSize}
+                hidePageSizeSelector
               />
             )}
             </>

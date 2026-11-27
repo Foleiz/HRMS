@@ -1106,6 +1106,7 @@ function OrganizationPageContent() {
         setPageSize(size);
         setPage(1);
       }}
+      hidePageSizeSelector
     />
   );
 
@@ -1197,6 +1198,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
               actions={
                 canCreateStruct && (
@@ -1268,6 +1276,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
               filters={
                 <CustomSelect
@@ -1352,6 +1367,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาชื่อทีม หรือรหัสทีม..."
               filters={
                 <CustomSelect
@@ -1448,6 +1470,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
               filters={
                 <CustomSelect
@@ -1551,6 +1580,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
               actions={
                 canCreatePos && (
@@ -1638,6 +1674,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาสวัสดิการ หรือรหัส..."
               filters={
                 <>
@@ -2107,6 +2150,13 @@ function OrganizationPageContent() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setPage(1);
+                },
+              }}
               searchPlaceholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
               actions={
                 canCreateCompany && (

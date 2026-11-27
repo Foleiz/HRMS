@@ -533,6 +533,13 @@ function MySalaryContent() {
                 setCurrentPage(1);
               }}
               searchPlaceholder="ค้นหาเดือน / พ.ศ...."
+              pageSizeControl={{
+                pageSize,
+                onPageSizeChange: (size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                },
+              }}
               actions={
                 <Button
                   size="sm"
@@ -662,6 +669,7 @@ function MySalaryContent() {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
+              hidePageSizeSelector
             />
           </div>
       </div>

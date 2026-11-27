@@ -731,6 +731,14 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="ค้นหาพนักงาน..."
+            pageSizeControl={{
+              pageSize: itemsPerPage,
+              onPageSizeChange: (newSize) => {
+                setItemsPerPage(newSize);
+                setCurrentPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100, 200],
+            }}
             filters={
               !isDeptManager ? (
                 <CustomSelect
@@ -1406,6 +1414,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                 setCurrentPage(1);
               }}
               pageSizeOptions={[10, 20, 50, 100, 200]}
+              hidePageSizeSelector
             />
           )}
         </div>

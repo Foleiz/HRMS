@@ -3,7 +3,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, TabBar, type TabBarItem, TablePagination, ActionDropdown } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem, TablePagination, PageSizeSelect, ActionDropdown } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1316,6 +1316,14 @@ function DailyAttendanceContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Left: Search, Filters & Date Stepper */}
             <div className="flex items-center gap-2.5 shrink-0">
+              <PageSizeSelect
+                pageSize={dailyPageSize}
+                onPageSizeChange={(newSize) => {
+                  setDailyPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+              />
               {/* Search */}
               <div className="relative w-56 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
@@ -1526,6 +1534,7 @@ function DailyAttendanceContent() {
                   setCurrentPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100, 200]}
+                hidePageSizeSelector
               />
             </div>
           </div>
@@ -1660,6 +1669,14 @@ function DailyAttendanceContent() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                <PageSizeSelect
+                  pageSize={batchPageSize}
+                  onPageSizeChange={(newSize) => {
+                    setBatchPageSize(newSize);
+                    setBatchPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                />
                 <div className="relative max-w-sm w-full sm:w-64 shrink-0">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-500 pointer-events-none" />
                   <input
@@ -1862,6 +1879,7 @@ function DailyAttendanceContent() {
                   setBatchPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
           </div>

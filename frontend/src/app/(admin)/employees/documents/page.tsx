@@ -195,6 +195,13 @@ export default function ExpiringDocumentsPage() {
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="ค้นหาชื่อ, รหัสพนักงาน, แผนก หรือประเภทเอกสาร..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              },
+            }}
             filters={
               <div className="flex items-center gap-1.5 flex-wrap">
                 {filterButtons.map((b) => (
@@ -314,6 +321,7 @@ export default function ExpiringDocumentsPage() {
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
+            hidePageSizeSelector
           />
         )}
         </div>

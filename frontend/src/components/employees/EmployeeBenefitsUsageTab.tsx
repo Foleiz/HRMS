@@ -5,7 +5,7 @@ import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/t
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
 import BenefitAttachmentPreviewModal from '@/components/benefits/BenefitAttachmentPreviewModal';
-import { ModalShell, Button, TablePagination } from '@/components/ui';
+import { ModalShell, Button, TablePagination, PageSizeSelect } from '@/components/ui';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -551,6 +551,13 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Left: Search and Status Filter */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 flex-1">
+              <PageSizeSelect
+                pageSize={claimPageSize}
+                onPageSizeChange={(newSize) => {
+                  setClaimPageSize(newSize);
+                  setClaimPage(1);
+                }}
+              />
               <div className="relative max-w-sm w-full shrink-0">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
@@ -833,6 +840,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                 onPageChange={setClaimPage}
                 onPageSizeChange={setClaimPageSize}
                 className="px-4 pb-3 border-t border-slate-100 dark:border-slate-700/60"
+                hidePageSizeSelector
               />
             </>
           ) : (

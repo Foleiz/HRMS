@@ -60,7 +60,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge, TablePagination } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge, TablePagination, PageSizeSelect } from '@/components/ui';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
@@ -1119,6 +1119,13 @@ function SchedulesContent() {
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto dark:bg-slate-800 dark:border-slate-700/80">
             {/* Left: Filters & Search */}
             <div className="flex items-center gap-2.5 shrink-0">
+              <PageSizeSelect
+                pageSize={assignmentPageSize}
+                onPageSizeChange={(newSize) => {
+                  setAssignmentPageSize(newSize);
+                  setAssignmentPage(1);
+                }}
+              />
               {/* Search */}
               <div className="relative w-56 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
@@ -1656,6 +1663,7 @@ function SchedulesContent() {
                     setAssignmentPageSize(newSize);
                     setAssignmentPage(1);
                   }}
+                  hidePageSizeSelector
                 />
               </>
               ) : (

@@ -656,6 +656,14 @@ function DepartmentEmployeesSubTable({
         searchPlaceholder="ค้นหาชื่อ, รหัส, ตำแหน่ง..."
         searchContainerClassName="w-full sm:w-64"
         className="mb-3"
+        pageSizeControl={{
+          pageSize,
+          onPageSizeChange: (newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          },
+          pageSizeOptions: [5, 10, 20, 50],
+        }}
         filters={
           <div className="flex flex-wrap items-center gap-2">
             <CustomSelect
@@ -780,6 +788,7 @@ function DepartmentEmployeesSubTable({
         pageSizeOptions={[5, 10, 20, 50]}
         totalLabel="คน"
         className="border-t border-slate-100 pt-3 dark:border-slate-800"
+        hidePageSizeSelector
       />
     </div>
   );

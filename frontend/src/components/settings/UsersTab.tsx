@@ -150,6 +150,14 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           searchValue={searchInput}
           onSearchChange={setSearchInput}
           searchPlaceholder="ค้นหาผู้ใช้งาน, อีเมล..."
+          pageSizeControl={{
+            pageSize,
+            onPageSizeChange: (newSize) => {
+              if (onPageSizeChange) onPageSizeChange(newSize);
+              onPageChange(1);
+            },
+            pageSizeOptions: [10, 20, 50, 100, 200],
+          }}
           filters={
             <>
               <CustomSelect
@@ -390,6 +398,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               onPageChange(1);
             }}
             pageSizeOptions={[10, 20, 50, 100, 200]}
+            hidePageSizeSelector
           />
         </div>
       </div>

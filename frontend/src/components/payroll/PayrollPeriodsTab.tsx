@@ -275,6 +275,14 @@ export default function PayrollPeriodsTab({
             setPage(1);
           }}
           searchPlaceholder="ค้นหารอบเงินเดือน..."
+          pageSizeControl={{
+            pageSize,
+            onPageSizeChange: (newSize: number) => {
+              setPageSize(newSize);
+              setPage(1);
+            },
+            pageSizeOptions: [10, 20, 50, 100],
+          }}
           filters={
             <div className="flex flex-wrap items-center gap-2">
               <div className="w-full sm:w-40">
@@ -490,6 +498,7 @@ export default function PayrollPeriodsTab({
                   setPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
           )}

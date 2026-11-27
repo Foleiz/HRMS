@@ -342,6 +342,13 @@ export default function EmployeeTypesPage() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="ค้นหาประเภทพนักงาน..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              },
+            }}
             filters={
               <CustomSelect
                 value={statusFilter}
@@ -534,6 +541,7 @@ export default function EmployeeTypesPage() {
                 setPageSize(newSize);
                 setCurrentPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </div>

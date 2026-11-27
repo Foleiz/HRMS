@@ -942,6 +942,13 @@ function DocumentHistoryPageContent() {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="ค้นหารหัส หรือประเภทเอกสาร..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              },
+            }}
             filters={
               <>
                 {isLeaveOnly ? (
@@ -1252,6 +1259,7 @@ function DocumentHistoryPageContent() {
                     setPageSize(newSize);
                     setPage(1);
                   }}
+                  hidePageSizeSelector
                 />
               </div>
             </>

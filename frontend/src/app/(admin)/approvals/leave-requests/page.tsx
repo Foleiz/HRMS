@@ -982,6 +982,14 @@ export default function LeaveRequestsApprovalPage() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100],
+            }}
             filters={
               <CustomSelect
                 value={docTypeFilter}
@@ -1378,6 +1386,7 @@ export default function LeaveRequestsApprovalPage() {
                   setCurrentPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100]}
+                hidePageSizeSelector
               />
             </div>
           )}

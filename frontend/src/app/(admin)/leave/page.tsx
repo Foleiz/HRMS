@@ -532,6 +532,13 @@ function LeaveManagementPageContent() {
                 setTypePage(1);
               }}
               searchPlaceholder="ค้นหาประเภทการลา หรือรหัสการลา..."
+              pageSizeControl={{
+                pageSize: typePageSize,
+                onPageSizeChange: (newSize) => {
+                  setTypePageSize(newSize);
+                  setTypePage(1);
+                },
+              }}
               actions={
                 canCreateType && (
                   <Button
@@ -622,6 +629,7 @@ function LeaveManagementPageContent() {
                   setTypePageSize(newSize);
                   setTypePage(1);
                 }}
+                hidePageSizeSelector
               />
             )}
           </div>
@@ -638,6 +646,13 @@ function LeaveManagementPageContent() {
                 setPolicyPage(1);
               }}
               searchPlaceholder="ค้นหาสิทธิ์การลา หรือประเภทการลา..."
+              pageSizeControl={{
+                pageSize: policyPageSize,
+                onPageSizeChange: (newSize) => {
+                  setPolicyPageSize(newSize);
+                  setPolicyPage(1);
+                },
+              }}
               actions={
                 canCreatePolicy ? (
                   <Button
@@ -755,6 +770,7 @@ function LeaveManagementPageContent() {
                   setPolicyPageSize(newSize);
                   setPolicyPage(1);
                 }}
+                hidePageSizeSelector
               />
             )}
           </div>

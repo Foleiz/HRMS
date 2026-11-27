@@ -431,6 +431,13 @@ export default function MasterDataHubPage() {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder={`ค้นหา${TAB_NAME_MAP[activeTab] || 'ข้อมูล'}...`}
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              },
+            }}
             actions={
               <div className="flex items-center gap-2">
                 <button
@@ -526,6 +533,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -578,6 +586,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -630,6 +639,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -682,6 +692,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -744,6 +755,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -802,6 +814,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>
@@ -870,6 +883,7 @@ export default function MasterDataHubPage() {
                 setPageSize(newSize);
                 setPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </>

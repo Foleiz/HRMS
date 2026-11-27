@@ -207,6 +207,13 @@ export default function TransfersPage() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="ค้นหารหัส, ชื่อพนักงาน, ตำแหน่ง, แผนก..."
+            pageSizeControl={{
+              pageSize,
+              onPageSizeChange: (newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              },
+            }}
             filters={
               <CustomSelect
                 value={selectedType}
@@ -334,6 +341,7 @@ export default function TransfersPage() {
                 setPageSize(newSize);
                 setCurrentPage(1);
               }}
+              hidePageSizeSelector
             />
           )}
         </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Search, X } from 'lucide-react';
+import { PageSizeSelect } from './TablePagination';
 
 export const searchInputClass =
   'w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 ' +
@@ -93,6 +94,12 @@ export interface TableToolbarProps {
   searchContainerClassName?: string;
   /** กรณีต้องการส่ง element ช่องค้นหาเข้ามาเอง */
   searchSlot?: React.ReactNode;
+  /** ตัวเลือกจำนวนแถวต่อหน้า (แสดงไว้ข้างหน้าช่องค้นหา) */
+  pageSizeControl?: {
+    pageSize: number;
+    onPageSizeChange: (size: number) => void;
+    pageSizeOptions?: number[];
+  };
   /** ตัวกรองต่างๆ (Dropdown, DatePicker, Status Filter) — จะถูกจัดเรียงต่อจากช่องค้นหาทางด้านซ้ายเสมอ */
   filters?: React.ReactNode;
   /** ปุ่มคำสั่งด้านขวาสุด (เช่น สลับมุมมอง การ์ด/ตาราง, ยุบ/ขยาย, + เพิ่มข้อมูล, ส่งออกไฟล์) */
@@ -112,6 +119,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   searchPlaceholder = 'ค้นหา...',
   searchContainerClassName,
   searchSlot,
+  pageSizeControl,
   filters,
   actions,
   className = '',
@@ -122,8 +130,15 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     <div
       className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${className}`}
     >
-      {/* ฝั่งซ้าย: ช่องค้นหาต้องขึ้นก่อนเสมอ แล้วตามด้วยตัวกรอง (Filters) */}
+      {/* ฝั่งซ้าย: ตัวเลือกแถวต่อหน้า (ถ้ามี) -> ช่องค้นหา -> ตัวกรอง (Filters) */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-1">
+        {pageSizeControl && (
+          <PageSizeSelect
+            pageSize={pageSizeControl.pageSize}
+            onPageSizeChange={pageSizeControl.onPageSizeChange}
+            pageSizeOptions={pageSizeControl.pageSizeOptions}
+          />
+        )}
         {searchSlot !== undefined ? (
           searchSlot
         ) : hasSearch ? (
