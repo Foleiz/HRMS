@@ -567,24 +567,22 @@ export default function MyNewsCalendarPage() {
                 <div
                   key={idx}
                   className={`min-h-[115px] sm:min-h-[125px] p-2 flex flex-col justify-between transition-colors ${
-                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white dark:bg-slate-800 dark:text-slate-200 text-slate-800 dark:text-slate-200'
-                  } ${isCurrentDay ? 'ring-2 ring-blue-500/40 inset-ring inset-0 bg-blue-50/20' : ''}`}
+                    !dayItem.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                  } ${isCurrentDay ? 'ring-2 ring-inset ring-[#0B2046] dark:ring-blue-400' : ''}`}
                 >
                   {/* Date Number */}
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs font-bold ${
-                        !dayItem.isCurrentMonth
+                        isCurrentDay
+                          ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center'
+                          : !dayItem.isCurrentMonth
                           ? 'text-slate-300'
                           : isSun
                           ? 'text-rose-500'
                           : isSat
                           ? 'text-blue-600'
                           : 'text-slate-700 dark:text-slate-300'
-                      } ${
-                        isCurrentDay
-                          ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs'
-                          : ''
                       }`}
                     >
                       {dayItem.dayNumber}
@@ -652,18 +650,20 @@ export default function MyNewsCalendarPage() {
               return (
                 <div
                   key={idx}
-                  className={`p-3 flex flex-col justify-start gap-2 ${
-                    isCurrentDay ? 'bg-blue-50/20 ring-1 ring-blue-500/30' : 'bg-white dark:bg-slate-800'
+                  className={`p-3 flex flex-col justify-start gap-2 bg-white dark:bg-slate-800 ${
+                    isCurrentDay ? 'ring-2 ring-inset ring-[#0B2046] dark:ring-blue-400' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span
                       className={`text-sm font-bold ${
-                        isSun ? 'text-rose-500' : isSat ? 'text-blue-600' : 'text-slate-800 dark:text-slate-200'
-                      } ${
                         isCurrentDay
                           ? 'w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center'
-                          : ''
+                          : isSun
+                          ? 'text-rose-500'
+                          : isSat
+                          ? 'text-blue-600'
+                          : 'text-slate-800 dark:text-slate-200'
                       }`}
                     >
                       {dayItem.dayNumber}

@@ -614,11 +614,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         fullName={profile.fullName}
         positionTitle={profile.positionTitle}
         departmentName={profile.departmentName}
-        action={
-          <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
-            ล้างฟอร์ม
-          </Button>
-        }
       />
 
       {error && (
@@ -929,7 +924,16 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           ) : undefined
         }
       >
-          <Button
+        <Button
+          variant="secondary"
+          type="button"
+          onClick={resetForm}
+          disabled={loading || savingDraft}
+          icon={<RotateCcw className="w-3.5 h-3.5" />}
+        >
+          ล้างฟอร์ม
+        </Button>
+        <Button
           variant="secondary"
           onClick={() => setShowPreview(true)}
           disabled={loading || savingDraft}
