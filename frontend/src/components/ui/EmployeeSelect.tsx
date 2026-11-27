@@ -22,7 +22,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   employees,
   value,
   onChange,
-  placeholder = 'เลือกพนักงาน หรือพิมพ์ค้นหา...',
+  placeholder,
   required = false,
   disabled = false,
   hasError = false,
@@ -31,6 +31,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   buttonClassName = '',
   emptyListText,
 }) => {
+  const displayPlaceholder = placeholder || (required ? 'เลือกพนักงาน หรือพิมพ์ค้นหา...' : '-- ไม่ระบุ (กำหนดภายหลังได้) --');
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,7 +122,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
               {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
             </span>
           ) : (
-            placeholder
+            displayPlaceholder
           )}
         </span>
         <ChevronDown
@@ -183,6 +184,8 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
               <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
                 {searchQuery
                   ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${searchQuery}"`
+                  : employees.length === 0
+                  ? 'ยังไม่มีรายชื่อพนักงานในระบบ (สามารถเว้นว่างไว้และกลับมาแต่งตั้งภายหลังได้)'
                   : emptyListText || 'ไม่พบข้อมูลพนักงานในสังกัดที่เลือก'}
               </li>
             ) : (

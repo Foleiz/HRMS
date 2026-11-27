@@ -450,6 +450,10 @@ function OrganizationPageContent() {
 
   // Handlers for Department
   const handleOpenDeptModal = (dept?: Department) => {
+    if (!dept && divisions.length === 0) {
+      toast.error('ยังไม่มีข้อมูลฝ่ายในระบบ กรุณาสร้างฝ่ายก่อนสร้างแผนก');
+      return;
+    }
     if (dept) {
       setModalMode('edit');
       setDeptForm({
@@ -477,6 +481,10 @@ function OrganizationPageContent() {
 
   const handleSaveDept = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deptForm.divisionId) {
+      toast.error('กรุณาเลือกฝ่ายที่สังกัด');
+      return;
+    }
     try {
       if (modalMode === 'create') {
         await organizationService.createDepartment(deptForm);
@@ -500,6 +508,10 @@ function OrganizationPageContent() {
 
   // Handlers for Team
   const handleOpenTeamModal = (team?: Team) => {
+    if (!team && departments.length === 0) {
+      toast.error('ยังไม่มีข้อมูลแผนกในระบบ กรุณาสร้างแผนกก่อนสร้างทีม');
+      return;
+    }
     if (team) {
       setModalMode('edit');
       setTeamForm({
@@ -527,6 +539,10 @@ function OrganizationPageContent() {
 
   const handleSaveTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!teamForm.departmentId) {
+      toast.error('กรุณาเลือกแผนกที่สังกัด');
+      return;
+    }
     try {
       if (modalMode === 'create') {
         await organizationService.createTeam(teamForm);
@@ -551,6 +567,10 @@ function OrganizationPageContent() {
 
   // Handlers for Position
   const handleOpenPosModal = (pos?: Position) => {
+    if (!pos && departments.length === 0) {
+      toast.error('ยังไม่มีข้อมูลแผนกในระบบ กรุณาสร้างแผนกก่อนสร้างตำแหน่งงาน');
+      return;
+    }
     if (pos) {
       setModalMode('edit');
       setPosForm({
@@ -578,6 +598,10 @@ function OrganizationPageContent() {
 
   const handleSavePos = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!posForm.departmentId) {
+      toast.error('กรุณาเลือกแผนกที่สังกัด');
+      return;
+    }
     try {
       if (modalMode === 'create') {
         await organizationService.createPosition(posForm);
@@ -1938,7 +1962,9 @@ function OrganizationPageContent() {
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO)</label>
+                      <label className={labelCls}>
+                        ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO) <span className="text-slate-400 font-normal text-[11px]">(ไม่บังคับ - กำหนดภายหลังได้)</span>
+                      </label>
                       <EmployeeSelect
                         employees={employees}
                         value={companyForm.ceoEmployeeId || ''}
@@ -1948,10 +1974,13 @@ function OrganizationPageContent() {
                             ceoEmployeeId: empId === '' ? null : Number(empId),
                           })
                         }
-                        placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                        placeholder="-- ไม่ระบุ (สามารถแต่งตั้งภายหลังได้) --"
                         emptyLabel="ไม่ระบุ CEO / ผู้บริหารสูงสุด"
                         required={false}
                       />
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                        สามารถเว้นว่างไว้ก่อนได้ และกลับมาแต่งตั้งหลังจากเพิ่มพนักงานแล้ว
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -2215,7 +2244,9 @@ function OrganizationPageContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าฝ่าย</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
+                หัวหน้าฝ่าย <span className="text-slate-400 font-normal text-[11px]">(ไม่บังคับ - กำหนดภายหลังได้)</span>
+              </label>
               <EmployeeSelect
                 employees={
                   modalMode === 'edit' &&
@@ -2231,10 +2262,13 @@ function OrganizationPageContent() {
                     headEmployeeId: empId === '' ? undefined : Number(empId),
                   })
                 }
-                placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                placeholder="-- ไม่ระบุ (สามารถแต่งตั้งภายหลังได้) --"
                 emptyLabel="ไม่ระบุหัวหน้าฝ่าย"
                 required={false}
               />
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                หากเพิ่งเริ่มต้นระบบและยังไม่มีพนักงาน สามารถเว้นว่างไว้ก่อนและกลับมาแต่งตั้งภายหลังได้
+              </p>
             </div>
 
             {modalMode === 'edit' && (
@@ -2256,29 +2290,36 @@ function OrganizationPageContent() {
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย <span className="text-rose-500">*</span></label>
-              <CustomSelect
-                required
-                value={deptForm.divisionId}
-                onChange={(e) => {
-                  const nextDivId = Number(e.target.value);
-                  const currentHead = employees.find((emp) => emp.id === deptForm.headEmployeeId);
-                  const shouldKeepHead =
-                    (modalMode === 'edit' && deptForm.id && currentHead?.departmentId === deptForm.id) ||
-                    (currentHead && currentHead.divisionId === nextDivId);
-                  setDeptForm({
-                    ...deptForm,
-                    divisionId: nextDivId,
-                    headEmployeeId: shouldKeepHead ? deptForm.headEmployeeId : undefined,
-                  });
-                }}
-                className={inputClass}
-              >
-                {divisions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.divisionName}
-                  </option>
-                ))}
-              </CustomSelect>
+              {divisions.length === 0 ? (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+                  ยังไม่มีข้อมูลฝ่ายในระบบ กรุณาสร้างฝ่ายก่อนสร้างแผนก
+                </div>
+              ) : (
+                <CustomSelect
+                  required
+                  value={deptForm.divisionId}
+                  onChange={(e) => {
+                    const nextDivId = Number(e.target.value);
+                    const currentHead = employees.find((emp) => emp.id === deptForm.headEmployeeId);
+                    const shouldKeepHead =
+                      (modalMode === 'edit' && deptForm.id && currentHead?.departmentId === deptForm.id) ||
+                      (currentHead && currentHead.divisionId === nextDivId);
+                    setDeptForm({
+                      ...deptForm,
+                      divisionId: nextDivId,
+                      headEmployeeId: shouldKeepHead ? deptForm.headEmployeeId : undefined,
+                    });
+                  }}
+                  className={inputClass}
+                >
+                  <option value={0} disabled>เลือกฝ่าย</option>
+                  {divisions.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.divisionName}
+                    </option>
+                  ))}
+                </CustomSelect>
+              )}
             </div>
 
             <CodeInput
@@ -2304,7 +2345,9 @@ function OrganizationPageContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าแผนก</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
+                หัวหน้าแผนก <span className="text-slate-400 font-normal text-[11px]">(ไม่บังคับ - กำหนดภายหลังได้)</span>
+              </label>
               <EmployeeSelect
                 employees={
                   modalMode === 'edit' &&
@@ -2322,10 +2365,13 @@ function OrganizationPageContent() {
                     headEmployeeId: empId === '' ? undefined : Number(empId),
                   })
                 }
-                placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                placeholder="-- ไม่ระบุ (สามารถแต่งตั้งภายหลังได้) --"
                 emptyLabel="ไม่ระบุหัวหน้าแผนก"
                 required={false}
               />
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                สามารถเว้นว่างไว้ก่อนได้ และกลับมาแต่งตั้งหลังจากเพิ่มพนักงานแล้ว
+              </p>
             </div>
 
             {modalMode === 'edit' && (
@@ -2347,28 +2393,34 @@ function OrganizationPageContent() {
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก <span className="text-rose-500">*</span></label>
-              <CustomSelect
-                required
-                value={teamForm.departmentId}
-                onChange={(e) => {
-                  const nextDeptId = Number(e.target.value);
-                  const currentLead = employees.find((emp) => emp.id === teamForm.leadEmployeeId);
-                  const shouldKeepLead = currentLead && currentLead.departmentId === nextDeptId;
-                  setTeamForm({
-                    ...teamForm,
-                    departmentId: nextDeptId,
-                    leadEmployeeId: shouldKeepLead ? teamForm.leadEmployeeId : null,
-                  });
-                }}
-                className={inputClass}
-              >
-                <option value={0} disabled>เลือกแผนก</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName}
-                  </option>
-                ))}
-              </CustomSelect>
+              {departments.length === 0 ? (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+                  ยังไม่มีข้อมูลแผนกในระบบ กรุณาสร้างแผนกก่อนสร้างทีม
+                </div>
+              ) : (
+                <CustomSelect
+                  required
+                  value={teamForm.departmentId}
+                  onChange={(e) => {
+                    const nextDeptId = Number(e.target.value);
+                    const currentLead = employees.find((emp) => emp.id === teamForm.leadEmployeeId);
+                    const shouldKeepLead = currentLead && currentLead.departmentId === nextDeptId;
+                    setTeamForm({
+                      ...teamForm,
+                      departmentId: nextDeptId,
+                      leadEmployeeId: shouldKeepLead ? teamForm.leadEmployeeId : null,
+                    });
+                  }}
+                  className={inputClass}
+                >
+                  <option value={0} disabled>เลือกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </CustomSelect>
+              )}
             </div>
 
             <CodeInput
@@ -2396,7 +2448,7 @@ function OrganizationPageContent() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                หัวหน้าทีม
+                หัวหน้าทีม <span className="text-slate-400 font-normal text-[11px]">(ไม่บังคับ - กำหนดภายหลังได้)</span>
               </label>
               <EmployeeSelect
                 employees={
@@ -2414,14 +2466,14 @@ function OrganizationPageContent() {
                 disabled={!teamForm.departmentId}
                 placeholder={
                   teamForm.departmentId
-                    ? 'เลือกพนักงาน หรือพิมพ์ค้นหา...'
+                    ? '-- ไม่ระบุ (สามารถแต่งตั้งภายหลังได้) --'
                     : 'กรุณาเลือกแผนกก่อน...'
                 }
                 emptyLabel="ไม่ระบุหัวหน้าทีม"
                 required={false}
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                เมื่อพนักงานสังกัดทีมนี้ ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมคนนี้โดยอัตโนมัติ
+                เมื่อพนักงานสังกัดทีมนี้ ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมคนนี้โดยอัตโนมัติ (สามารถแต่งตั้งภายหลังได้)
               </p>
             </div>
 
@@ -2455,18 +2507,25 @@ function OrganizationPageContent() {
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก <span className="text-rose-500">*</span></label>
-              <CustomSelect
-                required
-                value={posForm.departmentId}
-                onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
-                className={inputClass}
-              >
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName} ({d.divisionName})
-                  </option>
-                ))}
-              </CustomSelect>
+              {departments.length === 0 ? (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+                  ยังไม่มีข้อมูลแผนกในระบบ กรุณาสร้างแผนกก่อนสร้างตำแหน่งงาน
+                </div>
+              ) : (
+                <CustomSelect
+                  required
+                  value={posForm.departmentId}
+                  onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
+                  className={inputClass}
+                >
+                  <option value={0} disabled>เลือกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName} ({d.divisionName})
+                    </option>
+                  ))}
+                </CustomSelect>
+              )}
             </div>
 
             <div>

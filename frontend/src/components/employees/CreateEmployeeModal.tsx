@@ -736,35 +736,44 @@ export default function CreateEmployeeModal({
                         ตำแหน่ง <span className="text-rose-500">*</span>
                       </span>
                     </label>
-                    <CustomSelect
-                      value={formData.positionId ?? ''}
-                      onChange={(e) => {
-                        const id = e.target.value ? Number(e.target.value) : undefined;
-                        const pos = positions.find((p) => p.id === id);
-                        setFormData({ ...formData, positionId: id, positionName: pos?.positionName || '' });
-                        clearFieldError('positionName');
-                      }}
-                      className="w-full cursor-pointer"
-                      buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
-                    >
-                      <option value="">เลือกตำแหน่ง</option>
-                      {Array.from(new Set(positions.map((p) => p.departmentName))).map((dept) => (
-                        <optgroup key={dept} label={dept || 'ไม่ระบุแผนก'}>
-                          {positions
-                            .filter((p) => p.departmentName === dept)
-                            .map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.positionName}
-                                {p.headcountPlan != null
-                                  ? ` (${p.filledCount ?? 0}/${p.headcountPlan}${
-                                      (p.vacantCount ?? 0) === 0 ? ' เต็ม' : ''
-                                    })`
-                                  : ''}
-                              </option>
-                            ))}
-                        </optgroup>
-                      ))}
-                    </CustomSelect>
+                    {positions.length === 0 ? (
+                      <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                        <p className="font-semibold">ยังไม่มีตำแหน่งงานในระบบ</p>
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                          กรุณาสร้างโครงสร้างองค์กร (ฝ่าย → แผนก → ตำแหน่งงาน) ที่เมนู &quot;โครงสร้างองค์กร&quot; ให้เรียบร้อยก่อน จึงจะสามารถเพิ่มพนักงานได้
+                        </p>
+                      </div>
+                    ) : (
+                      <CustomSelect
+                        value={formData.positionId ?? ''}
+                        onChange={(e) => {
+                          const id = e.target.value ? Number(e.target.value) : undefined;
+                          const pos = positions.find((p) => p.id === id);
+                          setFormData({ ...formData, positionId: id, positionName: pos?.positionName || '' });
+                          clearFieldError('positionName');
+                        }}
+                        className="w-full cursor-pointer"
+                        buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
+                      >
+                        <option value="">เลือกตำแหน่ง</option>
+                        {Array.from(new Set(positions.map((p) => p.departmentName))).map((dept) => (
+                          <optgroup key={dept} label={dept || 'ไม่ระบุแผนก'}>
+                            {positions
+                              .filter((p) => p.departmentName === dept)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.positionName}
+                                  {p.headcountPlan != null
+                                    ? ` (${p.filledCount ?? 0}/${p.headcountPlan}${
+                                        (p.vacantCount ?? 0) === 0 ? ' เต็ม' : ''
+                                      })`
+                                    : ''}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </CustomSelect>
+                    )}
                     {renderFieldError('positionName')}
                   </div>
 
