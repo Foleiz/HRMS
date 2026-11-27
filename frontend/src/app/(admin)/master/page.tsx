@@ -28,11 +28,7 @@ import { bankService } from '@/services/bankService';
 import {
   DocumentTypeItem,
   CreateDocumentTypeRequest,
-  UpdateDocumentTypeRequest,
   NationalityItem,
-  ReligionItem,
-  MaritalStatusItem,
-  GenderTypeItem,
   CertificateTypeItem,
 } from '@/types/master';
 import { Bank } from '@/types/api';
@@ -48,18 +44,12 @@ type MasterTab =
   | 'document-types'
   | 'certificate-types'
   | 'nationalities'
-  | 'religions'
-  | 'marital-statuses'
-  | 'genders'
   | 'banks';
 
 const TAB_NAME_MAP: Record<MasterTab, string> = {
   'document-types': 'ประเภทเอกสารแนบ',
   'certificate-types': 'ประเภทหนังสือรับรอง',
   nationalities: 'สัญชาติ',
-  religions: 'ศาสนา',
-  'marital-statuses': 'สถานภาพสมรส',
-  genders: 'เพศ',
   banks: 'ข้อมูลธนาคาร',
 };
 
@@ -74,13 +64,17 @@ export default function MasterDataHubPage() {
   const canCreateMasterData = hasPermission('MASTER_DATA_CREATE') || isSuper;
   const canEditMasterData = hasPermission('MASTER_DATA_EDIT') || isSuper;
 
-  const initialTab = (searchParams.get('tab') as MasterTab) || 'document-types';
+  const initialTabParam = searchParams.get('tab') as MasterTab;
+  const validTabs: MasterTab[] = ['document-types', 'certificate-types', 'nationalities', 'banks'];
+  const initialTab: MasterTab = validTabs.includes(initialTabParam) ? initialTabParam : 'document-types';
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab') as MasterTab;
-    if (tabParam && ['document-types', 'certificate-types', 'nationalities', 'religions', 'marital-statuses', 'genders', 'banks'].includes(tabParam)) {
+    if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
+    } else if (tabParam) {
+      setActiveTab('document-types');
     }
   }, [searchParams]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,10 +89,7 @@ export default function MasterDataHubPage() {
   // Data states
   const [docTypes, setDocTypes] = useState<DocumentTypeItem[]>([]);
   const [nationalities, setNationalities] = useState<NationalityItem[]>([]);
-  const [religions, setReligions] = useState<ReligionItem[]>([]);
-  const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatusItem[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
-  const [genders, setGenders] = useState<GenderTypeItem[]>([]);
   const [certTypes, setCertTypes] = useState<CertificateTypeItem[]>([]);
 
   // Modal states
@@ -149,17 +140,9 @@ export default function MasterDataHubPage() {
       } else if (activeTab === 'nationalities') {
         const data = await masterDataService.getNationalities();
         setNationalities(data);
-      } else if (activeTab === 'religions') {
-        const data = await masterDataService.getReligions();
-        setReligions(data);
-      } else if (activeTab === 'marital-statuses') {
-        const data = await masterDataService.getMaritalStatuses();
-        setMaritalStatuses(data);
       } else if (activeTab === 'banks') {
         const data = await bankService.getAll();
         setBanks(data);
-      } else if (activeTab === 'genders') {
-        setGenders(await masterDataService.getGenders());
       } else if (activeTab === 'certificate-types') {
         setCertTypes(await masterDataService.getCertificateTypes());
       }
@@ -176,26 +159,20 @@ export default function MasterDataHubPage() {
     setSearchQuery('');
   }, [activeTab, canViewMasterData]);
 
-  // โหลดข้อมูลทุกแท็บครั้งแรกเบื้องหลัง เพื่อให้ตัวเลขบนแท็บถูกต้องตั้งแต่เปิดหน้า (เดิมเป็น 0 จนกว่าจะกดเข้าแท็บ)
+  // โหลดข้อมูลทุกแท็บครั้งแรกเบื้องหลัง
   useEffect(() => {
     if (!canViewMasterData) return;
     let cancelled = false;
     Promise.allSettled([
       masterDataService.getDocumentTypes(),
       masterDataService.getNationalities(),
-      masterDataService.getReligions(),
-      masterDataService.getMaritalStatuses(),
       bankService.getAll(),
-      masterDataService.getGenders(),
       masterDataService.getCertificateTypes(),
-    ]).then(([d, n, r, m, b, g, c]) => {
+    ]).then(([d, n, b, c]) => {
       if (cancelled) return;
       if (d.status === 'fulfilled') setDocTypes(d.value);
       if (n.status === 'fulfilled') setNationalities(n.value);
-      if (r.status === 'fulfilled') setReligions(r.value);
-      if (m.status === 'fulfilled') setMaritalStatuses(m.value);
       if (b.status === 'fulfilled') setBanks(b.value);
-      if (g.status === 'fulfilled') setGenders(g.value);
       if (c.status === 'fulfilled') setCertTypes(c.value);
     });
     return () => {
@@ -205,15 +182,13 @@ export default function MasterDataHubPage() {
 
   // Open Create Modal
   const handleOpenCreate = () => {
+    if (activeTab === 'certificate-types') return;
     setModalMode('create');
     setCurrentId(null);
     if (activeTab === 'document-types') {
       setDocForm({ documentCode: '', documentName: '', isExpiryRequired: false, notifyBeforeDays: 30, validityMonths: null, status: 'ACTIVE' });
     } else if (activeTab === 'banks') {
       setBankForm({ bankCode: '', bankName: '', shortName: '', accountDigits: '', status: 'ACTIVE' });
-    } else if (activeTab === 'genders' || activeTab === 'certificate-types') {
-      setCodeNameForm({ code: '', name: '' });
-      setCertValidity('3');
     } else {
       setSimpleNameInput('');
     }
@@ -235,12 +210,6 @@ export default function MasterDataHubPage() {
       });
     } else if (activeTab === 'nationalities') {
       setSimpleNameInput(item.nationalityName);
-    } else if (activeTab === 'religions') {
-      setSimpleNameInput(item.religionName);
-    } else if (activeTab === 'marital-statuses') {
-      setSimpleNameInput(item.maritalStatusName);
-    } else if (activeTab === 'genders') {
-      setCodeNameForm({ code: item.genderCode, name: item.genderName });
     } else if (activeTab === 'certificate-types') {
       setCodeNameForm({ code: item.certificateCode, name: item.certificateName });
       setCertValidity(item.validityMonths ? String(item.validityMonths) : '');
@@ -283,39 +252,8 @@ export default function MasterDataHubPage() {
           await masterDataService.updateNationality(currentId, { nationalityName: simpleNameInput.trim() });
           toast.success('อัปเดตสัญชาติสำเร็จ');
         }
-      } else if (activeTab === 'religions') {
-        if (modalMode === 'create') {
-          await masterDataService.createReligion({ religionName: simpleNameInput.trim() });
-          toast.success('เพิ่มศาสนาสำเร็จ');
-        } else if (currentId) {
-          await masterDataService.updateReligion(currentId, { religionName: simpleNameInput.trim() });
-          toast.success('อัปเดตศาสนาสำเร็จ');
-        }
-      } else if (activeTab === 'marital-statuses') {
-        if (modalMode === 'create') {
-          await masterDataService.createMaritalStatus({ maritalStatusName: simpleNameInput.trim() });
-          toast.success('เพิ่มสถานภาพสมรสสำเร็จ');
-        } else if (currentId) {
-          await masterDataService.updateMaritalStatus(currentId, { maritalStatusName: simpleNameInput.trim() });
-          toast.success('อัปเดตสถานภาพสมรสสำเร็จ');
-        }
-      } else if (activeTab === 'genders') {
-        if (modalMode === 'create') {
-          await masterDataService.createGender({ genderCode: codeNameForm.code.trim(), genderName: codeNameForm.name.trim() });
-          toast.success('เพิ่มเพศสำเร็จ');
-        } else if (currentId) {
-          await masterDataService.updateGender(currentId, { genderName: codeNameForm.name.trim() });
-          toast.success('อัปเดตเพศสำเร็จ');
-        }
       } else if (activeTab === 'certificate-types') {
-        if (modalMode === 'create') {
-          await masterDataService.createCertificateType({
-            certificateCode: codeNameForm.code.trim(),
-            certificateName: codeNameForm.name.trim(),
-            validityMonths: certValidity ? Number(certValidity) : null,
-          });
-          toast.success('เพิ่มประเภทหนังสือรับรองสำเร็จ');
-        } else if (currentId) {
+        if (currentId) {
           await masterDataService.updateCertificateType(currentId, {
             certificateName: codeNameForm.name.trim(),
             validityMonths: certValidity ? Number(certValidity) : null,
@@ -366,16 +304,8 @@ export default function MasterDataHubPage() {
         await masterDataService.deleteDocumentType(id);
       } else if (activeTab === 'nationalities') {
         await masterDataService.deleteNationality(id);
-      } else if (activeTab === 'religions') {
-        await masterDataService.deleteReligion(id);
-      } else if (activeTab === 'marital-statuses') {
-        await masterDataService.deleteMaritalStatus(id);
       } else if (activeTab === 'banks') {
         await bankService.delete(id);
-      } else if (activeTab === 'genders') {
-        await masterDataService.deleteGender(id);
-      } else if (activeTab === 'certificate-types') {
-        await masterDataService.deleteCertificateType(id);
       }
       toast.success('ลบข้อมูลสำเร็จ');
       await loadData();
@@ -390,11 +320,6 @@ export default function MasterDataHubPage() {
     (d) => !q || d.documentCode.toLowerCase().includes(q) || d.documentName.toLowerCase().includes(q)
   );
   const filteredNationalities = nationalities.filter((n) => !q || n.nationalityName.toLowerCase().includes(q));
-  const filteredReligions = religions.filter((r) => !q || r.religionName.toLowerCase().includes(q));
-  const filteredMaritalStatuses = maritalStatuses.filter((m) => !q || m.maritalStatusName.toLowerCase().includes(q));
-  const filteredGenders = genders.filter(
-    (g) => !q || g.genderCode.toLowerCase().includes(q) || g.genderName.toLowerCase().includes(q)
-  );
   const filteredCertTypes = certTypes.filter(
     (c) => !q || c.certificateCode.toLowerCase().includes(q) || c.certificateName.toLowerCase().includes(q)
   );
@@ -404,9 +329,6 @@ export default function MasterDataHubPage() {
 
   const pagedDocTypes = filteredDocTypes.slice((page - 1) * pageSize, page * pageSize);
   const pagedNationalities = filteredNationalities.slice((page - 1) * pageSize, page * pageSize);
-  const pagedReligions = filteredReligions.slice((page - 1) * pageSize, page * pageSize);
-  const pagedMaritalStatuses = filteredMaritalStatuses.slice((page - 1) * pageSize, page * pageSize);
-  const pagedGenders = filteredGenders.slice((page - 1) * pageSize, page * pageSize);
   const pagedCertTypes = filteredCertTypes.slice((page - 1) * pageSize, page * pageSize);
   const pagedBanks = filteredBanks.slice((page - 1) * pageSize, page * pageSize);
 
@@ -448,7 +370,7 @@ export default function MasterDataHubPage() {
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
                 </button>
-                {canCreateMasterData && (
+                {canCreateMasterData && activeTab !== 'certificate-types' && (
                   <Button
                     icon={<Plus className="w-4 h-4" />}
                     onClick={handleOpenCreate}
@@ -592,112 +514,6 @@ export default function MasterDataHubPage() {
         </>
       )}
 
-      {/* Tab 3: Religions Table */}
-      {activeTab === 'religions' && (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
-                  <th className="py-3 px-4 w-20">ID</th>
-                  <th className="py-3 px-4">ชื่อศาสนา</th>
-                  <th className="py-3 px-4 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {filteredReligions.length === 0 ? (
-                  <TableEmpty colSpan={3} text="ไม่พบข้อมูลศาสนา" />
-                ) : (
-                  pagedReligions.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.religionName}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        {canEditMasterData ? (
-                          <RowActions>
-                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
-                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.religionName)} />
-                          </RowActions>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredReligions.length > 0 && (
-            <TablePagination
-              total={filteredReligions.length}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-              hidePageSizeSelector
-            />
-          )}
-        </>
-      )}
-
-      {/* Tab 4: Marital Statuses Table */}
-      {activeTab === 'marital-statuses' && (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
-                  <th className="py-3 px-4 w-20">ID</th>
-                  <th className="py-3 px-4">ชื่อสถานภาพสมรส</th>
-                  <th className="py-3 px-4 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {filteredMaritalStatuses.length === 0 ? (
-                  <TableEmpty colSpan={3} text="ไม่พบข้อมูลสถานภาพสมรส" />
-                ) : (
-                  pagedMaritalStatuses.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.maritalStatusName}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        {canEditMasterData ? (
-                          <RowActions>
-                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
-                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.maritalStatusName)} />
-                          </RowActions>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredMaritalStatuses.length > 0 && (
-            <TablePagination
-              total={filteredMaritalStatuses.length}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-              hidePageSizeSelector
-            />
-          )}
-        </>
-      )}
-
       {/* Tab: Certificate Types */}
       {activeTab === 'certificate-types' && (
         <>
@@ -732,7 +548,6 @@ export default function MasterDataHubPage() {
                         {canEditMasterData ? (
                           <RowActions>
                             <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
-                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.certificateName)} />
                           </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
@@ -748,65 +563,6 @@ export default function MasterDataHubPage() {
           {filteredCertTypes.length > 0 && (
             <TablePagination
               total={filteredCertTypes.length}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-              hidePageSizeSelector
-            />
-          )}
-        </>
-      )}
-
-      {/* Tab: Genders */}
-      {activeTab === 'genders' && (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
-                  <th className="py-3 px-4 w-20">ID</th>
-                  <th className="py-3 px-4">รหัสเพศ</th>
-                  <th className="py-3 px-4">ชื่อเพศ</th>
-                  <th className="py-3 px-4 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {filteredGenders.length === 0 ? (
-                  <TableEmpty colSpan={4} text="ไม่พบข้อมูลเพศ" />
-                ) : (
-                  pagedGenders.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                          {item.genderCode}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.genderName}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        {canEditMasterData ? (
-                          <RowActions>
-                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
-                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.genderName)} />
-                          </RowActions>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredGenders.length > 0 && (
-            <TablePagination
-              total={filteredGenders.length}
               page={page}
               pageSize={pageSize}
               onPageChange={setPage}
@@ -985,89 +741,57 @@ export default function MasterDataHubPage() {
               </div>
             )}
 
-            {activeTab === 'religions' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={simpleNameInput}
-                  onChange={(e) => setSimpleNameInput(e.target.value)}
-                  placeholder="เช่น พุทธ, คริสต์, อิสลาม..."
-                  className={inputClass}
-                />
-              </div>
-            )}
-
-            {activeTab === 'marital-statuses' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={simpleNameInput}
-                  onChange={(e) => setSimpleNameInput(e.target.value)}
-                  placeholder="เช่น โสด, สมรส, หย่าร้าง..."
-                  className={inputClass}
-                />
-              </div>
-            )}
-
-            {(activeTab === 'genders' || activeTab === 'certificate-types') && (
+            {activeTab === 'certificate-types' && (
               <>
                 <div>
                   <CodeInput
-                    type={activeTab === 'genders' ? 'gender' : 'certificate-type'}
-                    prefix={activeTab === 'genders' ? 'G' : 'CERT_'}
-                    digits={activeTab === 'genders' ? 2 : 3}
-                    existingCodes={activeTab === 'genders' ? genders.map((x) => x.genderCode) : certTypes.map((x) => x.certificateCode)}
-                    label={activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'}
+                    type="certificate-type"
+                    prefix="CERT_"
+                    digits={3}
+                    existingCodes={certTypes.map((x) => x.certificateCode)}
+                    label="รหัสประเภทหนังสือรับรอง"
                     required
-                    mode={modalMode}
-                    maxLength={activeTab === 'genders' ? 20 : 50}
+                    mode="edit"
+                    maxLength={50}
                     value={codeNameForm.code}
                     onChange={(v) => setCodeNameForm((f) => ({ ...f, code: v }))}
                     labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                     inputClassName="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 disabled:bg-slate-100 dark:disabled:bg-slate-900"
                   />
-                  {activeTab === 'certificate-types' && (
-                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง</p>
-                  )}
+                  <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสประเภทถูกล็อกตามเทมเพลตเอกสารของระบบ</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} <span className="text-rose-500">*</span>
+                    ชื่อหนังสือรับรอง <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    maxLength={activeTab === 'genders' ? 50 : 255}
+                    maxLength={255}
                     value={codeNameForm.name}
                     onChange={(e) => setCodeNameForm({ ...codeNameForm, name: e.target.value })}
-                    placeholder={activeTab === 'genders' ? 'เช่น ชาย, หญิง, ไม่ระบุ' : 'เช่น หนังสือรับรองการทำงาน'}
+                    placeholder="เช่น หนังสือรับรองการทำงาน"
                     className={inputClass}
                   />
                 </div>
-                {activeTab === 'certificate-types' && (
-                  <div>
-                    <label htmlFor="cert-validity" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      อายุหนังสือรับรอง (เดือน)
-                    </label>
-                    <input
-                      id="cert-validity"
-                      type="number"
-                      min={1}
-                      max={24}
-                      value={certValidity}
-                      onChange={(e) => setCertValidity(e.target.value)}
-                      placeholder="เว้นว่าง = ไม่กำหนดวันหมดอายุ"
-                      className={inputClass}
-                    />
-                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">
-                      นับจากวันที่ออกหนังสือ (วันที่อนุมัติ) และพิมพ์ "ใช้ได้ถึงวันที่" ในหนังสือให้อัตโนมัติ
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label htmlFor="cert-validity" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    อายุหนังสือรับรอง (เดือน)
+                  </label>
+                  <input
+                    id="cert-validity"
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={certValidity}
+                    onChange={(e) => setCertValidity(e.target.value)}
+                    placeholder="เว้นว่าง = ไม่กำหนดวันหมดอายุ"
+                    className={inputClass}
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">
+                    นับจากวันที่ออกหนังสือ (วันที่อนุมัติ) และพิมพ์ "ใช้ได้ถึงวันที่" ในหนังสือให้อัตโนมัติ
+                  </p>
+                </div>
               </>
             )}
 
