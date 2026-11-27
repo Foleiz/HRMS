@@ -232,7 +232,7 @@ export const SalaryPinSettingsModal: React.FC<SalaryPinSettingsModalProps> = ({
               loading={isLoading}
               icon={<CheckCircle2 className="w-3.5 h-3.5" />}
             >
-              {hasPin ? 'บันทึกรหัส PIN ใหม่' : 'บันทึกรหัส PIN'}
+              บันทึก
             </Button>
           </div>
         </form>

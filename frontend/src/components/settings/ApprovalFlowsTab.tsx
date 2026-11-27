@@ -719,7 +719,7 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
             onClick={handleSave}
             loading={isSaving}
           >
-            {isNew ? 'บันทึกสายการอนุมัติ' : 'บันทึกการแก้ไข'}
+            บันทึก
           </Button>
         </div>
       </div>

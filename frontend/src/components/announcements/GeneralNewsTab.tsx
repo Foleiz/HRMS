@@ -1672,7 +1672,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                   disabled={isSaving}
                   loading={savingStatus === 'PUBLISHED'}
                 >
-                  {editingAnnouncement ? 'บันทึกการแก้ไข' : 'เผยแพร่ประกาศ'}
+                  {editingAnnouncement ? 'บันทึก' : 'เผยแพร่ประกาศ'}
                 </Button>
               </div>
             </div>

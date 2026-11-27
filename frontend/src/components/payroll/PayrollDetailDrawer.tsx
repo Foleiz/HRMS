@@ -515,7 +515,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       loading={saving}
                       disabled={!editName.trim() || !editAmount}
                     >
-                      {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+                      {saving ? 'กำลังบันทึก...' : 'บันทึก'}
                     </Button>
                   </div>
                 </div>

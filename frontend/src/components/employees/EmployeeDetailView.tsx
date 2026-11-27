@@ -1408,7 +1408,7 @@ export default function EmployeeDetailView({
                   loading={isChangingPassword}
                   icon={<CheckCircle2 className="w-3.5 h-3.5" />}
                 >
-                  บันทึกรหัสผ่านใหม่
+                  บันทึก
                 </Button>
               </div>
             </form>

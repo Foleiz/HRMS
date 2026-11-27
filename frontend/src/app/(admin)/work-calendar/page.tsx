@@ -569,7 +569,7 @@ function WorkCalendarPageContent() {
                   loading={saving}
                   disabled={loading}
                 >
-                  บันทึกการตั้งค่าวันทำงาน
+                  บันทึก
                 </Button>
               )}
             </div>
@@ -834,7 +834,7 @@ function WorkCalendarPageContent() {
                   variant="primary"
                   size="sm"
                 >
-                  บันทึกข้อมูล
+                  บันทึก
                 </Button>
               </div>
             </form>

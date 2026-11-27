@@ -1831,7 +1831,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                   disabled={submitting}
                   loading={submittingStatus === 'PUBLISHED'}
                 >
-                  {modalMode === 'create' ? 'เผยแพร่กิจกรรม' : 'บันทึกการแก้ไข'}
+                  {modalMode === 'create' ? 'เผยแพร่กิจกรรม' : 'บันทึก'}
                 </Button>
               </div>
             </div>

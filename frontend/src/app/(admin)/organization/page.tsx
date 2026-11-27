@@ -2091,7 +2091,7 @@ function OrganizationPageContent() {
                         disabled={!isCompanyDirty || savingCompany}
                         loading={savingCompany}
                       >
-                        บันทึกข้อมูลบริษัท
+                        บันทึก
                       </Button>
                     </div>
                   )}
@@ -2219,7 +2219,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มฝ่ายใหม่' : 'แก้ไขข้อมูลฝ่าย'}
           onSubmit={handleSaveDivision}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
             <CodeInput
               type="division"
@@ -2286,7 +2286,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มแผนกใหม่' : 'แก้ไขข้อมูลแผนก'}
           onSubmit={handleSaveDept}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย <span className="text-rose-500">*</span></label>
@@ -2389,7 +2389,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มทีมใหม่' : 'แก้ไขข้อมูลทีม'}
           onSubmit={handleSaveTeam}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก <span className="text-rose-500">*</span></label>
@@ -2503,7 +2503,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มตำแหน่งใหม่' : 'แก้ไขข้อมูลตำแหน่ง'}
           onSubmit={handleSavePos}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก <span className="text-rose-500">*</span></label>
@@ -2595,7 +2595,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
           onSubmit={handleSaveBenefit}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -2645,7 +2645,7 @@ function OrganizationPageContent() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มระดับพนักงานใหม่' : 'แก้ไขข้อมูลระดับพนักงาน'}
           onSubmit={handleSaveLevel}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึก" />}
         >
             <CodeInput
               type="level"
@@ -2731,7 +2731,7 @@ function OrganizationPageContent() {
             <ModalFooter
               onCancel={() => setBankAccountModalOpen(false)}
               loading={savingBankAccount}
-              submitText={editingBankAccount ? 'บันทึกการแก้ไข' : 'เพิ่มบัญชีธนาคาร'}
+              submitText={editingBankAccount ? 'บันทึก' : 'เพิ่มบัญชีธนาคาร'}
             />
           }
         >
@@ -2880,7 +2880,7 @@ function OrganizationPageContent() {
         onConfirm={executeSaveCompany}
         title="ยืนยันการบันทึกข้อมูลบริษัท"
         message="คุณต้องการบันทึกการแก้ไขข้อมูลบริษัทใช่หรือไม่?\nข้อมูลที่แก้ไขจะมีผลกับการแสดงผลในระบบและเอกสารทั้งหมด"
-        confirmText="บันทึกข้อมูล"
+        confirmText="บันทึก"
         cancelText="ยกเลิก"
         type="question"
         isLoading={savingCompany}

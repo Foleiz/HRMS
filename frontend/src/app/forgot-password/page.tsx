@@ -316,10 +316,10 @@ export default function ForgotPasswordPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      กำลังบันทึกรหัสผ่านใหม่...
+                      กำลังบันทึก...
                     </>
                   ) : (
-                    'บันทึกรหัสผ่านใหม่'
+                    'บันทึก'
                   )}
                 </button>
               </form>

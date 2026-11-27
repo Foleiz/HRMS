@@ -887,7 +887,7 @@ export default function MasterDataHubPage() {
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล'}
           onSubmit={handleSave}
-          footer={<ModalFooter onCancel={() => setModalOpen(false)} loading={submitting} submitText="บันทึกข้อมูล" />}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} loading={submitting} submitText="บันทึก" />}
         >
             {activeTab === 'document-types' && (
               <>

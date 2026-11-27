@@ -216,7 +216,7 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                   )
                 }
               >
-                {isSaving ? 'กำลังบันทึก...' : isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการตั้งค่า'}
+                {isSaving ? 'กำลังบันทึก...' : isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึก'}
               </Button>
             )}
           </div>

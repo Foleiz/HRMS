@@ -1475,7 +1475,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                 size="sm"
                 onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
               >
-                บันทึกคอมเมนต์
+                บันทึก
               </Button>
             </div>
           </div>

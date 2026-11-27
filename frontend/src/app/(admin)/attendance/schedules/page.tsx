@@ -2030,7 +2030,7 @@ function SchedulesContent() {
           <ModalFooter
             onCancel={() => setAssignModalOpen(false)}
             cancelText="ยกเลิก"
-            submitText="บันทึกการมอบหมาย"
+            submitText="บันทึก"
             loading={submitting}
             loadingText="กำลังบันทึก..."
             submit={true}
@@ -2792,7 +2792,7 @@ function SchedulesContent() {
           <ModalFooter
             onCancel={() => setShiftModalOpen(false)}
             cancelText="ยกเลิก"
-            submitText={shiftModalMode === 'create' ? 'สร้างกะใหม่' : 'บันทึกการแก้ไข'}
+            submitText={shiftModalMode === 'create' ? 'สร้างกะใหม่' : 'บันทึก'}
             loading={submitting}
             loadingText="กำลังบันทึก..."
             submit={true}

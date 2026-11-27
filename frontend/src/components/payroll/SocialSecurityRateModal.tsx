@@ -369,7 +369,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               disabled={validationErrors.length > 0}
               icon={<Save className="w-3.5 h-3.5" />}
             >
-              บันทึกอัตราประกันสังคม
+              บันทึก
             </Button>
           </div>
         </div>
