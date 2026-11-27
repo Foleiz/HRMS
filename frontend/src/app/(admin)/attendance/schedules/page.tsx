@@ -1155,7 +1155,7 @@ function SchedulesContent() {
                   }
                 }}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                title="รีเฟรชข้อมูล"
+                title="รีเฟรช"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingRoster || loadingAssignments ? 'animate-spin' : ''}`} />
               </button>
@@ -1725,7 +1725,7 @@ function SchedulesContent() {
               <button
                 onClick={loadShifts}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 rounded-lg transition border border-slate-200 bg-slate-50 shrink-0 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                title="รีเฟรชข้อมูลกะ"
+                title="รีเฟรช"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingShifts ? 'animate-spin' : ''}`} />
               </button>

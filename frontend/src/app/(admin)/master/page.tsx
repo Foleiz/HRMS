@@ -437,7 +437,7 @@ export default function MasterDataHubPage() {
                   onClick={loadData}
                   disabled={loading}
                   className="p-2 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
-                  title="รีเฟรชข้อมูล"
+                  title="รีเฟรช"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
                 </button>

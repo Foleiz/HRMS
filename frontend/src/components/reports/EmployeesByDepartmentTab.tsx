@@ -292,7 +292,7 @@ export default function EmployeesByDepartmentTab({
           ))}
         </CustomSelect>
 
-        <IconButton onClick={load} title="โหลดข้อมูลใหม่">
+        <IconButton onClick={load} title="รีเฟรช">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
         </IconButton>
       </ReportFilterBar>

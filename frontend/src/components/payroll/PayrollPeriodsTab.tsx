@@ -328,7 +328,7 @@ export default function PayrollPeriodsTab({
                 onClick={onRefresh}
                 disabled={isLoading}
                 icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
-                title="รีเฟรชข้อมูล"
+                title="รีเฟรช"
                 className="!h-9"
               >
                 <span className="hidden sm:inline">รีเฟรช</span>
@@ -369,7 +369,7 @@ export default function PayrollPeriodsTab({
               onClick={onRefresh}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
             >
-              รีเฟรชข้อมูล
+              รีเฟรช
             </Button>
           </div>
         ) : (

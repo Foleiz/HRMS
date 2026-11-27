@@ -240,7 +240,7 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
           ]}
         />
 
-        <IconButton onClick={loadPayrollTax} title="รีเฟรชข้อมูล">
+        <IconButton onClick={loadPayrollTax} title="รีเฟรช">
           <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTax ? 'animate-spin' : ''}`} />
         </IconButton>
       </ReportFilterBar>

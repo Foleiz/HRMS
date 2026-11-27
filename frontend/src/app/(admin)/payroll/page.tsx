@@ -3695,7 +3695,7 @@ export default function PayrollPage() {
                   className="h-9 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5 self-start sm:self-auto"
                 >
                   {isLoadingBonusPeriods ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
-                  <span>รีเฟรชข้อมูล</span>
+                  <span>รีเฟรช</span>
                 </button>
               </div>
 

@@ -504,7 +504,7 @@ export default function AttendanceReportTab({
               ]}
             />
 
-            <IconButton onClick={loadDailyHeadcount} title="รีเฟรชข้อมูล">
+            <IconButton onClick={loadDailyHeadcount} title="รีเฟรช">
               <RefreshCw className={`h-3.5 w-3.5 ${isLoadingHeadcount ? 'animate-spin' : ''}`} />
             </IconButton>
           </ReportFilterBar>
@@ -714,7 +714,7 @@ export default function AttendanceReportTab({
               ]}
             />
 
-            <IconButton onClick={loadMonthlyLateness} title="รีเฟรชข้อมูล">
+            <IconButton onClick={loadMonthlyLateness} title="รีเฟรช">
               <RefreshCw className={`h-3.5 w-3.5 ${isLoadingLateness ? 'animate-spin' : ''}`} />
             </IconButton>
           </ReportFilterBar>
@@ -925,7 +925,7 @@ export default function AttendanceReportTab({
               ]}
             />
 
-            <IconButton onClick={loadYearlyLateness} title="รีเฟรชข้อมูล">
+            <IconButton onClick={loadYearlyLateness} title="รีเฟรช">
               <RefreshCw className={`h-3.5 w-3.5 ${isLoadingYearly ? 'animate-spin' : ''}`} />
             </IconButton>
           </ReportFilterBar>

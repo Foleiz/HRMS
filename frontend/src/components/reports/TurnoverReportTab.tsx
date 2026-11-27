@@ -497,7 +497,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
           ]}
         />
 
-        <IconButton onClick={loadTurnover} title="รีเฟรชข้อมูล">
+        <IconButton onClick={loadTurnover} title="รีเฟรช">
           <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTurnover ? 'animate-spin' : ''}`} />
         </IconButton>
       </ReportFilterBar>

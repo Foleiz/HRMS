@@ -1717,7 +1717,7 @@ function DailyAttendanceContent() {
                     loadBatches();
                   }}
                   className="p-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700"
-                  title="รีเฟรชตาราง"
+                  title="รีเฟรช"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingBatches ? 'animate-spin' : ''}`} />
                 </button>
