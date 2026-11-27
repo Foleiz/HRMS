@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useAuthImageUrl } from '@/hooks/useAuthImageUrl';
 import { Sarabun } from 'next/font/google';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
@@ -146,10 +147,19 @@ export const ApproverSignatureImg: React.FC<{ employeeId: number; at?: string | 
   at,
   onError,
 }) => {
+  const rawUrl = signatureUrl(employeeId, at);
+  const { src, failed } = useAuthImageUrl(rawUrl, Boolean(employeeId));
+
+  useEffect(() => {
+    if (failed) onError();
+  }, [failed, onError]);
+
+  if (!src) return null;
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={signatureUrl(employeeId, at)}
+      src={src}
       alt="ลายเซ็นผู้อนุมัติ"
       onError={onError}
       style={{
@@ -491,11 +501,15 @@ export const useCompanyDocumentInfo = (isOpen: boolean = true, at?: string | nul
  * at = เวลาที่ยื่น/เซ็นเอกสาร → ลายเซ็นที่ใช้อยู่ ณ ตอนนั้น (ไม่ส่ง = ลายเซ็นปัจจุบัน ดึงใหม่ทุกครั้งที่เปิด)
  */
 export const useEmployeeSignature = (isOpen: boolean, employeeId?: number | null, at?: string | null) => {
-  const [src, setSrc] = useState<string | null>(null);
+  const rawUrl = isOpen && employeeId ? signatureUrl(employeeId, at) : null;
+  const { src } = useAuthImageUrl(rawUrl, Boolean(isOpen && employeeId));
+  const [cleared, setCleared] = useState(false);
+
   useEffect(() => {
-    setSrc(isOpen && employeeId ? signatureUrl(employeeId, at) : null);
+    setCleared(false);
   }, [isOpen, employeeId, at]);
-  return { src, clear: () => setSrc(null) };
+
+  return { src: cleared ? null : src, clear: () => setCleared(true) };
 };
 
 /**

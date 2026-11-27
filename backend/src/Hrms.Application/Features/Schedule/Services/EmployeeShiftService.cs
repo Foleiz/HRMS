@@ -106,10 +106,16 @@ public class EmployeeShiftService : IEmployeeShiftService
             .Where(ea => ea.IsCurrent)
             .ToListAsync();
 
-        return currentAssignments.ToDictionary(
-            ea => ea.EmployeeId,
-            ea => (ea.Department?.DepartmentName?.Trim() ?? "-", ea.Position?.PositionName?.Trim() ?? "-")
-        );
+        return currentAssignments
+            .GroupBy(ea => ea.EmployeeId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var latest = g.OrderByDescending(x => x.EffectiveFrom).ThenByDescending(x => x.Id).First();
+                    return (latest.Department?.DepartmentName?.Trim() ?? "-", latest.Position?.PositionName?.Trim() ?? "-");
+                }
+            );
     }
 
     private async Task EnsureNoOverlapAsync(long employeeId, DateOnly from, DateOnly? to, long? currentAssignmentId = null)
@@ -580,22 +586,26 @@ public class EmployeeShiftService : IEmployeeShiftService
             .Where(ea => ea.IsCurrent)
             .ToListAsync();
 
-        var assignMap = currentAssignments.ToDictionary(
-            ea => ea.EmployeeId,
-            ea => {
-                var resolvedTypeId = ea.EmployeeTypeId ?? (ea.WageType == "DAILY" ? 4L : 1L);
-                var typeName = ea.EmployeeType?.TypeName ?? (resolvedTypeId == 4L ? "พนักงานรายวัน" : "พนักงานประจำ");
-                var typeCode = ea.EmployeeType?.TypeCode ?? (resolvedTypeId == 4L ? "DAILY" : "PERM");
-                return (
-                    DepartmentId: ea.DepartmentId,
-                    DepartmentName: ea.Department?.DepartmentName?.Trim() ?? "-",
-                    PositionName: ea.Position?.PositionName?.Trim() ?? "-",
-                    EmployeeTypeId: (long?)resolvedTypeId,
-                    EmployeeTypeCode: typeCode,
-                    EmployeeTypeName: typeName
-                );
-            }
-        );
+        var assignMap = currentAssignments
+            .GroupBy(ea => ea.EmployeeId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var ea = g.OrderByDescending(x => x.EffectiveFrom).ThenByDescending(x => x.Id).First();
+                    var resolvedTypeId = ea.EmployeeTypeId ?? (ea.WageType == "DAILY" ? 4L : 1L);
+                    var typeName = ea.EmployeeType?.TypeName ?? (resolvedTypeId == 4L ? "พนักงานรายวัน" : "พนักงานประจำ");
+                    var typeCode = ea.EmployeeType?.TypeCode ?? (resolvedTypeId == 4L ? "DAILY" : "PERM");
+                    return (
+                        DepartmentId: ea.DepartmentId,
+                        DepartmentName: ea.Department?.DepartmentName?.Trim() ?? "-",
+                        PositionName: ea.Position?.PositionName?.Trim() ?? "-",
+                        EmployeeTypeId: (long?)resolvedTypeId,
+                        EmployeeTypeCode: typeCode,
+                        EmployeeTypeName: typeName
+                    );
+                }
+            );
 
         var list = new List<AssignableEmployeeDto>();
         foreach (var e in employees)

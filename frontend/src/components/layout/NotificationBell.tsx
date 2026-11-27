@@ -44,7 +44,7 @@ function formatNotificationDate(dateStr: string, fallbackTimeAgo?: string): stri
 
 export const NotificationBell: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const { shouldRender: shouldRenderNotifications, isActive: isNotificationsActive } =
     useAnimatedMount(isOpen, 150);
@@ -291,7 +291,13 @@ export const NotificationBell: React.FC = () => {
   const handleViewAll = () => {
     setIsOpen(false);
     setShowSettings(false);
-    router.push('/announcements');
+    const canManageAnnouncements =
+      hasRole('ADMIN') ||
+      hasRole('SYSTEM_SUPER') ||
+      hasPermission('ANNOUNCEMENTS_VIEW') ||
+      hasPermission('ANNOUNCEMENTS_GENERAL_VIEW') ||
+      hasPermission('ANNOUNCEMENTS_ACTIVITY_VIEW');
+    router.push(canManageAnnouncements ? '/announcements' : '/my-news');
   };
 
   const badgeText = unreadCount > 50 ? '50+' : unreadCount > 0 ? String(unreadCount) : '0';

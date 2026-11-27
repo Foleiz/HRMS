@@ -38,6 +38,7 @@ import { SalaryPinSettingsModal } from '@/components/profile/SalaryPinSettingsMo
 import { Employee } from '@/types/employee';
 import { useToast } from '@/context/ToastContext';
 import { getAvatarUrl } from '@/lib/api-client';
+import { useAuthImageUrl } from '@/hooks/useAuthImageUrl';
 import { useAuth } from '@/context/AuthContext';
 import { confirmDelete } from '@/lib/sweetalert';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
@@ -504,7 +505,8 @@ export default function EmployeeDetailView({
   const rawAvatarUrl = customAvatar !== undefined ? customAvatar : employee.avatarUrl;
   const avatarUrl = rawAvatarUrl ? getAvatarUrl(rawAvatarUrl) : null;
   const rawSigUrl = customSig || employee.signatureUrl;
-  const signatureUrl = rawSigUrl ? getAvatarUrl(rawSigUrl) : null;
+  const rawResolvedSigUrl = rawSigUrl ? getAvatarUrl(rawSigUrl) : null;
+  const { src: signatureUrl } = useAuthImageUrl(rawResolvedSigUrl, Boolean(rawResolvedSigUrl));
 
   const TABS = [
     { id: 'personal', label: 'ข้อมูลส่วนตัว' },

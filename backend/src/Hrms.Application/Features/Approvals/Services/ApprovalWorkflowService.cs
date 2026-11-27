@@ -1072,14 +1072,20 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     ? allActions.Where(a => a.ApprovalStepId == step.StepId.Value).OrderByDescending(a => a.ActionAt).FirstOrDefault()
                     : null;
 
-                // 2. ถ้ายังไม่พบ ให้ fallback จับคู่ตามลำดับขั้นตอนที่มีการอนุมัติ/ดำเนินการ
-                if (action == null)
+                // 2. ถ้ายังไม่พบ ให้ fallback จับคู่ตามลำดับเฉพาะกรณี Snapshot เก่าที่ไม่มี StepId เท่านั้น
+                // (หากมี StepId ชัดเจนแต่ไม่มี Action เช่น ขั้นที่ถูก SKIP ต้องไม่ดึง Action ของขั้นถัดไปมาสวมรอย)
+                if (action == null && (!step.StepId.HasValue || step.StepId.Value <= 0))
                 {
-                    var orderedActions = allActions.OrderBy(a => a.ActionAt).ToList();
-                    int actionIdx = step.StepNo - 1;
-                    if (actionIdx >= 0 && actionIdx < orderedActions.Count)
+                    bool isSkippedStep = string.Equals(step.FallbackAction, "SKIP", StringComparison.OrdinalIgnoreCase)
+                        && (instance.Status == "APPROVED" || (instance.CurrentStepNo.HasValue && step.StepNo < instance.CurrentStepNo.Value));
+                    if (!isSkippedStep)
                     {
-                        action = orderedActions[actionIdx];
+                        var orderedActions = allActions.Where(a => a.ApprovalStepId <= 0).OrderBy(a => a.ActionAt).ToList();
+                        int actionIdx = step.StepNo - 1;
+                        if (actionIdx >= 0 && actionIdx < orderedActions.Count)
+                        {
+                            action = orderedActions[actionIdx];
+                        }
                     }
                 }
 

@@ -213,12 +213,17 @@ public class CertificateService : ICertificateService
             .ToListAsync(cancellationToken);
 
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
-        var assignments = await _context.EmployeeAssignments
+        var rawAssignments = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(a => a.Department)
             .Include(a => a.Position)
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+            .ToListAsync(cancellationToken);
+        var assignments = rawAssignments
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(x => x.EffectiveFrom).ThenByDescending(x => x.Id).First());
 
         var isHrOrAdmin = IsHrOrAdmin;
 

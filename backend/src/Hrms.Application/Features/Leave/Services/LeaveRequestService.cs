@@ -12,17 +12,20 @@ public partial class LeaveRequestService : ILeaveRequestService
     private readonly IApprovalWorkflowService _approvalWorkflow;
     private readonly ILeaveEntitlementSync _entitlementSync;
     private readonly IDataScopeService _dataScopeService;
+    private readonly ICurrentUserService _currentUser;
 
     public LeaveRequestService(
         IHrmsDbContext context,
         IApprovalWorkflowService approvalWorkflow,
         ILeaveEntitlementSync entitlementSync,
-        IDataScopeService dataScopeService)
+        IDataScopeService dataScopeService,
+        ICurrentUserService currentUser)
     {
         _context = context;
         _approvalWorkflow = approvalWorkflow;
         _entitlementSync = entitlementSync;
         _dataScopeService = dataScopeService;
+        _currentUser = currentUser;
     }
 
     public async Task<(List<LeaveRequestDto> Items, int TotalCount)> GetAllAsync(
@@ -593,8 +596,18 @@ public partial class LeaveRequestService : ILeaveRequestService
             throw new KeyNotFoundException($"ไม่พบคำร้องขอลาหยุดงานรหัส ID {id}");
         }
 
+        bool isAdminOrLeaveApprover = _currentUser.HasRole("ADMIN")
+            || _currentUser.HasRole("SYSTEM_SUPER")
+            || _currentUser.HasPermission("APPROVAL_LEAVE_APPROVE")
+            || _currentUser.HasPermission("LEAVE_BALANCE_EDIT");
+
         if (request.ApprovalInstanceId.HasValue)
         {
+            if ((!approverId.HasValue || approverId.Value <= 0) && !isAdminOrLeaveApprover)
+            {
+                throw new UnauthorizedAccessException("ไม่พบข้อมูลผู้อนุมัติสำหรับผู้ใช้งานปัจจุบัน");
+            }
+
             var effectiveApproverId = approverId ?? 1L;
             try
             {
@@ -605,7 +618,18 @@ public partial class LeaveRequestService : ILeaveRequestService
                     reason.Trim(),
                     cancellationToken);
             }
-            catch { /* Ignore if workflow status mismatch */ }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException) when (isAdminOrLeaveApprover)
+            {
+                // อนุญาตเฉพาะ HR/Admin ปฏิเสธใบลาที่สถานะ Workflow ไม่ตรงได้
+            }
+        }
+        else if (!isAdminOrLeaveApprover)
+        {
+            throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์ปฏิเสธคำร้องขอลานี้");
         }
 
         request.Status = "REJECTED";
@@ -659,9 +683,11 @@ public partial class LeaveRequestService : ILeaveRequestService
             return (await GetByIdAsync(id, cancelledBy, cancellationToken))!;
         }
 
-        // ถ้าเคย APPROVED แล้ว ต้องคืนยอดวันลา — คืนเข้ายอดเดียวกับที่เคยตัด (อ้างอิงจากรายการ USED ของคำขอนี้)
+        // ถ้าเคย APPROVED แล้ว ต้องตรวจว่างวดเงินเดือนยังไม่ถูกล็อก ก่อนคืนยอดวันลาและแก้บันทึกเวลา
         if (request.Status == "APPROVED")
         {
+            await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "ยกเลิก", cancellationToken);
+
             var usedTx = await _context.LeaveBalanceTransactions
                 .AsNoTracking()
                 .Where(t => t.ReferenceType == "leave_request" && t.ReferenceId == request.Id && t.TransactionType == "USED")

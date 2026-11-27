@@ -13,6 +13,7 @@ public class PasswordResetToken : BaseEntity
     public string? OtpCode { get; set; }
     public DateTime ExpiresAt { get; set; }
     public bool IsUsed { get; set; } = false;
+    public int FailedAttempts { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation Property

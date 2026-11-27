@@ -422,10 +422,21 @@ public class AuthService : IAuthService
         _dbContext.PasswordResetTokens.Add(resetToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // กำหนด URL รีเซ็ต (ตรวจสอบจาก ClientOrigin ที่เรียกมา หรือ Fallback ไปที่ Configuration Smtp:FrontendUrl)
-        var frontendUrl = !string.IsNullOrWhiteSpace(request.ClientOrigin)
-            ? request.ClientOrigin.TrimEnd('/')
-            : (_configuration["Smtp:FrontendUrl"]?.TrimEnd('/') ?? "http://localhost:4001");
+        // กำหนด URL รีเซ็ตจาก Configuration เป็นหลัก (อนุญาต ClientOrigin เฉพาะกรณีตรงกับโดเมนที่กำหนดไว้ หรือเป็น localhost ในโหมดพัฒนาเท่านั้น เพื่อป้องกัน Link Poisoning)
+        var configuredFrontendUrl = (_configuration["Smtp:FrontendUrl"]?.TrimEnd('/') ?? "http://localhost:4001");
+        var frontendUrl = configuredFrontendUrl;
+        if (!string.IsNullOrWhiteSpace(request.ClientOrigin)
+            && Uri.TryCreate(request.ClientOrigin.TrimEnd('/'), UriKind.Absolute, out var clientUri)
+            && (clientUri.Scheme == Uri.UriSchemeHttp || clientUri.Scheme == Uri.UriSchemeHttps)
+            && Uri.TryCreate(configuredFrontendUrl, UriKind.Absolute, out var configUri))
+        {
+            bool isLocalDev = (configUri.Host == "localhost" || configUri.Host == "127.0.0.1")
+                && (clientUri.Host == "localhost" || clientUri.Host == "127.0.0.1");
+            if (string.Equals(clientUri.Host, configUri.Host, StringComparison.OrdinalIgnoreCase) || isLocalDev)
+            {
+                frontendUrl = $"{clientUri.Scheme}://{clientUri.Authority}";
+            }
+        }
         var resetUrl = $"{frontendUrl}/reset-password?token={rawToken}";
 
         var recipientName = user.Employee?.FullName ?? user.Username;
@@ -500,6 +511,8 @@ public class AuthService : IAuthService
         };
     }
 
+    private const int MaxOtpFailedAttempts = 5;
+
     public async Task<ValidateOtpResponseDto> ValidateOtpAsync(ValidateOtpRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.OtpCode) || request.OtpCode.Trim().Length < 6)
@@ -509,33 +522,50 @@ public class AuthService : IAuthService
 
         var otpInput = request.OtpCode.Trim();
         var emailInput = request.EmailOrUsername?.Trim().ToLower() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(emailInput))
+        {
+            return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "กรุณาระบุอีเมลหรือชื่อผู้ใช้งานคู่กับรหัส OTP" };
+        }
 
-        var query = _dbContext.PasswordResetTokens
+        var latestToken = await _dbContext.PasswordResetTokens
             .Include(t => t.UserAccount)
                 .ThenInclude(u => u.Employee)
                     .ThenInclude(e => e.Contact)
-            .Where(t => t.OtpCode == otpInput && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow);
-
-        if (!string.IsNullOrWhiteSpace(emailInput))
-        {
-            query = query.Where(t =>
+            .Where(t => !t.IsUsed && t.ExpiresAt > DateTime.UtcNow && (
                 t.UserAccount.Username.ToLower() == emailInput ||
                 (t.UserAccount.Employee != null && t.UserAccount.Employee.Contact != null && (
                     (t.UserAccount.Employee.Contact.PersonalEmail != null && t.UserAccount.Employee.Contact.PersonalEmail.ToLower() == emailInput) ||
                     (t.UserAccount.Employee.Contact.OrganizationEmail != null && t.UserAccount.Employee.Contact.OrganizationEmail.ToLower() == emailInput)
-                )));
-        }
+                ))))
+            .OrderByDescending(t => t.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var resetToken = await query.OrderByDescending(t => t.CreatedAt).FirstOrDefaultAsync(cancellationToken);
-        if (resetToken == null)
+        if (latestToken == null)
         {
             return new ValidateOtpResponseDto { IsValid = false, ErrorMessage = "รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว (โปรดขอรหัสใหม่)" };
+        }
+
+        if (!string.Equals(latestToken.OtpCode, otpInput, StringComparison.Ordinal))
+        {
+            latestToken.FailedAttempts += 1;
+            if (latestToken.FailedAttempts >= MaxOtpFailedAttempts)
+            {
+                latestToken.IsUsed = true;
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return new ValidateOtpResponseDto
+            {
+                IsValid = false,
+                ErrorMessage = latestToken.IsUsed
+                    ? "กรอกรหัส OTP ผิดเกินจำนวนครั้งที่กำหนด กรุณาขอรหัส OTP ใหม่อีกครั้ง"
+                    : "รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว (โปรดขอรหัสใหม่)"
+            };
         }
 
         return new ValidateOtpResponseDto
         {
             IsValid = true,
-            ResetToken = resetToken.Token
+            ResetToken = latestToken.Token
         };
     }
 
@@ -570,27 +600,44 @@ public class AuthService : IAuthService
                 .FirstOrDefaultAsync(t => t.Token == tokenInput, cancellationToken);
         }
 
-        // 2. ตรวจสอบจาก OtpCode (หรือ Token ที่เป็นเลข 6 หลัก)
+        // 2. ตรวจสอบจาก OtpCode (หรือ Token ที่เป็นเลข 6 หลัก) — ต้องระบุ EmailOrUsername เสมอและจำกัดจำนวนครั้งที่เดาผิด
         var codeToMatch = !string.IsNullOrWhiteSpace(otpInput) ? otpInput : (tokenInput.Length == 6 ? tokenInput : null);
         if (resetToken == null && !string.IsNullOrWhiteSpace(codeToMatch))
         {
-            var query = _dbContext.PasswordResetTokens
+            if (string.IsNullOrWhiteSpace(emailInput))
+            {
+                throw new ValidationException("กรุณาระบุอีเมลหรือชื่อผู้ใช้งานคู่กับรหัส OTP");
+            }
+
+            var candidate = await _dbContext.PasswordResetTokens
                 .Include(t => t.UserAccount)
                     .ThenInclude(u => u.Employee)
                         .ThenInclude(e => e.Contact)
-                .Where(t => t.OtpCode == codeToMatch && !t.IsUsed && t.ExpiresAt > DateTime.UtcNow);
-
-            if (!string.IsNullOrWhiteSpace(emailInput))
-            {
-                query = query.Where(t => 
+                .Where(t => !t.IsUsed && t.ExpiresAt > DateTime.UtcNow && (
                     t.UserAccount.Username.ToLower() == emailInput ||
                     (t.UserAccount.Employee != null && t.UserAccount.Employee.Contact != null && (
                         (t.UserAccount.Employee.Contact.PersonalEmail != null && t.UserAccount.Employee.Contact.PersonalEmail.ToLower() == emailInput) ||
                         (t.UserAccount.Employee.Contact.OrganizationEmail != null && t.UserAccount.Employee.Contact.OrganizationEmail.ToLower() == emailInput)
-                    )));
-            }
+                    ))))
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            resetToken = await query.OrderByDescending(t => t.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+            if (candidate != null)
+            {
+                if (string.Equals(candidate.OtpCode, codeToMatch, StringComparison.Ordinal))
+                {
+                    resetToken = candidate;
+                }
+                else
+                {
+                    candidate.FailedAttempts += 1;
+                    if (candidate.FailedAttempts >= MaxOtpFailedAttempts)
+                    {
+                        candidate.IsUsed = true;
+                    }
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
         }
 
         if (resetToken == null || resetToken.IsUsed || resetToken.ExpiresAt < DateTime.UtcNow)

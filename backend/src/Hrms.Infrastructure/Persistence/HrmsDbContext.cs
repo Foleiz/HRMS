@@ -464,6 +464,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.OtpCode).HasColumnName("otp_code").HasMaxLength(10);
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
             entity.Property(e => e.IsUsed).HasColumnName("is_used").IsRequired().HasDefaultValue(false);
+            entity.Property(e => e.FailedAttempts).HasColumnName("failed_attempts").IsRequired().HasDefaultValue(0);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
 
             entity.HasOne(e => e.UserAccount)

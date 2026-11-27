@@ -92,12 +92,25 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission("ESS_LEAVE_REQUEST_CREATE,ESS_LEAVE_REQUEST_EDIT,LEAVE_BALANCE_CREATE,LEAVE_BALANCE_EDIT")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> Create(
         [FromBody] CreateLeaveRequestDto request,
         CancellationToken cancellationToken)
     {
+        var currentEmpId = GetCurrentEmployeeId();
+        bool canCreateForOthers = IsAdmin
+            || _currentUser.HasPermission("LEAVE_BALANCE_CREATE")
+            || _currentUser.HasPermission("LEAVE_BALANCE_EDIT")
+            || _currentUser.HasPermission("APPROVAL_LEAVE_APPROVE");
+        if (!canCreateForOthers && request.EmployeeId != currentEmpId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse<LeaveRequestDto>.Fail("คุณสามารถยื่นคำขอลาได้เฉพาะของตนเองเท่านั้น"));
+        }
+
         try
         {
             var result = await _requestService.CreateAsync(request, cancellationToken);
@@ -224,6 +237,10 @@ public class LeaveRequestsController : ControllerBase
             var result = await _requestService.RejectAsync(id, model.Reason.Trim(), approverId > 0 ? approverId : null, cancellationToken);
             return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "ปฏิเสธคำร้องขอลาสำเร็จ"));
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
@@ -274,9 +291,31 @@ public class LeaveRequestsController : ControllerBase
     [HttpGet("{id:long}/documents/{docId:long}")]
     [AuditAccess("DOWNLOAD", "leave_request", "id", "ดาวน์โหลดเอกสารแนบคำร้องขอลา")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DownloadDocument(long id, long docId, CancellationToken cancellationToken)
     {
+        var currentEmpId = GetCurrentEmployeeId();
+        var leaveReq = await _requestService.GetByIdAsync(id, currentEmpId > 0 ? currentEmpId : null, cancellationToken);
+        if (leaveReq == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("ไม่พบคำร้องขอลาที่ระบุ"));
+        }
+
+        bool isOwner = currentEmpId > 0 && leaveReq.EmployeeId == currentEmpId;
+        bool isApproverOnRequest = leaveReq.IsMyTurnToApprove || leaveReq.HasAlreadyApproved;
+        bool canViewLeaveDocs = IsAdmin
+            || _currentUser.HasPermission("APPROVAL_LEAVE_VIEW")
+            || _currentUser.HasPermission("APPROVAL_LEAVE_APPROVE")
+            || _currentUser.HasPermission("LEAVE_BALANCE_VIEW")
+            || _currentUser.HasPermission("EMP_DOC_VIEW");
+
+        if (!isOwner && !isApproverOnRequest && !canViewLeaveDocs)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse<object>.Fail("คุณไม่มีสิทธิ์ดาวน์โหลดเอกสารแนบของคำขอลานี้"));
+        }
+
         var document = await _requestService.GetDocumentAsync(id, docId, cancellationToken);
         if (document == null || document.FileData == null)
         {

@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { X, Printer, FileText, ExternalLink } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
+import { fetchAuthImageObjectUrl } from '@/hooks/useAuthImageUrl';
 import { approvalService } from '@/services/approvalService';
 import { employeeService } from '@/services/employeeService';
 import { useAuth } from '@/context/AuthContext';
@@ -507,14 +508,32 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
       setSignatureSrc(null);
       return;
     }
-    if (data?.signatureUrl) {
-      setSignatureSrc(getAvatarUrl(data.signatureUrl));
-    } else if (data?.employeeId) {
-      // เอกสารที่ยื่นแล้ว: ลายเซ็น ณ เวลาที่ยื่น / ยังไม่ยื่น: ลายเซ็นปัจจุบัน
-      setSignatureSrc(buildSignatureUrl(data.employeeId, data.signedAt));
-    } else {
+    const rawTarget = data?.signatureUrl
+      ? getAvatarUrl(data.signatureUrl)
+      : data?.employeeId
+      ? buildSignatureUrl(data.employeeId, data.signedAt)
+      : null;
+
+    if (!rawTarget) {
       setSignatureSrc(null);
+      return;
     }
+
+    const controller = new AbortController();
+    let objUrl: string | null = null;
+    fetchAuthImageObjectUrl(rawTarget, controller.signal)
+      .then((url) => {
+        if (url.startsWith('blob:')) objUrl = url;
+        setSignatureSrc(url);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSignatureSrc(null);
+      });
+
+    return () => {
+      controller.abort();
+      if (objUrl) URL.revokeObjectURL(objUrl);
+    };
   }, [isOpen, data?.employeeId, data?.signatureUrl, data?.signedAt]);
 
   useEffect(() => {

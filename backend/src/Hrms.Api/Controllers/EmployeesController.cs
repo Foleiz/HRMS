@@ -237,7 +237,6 @@ public class EmployeesController : ControllerBase
     /// ดึงไฟล์ภาพลายเซ็นพนักงาน (ส่งคืนเป็น Binary Stream)
     /// </summary>
     [HttpGet("{id:long}/signature")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [AuditAccess("DOWNLOAD", "employee_signature", "id", "ดาวน์โหลดลายเซ็นอิเล็กทรอนิกส์", idIsEmployee: true)]

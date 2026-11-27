@@ -214,7 +214,32 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 6. Controllers & JSON Options
+// 6. Controllers, Rate Limiting & JSON Options
+builder.Services.AddRateLimiter(limiterOptions =>
+{
+    limiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    limiterOptions.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json; charset=utf-8";
+        var payload = Hrms.Application.Common.Models.ApiResponse<object>.Fail(
+            "มีการส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง");
+        await context.HttpContext.Response.WriteAsJsonAsync(payload, cancellationToken: token);
+    };
+    limiterOptions.AddPolicy("AuthEndpoints", httpContext =>
+    {
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -288,7 +313,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 10. Authentication & Authorization Middleware
+// 10. Authentication, Rate Limiting & Authorization Middleware
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -353,8 +379,10 @@ using (var scope = app.Services.CreateScope())
                 otp_code varchar(10) NULL,
                 expires_at timestamptz NOT NULL,
                 is_used boolean NOT NULL DEFAULT false,
+                failed_attempts int NOT NULL DEFAULT 0,
                 created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            ALTER TABLE hrms.password_reset_token ADD COLUMN IF NOT EXISTS failed_attempts int NOT NULL DEFAULT 0;
             CREATE INDEX IF NOT EXISTS idx_password_reset_token_token ON hrms.password_reset_token(token);
             CREATE INDEX IF NOT EXISTS idx_password_reset_token_user_id ON hrms.password_reset_token(user_account_id);
             CREATE INDEX IF NOT EXISTS idx_password_reset_token_otp ON hrms.password_reset_token(user_account_id, otp_code);

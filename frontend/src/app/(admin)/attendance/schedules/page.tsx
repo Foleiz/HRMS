@@ -223,15 +223,6 @@ function SchedulesContent() {
     }
   }, [canViewSchedule, canViewShift, activeTab]);
 
-  if (!canViewSchedules) {
-    return (
-      <AccessDenied
-        title="ไม่มีสิทธิ์ดูการจัดตารางงาน"
-        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการจัดตารางเวลาและกะการทำงาน กรุณาติดต่อผู้ดูแลระบบ"
-      />
-    );
-  }
-
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     const params = new URLSearchParams(window.location.search);
@@ -443,18 +434,20 @@ function SchedulesContent() {
   }, [activeTab, setBreadcrumb]);
 
   useEffect(() => {
+    if (!canViewSchedules) return;
     loadShifts();
     loadAssignments();
     loadLookups();
-  }, [loadShifts, loadAssignments, loadLookups]);
+  }, [canViewSchedules, loadShifts, loadAssignments, loadLookups]);
 
   // Load roster when on Tab 1 and Calendar view
   useEffect(() => {
+    if (!canViewSchedules) return;
     if (activeTab === 'roster' && assignmentViewMode === 'calendar') {
       const deptId = assignmentDeptFilter !== 'ALL' ? Number(assignmentDeptFilter) : undefined;
       loadRoster(rosterYear, rosterMonth, deptId, assignmentSearch);
     }
-  }, [activeTab, assignmentViewMode, rosterYear, rosterMonth, assignmentDeptFilter, assignmentSearch, loadRoster]);
+  }, [canViewSchedules, activeTab, assignmentViewMode, rosterYear, rosterMonth, assignmentDeptFilter, assignmentSearch, loadRoster]);
 
 
 
@@ -1103,6 +1096,15 @@ function SchedulesContent() {
       setSubmitting(false);
     }
   };
+
+  if (!canViewSchedules) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์ดูการจัดตารางงาน"
+        message="ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหรือดูข้อมูลการจัดตารางเวลาและกะการทำงาน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

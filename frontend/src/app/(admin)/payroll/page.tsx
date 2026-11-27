@@ -5,7 +5,7 @@ import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { MoneyInput } from '@/components/ui/MoneyInput';
 import { YearPicker } from '@/components/ui/YearPicker';
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ChevronLeft,
@@ -2442,18 +2442,7 @@ export default function PayrollPage() {
     setIsDetailDrawerOpen(true);
   };
 
-  if (!canViewPayroll) {
-    return (
-      <AccessDenied
-        title="ไม่มีสิทธิ์เข้าถึงระบบเงินเดือน"
-        message="คุณไม่มีสิทธิ์ในการดูข้อมูลโครงสร้างเงินเดือนและค่าตอบแทน กรุณาติดต่อผู้ดูแลระบบ"
-      />
-    );
-  }
-
   // Get Tab Display Name for Breadcrumb
-  // ใช้ function declaration (hoisted) — useEffect ด้านบนเรียกใช้ และหน้านี้ return AccessDenied ก่อนถึงบรรทัดนี้
-  // เดิมเป็น const ทำให้ผู้ไม่มีสิทธิ์เงินเดือนเจอ "Cannot access 'getTabLabel' before initialization"
   function getTabLabel(tab: ActiveTab) {
     switch (tab) {
       case 'overview':
@@ -2490,16 +2479,28 @@ export default function PayrollPage() {
     .map(({ i }) => i);
 
   // Dynamic subNavTabs based on user permissions
-  const visibleNavTabs: { id: ActiveTab; label: string }[] = [
-    ...(canViewPeriods ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
-    ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'ฐานเงินเดือนพนักงาน' }] : []),
-    ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
-    ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
-    ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
-    ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
-    ...(canAccessHrView || canViewPeriods || isAdmin ? [{ id: 'schedule-settings' as ActiveTab, label: 'ตั้งค่าเงินเดือน' }] : []),
-    ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี' }] : []),
-  ];
+  const visibleNavTabs = useMemo<{ id: ActiveTab; label: string }[]>(
+    () => [
+      ...(canViewPeriods ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
+      ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'ฐานเงินเดือนพนักงาน' }] : []),
+      ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
+      ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
+      ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
+      ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
+      ...(canAccessHrView || canViewPeriods || isAdmin ? [{ id: 'schedule-settings' as ActiveTab, label: 'ตั้งค่าเงินเดือน' }] : []),
+      ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี' }] : []),
+    ],
+    [
+      canViewPeriods,
+      canViewStructures,
+      canViewItems,
+      canViewBonus,
+      canViewProcess,
+      canAccessHrView,
+      canViewTaxSso,
+      isAdmin,
+    ]
+  );
 
   // Auto switch tab if current active tab is not in visible permitted tabs
   useEffect(() => {
@@ -2507,6 +2508,15 @@ export default function PayrollPage() {
       setActiveTab(visibleNavTabs[0].id);
     }
   }, [visibleNavTabs, activeTab]);
+
+  if (!canViewPayroll) {
+    return (
+      <AccessDenied
+        title="ไม่มีสิทธิ์เข้าถึงระบบเงินเดือน"
+        message="คุณไม่มีสิทธิ์ในการดูข้อมูลโครงสร้างเงินเดือนและค่าตอบแทน กรุณาติดต่อผู้ดูแลระบบ"
+      />
+    );
+  }
 
   // สถานะโบนัส (ไม่มีขั้นอนุมัติโบนัสแยก — อนุมัติรวมที่รอบเงินเดือน)
   const renderBonusStatusBadge = (b: EmployeeBonus, isDirty = false) => {

@@ -76,18 +76,21 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [selectedRole, setSelectedRole] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
 
-  // Debounce search input to notify parent
+  // Debounce search input to notify parent (ใช้ ref เก็บ callback เพื่อไม่ให้รีเซ็ตหน้ากลับเป็น 1 เวลา parent re-render ตอนกดเปลี่ยนหน้า)
   const isFirstRender = useRef(true);
+  const onSearchChangeRef = useRef(onSearchChange);
+  onSearchChangeRef.current = onSearchChange;
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
     const timer = setTimeout(() => {
-      onSearchChange(searchInput.trim());
+      onSearchChangeRef.current(searchInput.trim());
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, onSearchChange]);
+  }, [searchInput]);
 
   const handleRoleSelect = (val: any) => {
     const strVal = String(val?.target?.value ?? val ?? '');

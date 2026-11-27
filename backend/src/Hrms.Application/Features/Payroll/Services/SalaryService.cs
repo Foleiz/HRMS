@@ -2565,7 +2565,8 @@ public class SalaryService : ISalaryService
 
         var eligiblePeriodBonuses = periodBonuses
             .Where(b => !paidOtherBonusIds.Contains(b.Id))
-            .ToDictionary(b => b.EmployeeId);
+            .GroupBy(b => b.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Id).First());
 
         // โบนัสที่ผูกกับรายการในรอบนี้อยู่แล้ว (รวมโบนัสต่างเดือนที่กด "บันทึกเข้างวด" มา) — ใช้อัปเดตยอดล่าสุด
         var linkedBonusIds = period.Payrolls
@@ -2602,7 +2603,8 @@ public class SalaryService : ISalaryService
 
         var eligiblePeriodCommissions = periodCommissions
             .Where(c => !paidOtherCommissionIds.Contains(c.Id))
-            .ToDictionary(c => c.EmployeeId);
+            .GroupBy(c => c.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Id).First());
 
         var employeeIds = employees.Select(e => e.Id).ToList();
 
@@ -3177,13 +3179,24 @@ public class SalaryService : ISalaryService
 
                 if (pastEffectiveSalary == null) continue;
 
-                // คิดสัดส่วนเหมือนรอบนั้น (หากรอบในอดีตเคยถูก prorated)
+                // คิดสัดส่วนตามประเภทค่าจ้างของรอบในอดีต (รายวัน/รายชั่วโมง คูณจำนวนวัน/ชั่วโมงกับเรตใหม่; รายเดือน คิดตามสัดส่วนวันในรอบ)
+                string pastWageType = (pastP.SnapshotWageType ?? effectiveWageType).Trim().ToUpperInvariant();
+                bool pastIsDailyOrHourly = pastWageType == "DAILY" || pastWageType == "HOURLY";
                 int pastPeriodDays = pastPeriod.EndDate.DayNumber - pastPeriod.StartDate.DayNumber + 1;
-                decimal expectedBase = pastEffectiveSalary.BaseSalary;
-                if (pastBaseDetail.Quantity.HasValue && pastBaseDetail.Quantity.Value > 0 && pastBaseDetail.Quantity.Value < pastPeriodDays)
+                decimal expectedBase;
+                if (pastIsDailyOrHourly)
                 {
-                    decimal pastFactor = pastBaseDetail.Quantity.Value / (decimal)pastPeriodDays;
-                    expectedBase = Math.Round(pastEffectiveSalary.BaseSalary * pastFactor, 2, MidpointRounding.AwayFromZero);
+                    if (!pastBaseDetail.Quantity.HasValue || pastBaseDetail.Quantity.Value <= 0) continue;
+                    expectedBase = Math.Round(pastBaseDetail.Quantity.Value * pastEffectiveSalary.BaseSalary, 2, MidpointRounding.AwayFromZero);
+                }
+                else
+                {
+                    expectedBase = pastEffectiveSalary.BaseSalary;
+                    if (pastBaseDetail.Quantity.HasValue && pastBaseDetail.Quantity.Value > 0 && pastBaseDetail.Quantity.Value < pastPeriodDays)
+                    {
+                        decimal pastFactor = pastBaseDetail.Quantity.Value / (decimal)pastPeriodDays;
+                        expectedBase = Math.Round(pastEffectiveSalary.BaseSalary * pastFactor, 2, MidpointRounding.AwayFromZero);
+                    }
                 }
 
                 decimal alreadyCompensated = paidRetroByEmpAndPeriod.GetValueOrDefault((emp.Id, pastPeriod.Id));
@@ -3250,22 +3263,37 @@ public class SalaryService : ISalaryService
             }
 
             // ===== 6. ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) =====
-            // เงินได้ประจำ: ประมาณการทั้งปีจากยอดเต็มเดือน แล้วคิดตามสัดส่วนวันทำงาน
-            // เงินได้ไม่ประจำ (โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในเดือนที่จ่าย
-            // กองทุนสำรองเลี้ยงชีพ (ส่วนลูกจ้าง) เป็นค่าลดหย่อน ไม่ใช่รายการที่ไปลดเงินได้
-            decimal regularMonthly = fullSalary + lines.Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable && !IsProvidentFund(l.Item))
+            // เงินได้ประจำ: ประมาณการทั้งปีตามรอบการจ่ายจริง (รายเดือน 12 งวด / รายปักษ์ 24 งวด / รายสัปดาห์ 52 งวด)
+            // พนักงานรายวัน/รายชั่วโมง: ประเมินฐานรายเดือนจากค่าจ้างในงวดคูณจำนวนงวดต่อเดือน (แทนการนำเรตต่อวันไปคูณ 12)
+            // เงินได้ไม่ประจำ (โบนัส, รายการ manual, รายการหัก): คิดภาษีส่วนเพิ่มของปีทั้งก้อนในงวดที่จ่าย
+            string periodPayCycle = (period.PayCycle ?? "MONTHLY").Trim().ToUpperInvariant();
+            decimal periodsPerYear = periodPayCycle == "WEEKLY" ? 52m : periodPayCycle == "SEMI_MONTHLY" ? 24m : 12m;
+            decimal periodsPerMonth = periodsPerYear / 12m;
+
+            decimal otherRegularNet = lines
+                .Where(l => l.IsRegular && l.Item.ItemCode != "INC_BASE" && l.Item.IsTaxable && !IsProvidentFund(l.Item))
                 .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
-            decimal fullMonthSso = hasSso ? CalculateSsoContribution(fullSalary, ssoRate.EmployeePercent, ssoRate) : 0;
-            decimal monthlyPvd = lines.Where(l => l.IsRegular && IsProvidentFund(l.Item)).Sum(l => l.Amount);
-            if (isProrated && factor > 0) monthlyPvd = Math.Round(monthlyPvd / factor, 2, MidpointRounding.AwayFromZero);
-            decimal annualPvdAllowance = CalculatePvdAllowance(monthlyPvd * 12, fullSalary * 12);
-            decimal regularAnnualTax = CalculateAnnualTax(regularMonthly * 12, fullMonthSso * 12, taxBrackets, annualPvdAllowance, taxConfig);
-            decimal regularMonthlyTax = Math.Round(regularAnnualTax / 12m * factor, 2, MidpointRounding.AwayFromZero);
+
+            decimal estimatedMonthlyBase = (isDailyWage || isHourlyWage)
+                ? Math.Round(baseSalary * periodsPerMonth, 2, MidpointRounding.AwayFromZero)
+                : fullSalary;
+
+            decimal regularMonthly = estimatedMonthlyBase + Math.Round(otherRegularNet * periodsPerMonth, 2, MidpointRounding.AwayFromZero);
+            decimal fullMonthSso = hasSso ? CalculateSsoContribution(estimatedMonthlyBase, ssoRate.EmployeePercent, ssoRate) : 0;
+            decimal monthlyPvd = lines.Where(l => l.IsRegular && IsProvidentFund(l.Item)).Sum(l => l.Amount) * periodsPerMonth;
+            if (!isDailyWage && !isHourlyWage && isProrated && factor > 0)
+            {
+                monthlyPvd = Math.Round(monthlyPvd / factor, 2, MidpointRounding.AwayFromZero);
+            }
+            decimal annualPvdAllowance = CalculatePvdAllowance(monthlyPvd * 12m, estimatedMonthlyBase * 12m);
+            decimal regularAnnualTax = CalculateAnnualTax(regularMonthly * 12m, fullMonthSso * 12m, taxBrackets, annualPvdAllowance, taxConfig);
+            decimal periodTaxFactor = (isDailyWage || isHourlyWage) ? 1m : factor;
+            decimal regularMonthlyTax = Math.Round(regularAnnualTax / periodsPerYear * periodTaxFactor, 2, MidpointRounding.AwayFromZero);
 
             decimal irregularTaxable = lines.Where(l => !l.IsRegular && l.Item.IsTaxable && !IsProvidentFund(l.Item))
                 .Sum(l => l.Item.ItemType == "EARNING" ? l.Amount : -l.Amount);
             decimal irregularTax = irregularTaxable != 0
-                ? CalculateAnnualTax(regularMonthly * 12 + irregularTaxable, fullMonthSso * 12, taxBrackets, annualPvdAllowance, taxConfig) - regularAnnualTax
+                ? CalculateAnnualTax(regularMonthly * 12m + irregularTaxable, fullMonthSso * 12m, taxBrackets, annualPvdAllowance, taxConfig) - regularAnnualTax
                 : 0;
             decimal monthlyTax = Math.Max(0, Math.Round(regularMonthlyTax + irregularTax, 2, MidpointRounding.AwayFromZero));
 
