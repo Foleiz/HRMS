@@ -3,8 +3,8 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, Button, TabBar, type TabBarItem , TableToolbar } from '@/components/ui';
-import React, { useState, useEffect, Suspense } from 'react';
+import { ModalShell, Button, TabBar, type TabBarItem, TableToolbar, TablePagination } from '@/components/ui';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Calendar,
@@ -459,6 +459,9 @@ function WorkCalendarPageContent() {
   };
 
   // Filtered holidays
+  const [holidayPage, setHolidayPage] = useState(1);
+  const [holidayPageSize, setHolidayPageSize] = useState(10);
+
   const filteredHolidays = holidays.filter((h) => {
     const matchesSearch =
       h.holidayName.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
@@ -466,6 +469,15 @@ function WorkCalendarPageContent() {
     const matchesType = filterType === 'ALL' || h.holidayType === filterType;
     return matchesSearch && matchesType;
   });
+
+  useEffect(() => {
+    setHolidayPage(1);
+  }, [searchQuery, filterType, selectedYear]);
+
+  const pagedHolidays = useMemo(() => {
+    const start = (holidayPage - 1) * holidayPageSize;
+    return filteredHolidays.slice(start, start + holidayPageSize);
+  }, [filteredHolidays, holidayPage, holidayPageSize]);
 
   const workingDaysCount = workWeek.filter((d) => d.isWorkingDay).length;
   const offDaysCount = 7 - workingDaysCount;
@@ -676,6 +688,7 @@ function WorkCalendarPageContent() {
 
             {/* Holidays Table */}
             {holidayView === 'list' && (
+            <>
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <RefreshIndicator active={calendarPhase.refreshing} />
               <table className="table-standard w-full min-w-[600px] text-left text-xs border-collapse whitespace-nowrap">
@@ -698,10 +711,10 @@ function WorkCalendarPageContent() {
                       </td>
                     </tr>
                   ) : (
-                    filteredHolidays.map((h, idx) => (
+                    pagedHolidays.map((h, idx) => (
                       <tr key={h.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 text-center font-mono text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                          {idx + 1}
+                          {(holidayPage - 1) * holidayPageSize + idx + 1}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
@@ -757,6 +770,16 @@ function WorkCalendarPageContent() {
                 </tbody>
               </table>
             </div>
+            {!calendarPhase.initialLoading && filteredHolidays.length > 0 && (
+              <TablePagination
+                total={filteredHolidays.length}
+                page={holidayPage}
+                pageSize={holidayPageSize}
+                onPageChange={setHolidayPage}
+                onPageSizeChange={setHolidayPageSize}
+              />
+            )}
+            </>
             )}
           </div>
         )}

@@ -3,7 +3,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { Button, ModalShell, TableToolbar } from '@/components/ui';
+import { Button, ModalShell, TableToolbar, TablePagination } from '@/components/ui';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -59,6 +59,8 @@ export default function EmployeeBenefitBalancesPage() {
   const [empClaims, setEmpClaims] = useState<BenefitClaim[]>([]);
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
 
   useEffect(() => {
@@ -194,6 +196,15 @@ export default function EmployeeBenefitBalancesPage() {
     return overviewList.reduce((acc, curr) => acc + curr.benefits.length, 0);
   }, [overviewList]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedYear]);
+
+  const pagedOverviewList = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return overviewList.slice(start, start + pageSize);
+  }, [overviewList, page, pageSize]);
+
   if (!canView) {
     return (
       <AccessDenied
@@ -275,7 +286,7 @@ export default function EmployeeBenefitBalancesPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {overviewList.map((emp) => {
+            {pagedOverviewList.map((emp) => {
               const isExpanded = expandedEmployeeIds.has(emp.employeeId);
 
               return (
@@ -416,6 +427,14 @@ export default function EmployeeBenefitBalancesPage() {
                 </EmployeeAccordionItem>
               );
             })}
+            <TablePagination
+              total={overviewList.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              totalLabel="คน"
+            />
           </div>
         )}
       </div>

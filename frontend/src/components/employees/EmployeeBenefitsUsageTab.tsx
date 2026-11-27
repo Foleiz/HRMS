@@ -5,7 +5,7 @@ import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/t
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
 import BenefitAttachmentPreviewModal from '@/components/benefits/BenefitAttachmentPreviewModal';
-import { ModalShell, Button } from '@/components/ui';
+import { ModalShell, Button, TablePagination } from '@/components/ui';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -130,6 +130,8 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const [selectedDetailClaim, setSelectedDetailClaim] = useState<BenefitClaim | null>(null);
   const [searchClaimText, setSearchClaimText] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [claimPage, setClaimPage] = useState(1);
+  const [claimPageSize, setClaimPageSize] = useState(10);
 
   const filteredClaims: BenefitClaim[] = useMemo(() => {
     return claims.filter((c: BenefitClaim) => {
@@ -145,6 +147,15 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
       return true;
     });
   }, [claims, statusFilter, searchClaimText]);
+
+  useEffect(() => {
+    setClaimPage(1);
+  }, [searchClaimText, statusFilter, selectedYear, employeeId]);
+
+  const pagedClaims = useMemo(() => {
+    const start = (claimPage - 1) * claimPageSize;
+    return filteredClaims.slice(start, start + claimPageSize);
+  }, [filteredClaims, claimPage, claimPageSize]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -578,7 +589,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
               <>
                 {/* Mobile Card List View (< md) */}
                 <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {filteredClaims.map((c) => {
+                  {pagedClaims.map((c) => {
                   const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
                   const Icon =
                     c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
@@ -707,7 +718,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {filteredClaims.map((c) => (
+                    {pagedClaims.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
@@ -815,6 +826,14 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                   </tbody>
                 </table>
               </div>
+              <TablePagination
+                total={filteredClaims.length}
+                page={claimPage}
+                pageSize={claimPageSize}
+                onPageChange={setClaimPage}
+                onPageSizeChange={setClaimPageSize}
+                className="px-4 pb-3 border-t border-slate-100 dark:border-slate-700/60"
+              />
             </>
           ) : (
             <div className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">

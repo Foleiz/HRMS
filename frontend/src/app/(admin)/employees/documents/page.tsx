@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
-import { Button, TabBar , TableToolbar } from '@/components/ui';
+import { Button, TabBar, TableToolbar, TablePagination } from '@/components/ui';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
 import { EmployeeDocument } from '@/types/employeeDocument';
 
@@ -36,6 +36,8 @@ export default function ExpiringDocumentsPage() {
   const [search, setSearch] = useState('');
   const [checking, setChecking] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     setBreadcrumb({ section: 'พนักงาน', page: 'เอกสารใกล้หมดอายุ' });
@@ -95,6 +97,15 @@ export default function ExpiringDocumentsPage() {
         .some((v) => (v || '').toLowerCase().includes(q));
     });
   }, [documents, statusFilter, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  const pagedDocuments = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const handleRunCheck = async () => {
     setChecking(true);
@@ -241,7 +252,7 @@ export default function ExpiringDocumentsPage() {
                   </tr>
                 </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((doc) => {
+                {pagedDocuments.map((doc) => {
                   const expired = doc.expiryStatus === 'EXPIRED';
                   const days = doc.daysToExpiry ?? 0;
                   return (
@@ -296,6 +307,15 @@ export default function ExpiringDocumentsPage() {
             </table>
           )}
         </div>
+        {!loading && !error && filtered.length > 0 && (
+          <TablePagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
         </div>
       </div>
     </div>

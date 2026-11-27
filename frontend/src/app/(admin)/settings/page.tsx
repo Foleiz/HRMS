@@ -69,6 +69,8 @@ function SettingsPageContent() {
 
   const canViewApprovalFlowsTab =
     hasPermission('SETTINGS_APPROVAL_FLOWS_MANAGE') ||
+    hasPermission('SETTINGS_ROLES_VIEW') ||
+    hasPermission('SETTINGS_USERS_VIEW') ||
     isSuper;
 
   const [activeTab, setActiveTab] = useState<TabType>('users');

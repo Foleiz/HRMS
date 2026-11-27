@@ -36,7 +36,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button, TableToolbar, RowActions, RowActionButton } from '@/components/ui';
+import { Button, TableToolbar, TablePagination, RowActions, RowActionButton } from '@/components/ui';
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
 const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
@@ -1117,6 +1117,9 @@ export const ApprovalFlowsTab: React.FC = () => {
   }, [loadFlows]);
 
   // Filtered Flows
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const filteredFlows = useMemo(() => {
     return flows.filter((f) => {
       if (searchTerm.trim()) {
@@ -1131,6 +1134,15 @@ export const ApprovalFlowsTab: React.FC = () => {
       return true;
     });
   }, [flows, searchTerm, docTypeFilter, deptFilter, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, docTypeFilter, deptFilter, statusFilter]);
+
+  const pagedFlows = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredFlows.slice(start, start + pageSize);
+  }, [filteredFlows, page, pageSize]);
 
   const handleDeleteFlow = (flow: ApprovalFlow) => {
     setConfirmModalConfig({
@@ -1268,7 +1280,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             )}
 
             {/* หน้ารายการเริ่มแรกแสดงเป็นการ์ดสรุป กด "แก้ไข" เพื่อเปิดฟอร์มแก้ไข */}
-            {filteredFlows.map((flow) => {
+            {pagedFlows.map((flow) => {
               if (editingFlowId === flow.id) {
                 return (
                   <FlowCardEditor
@@ -1415,6 +1427,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                 </div>
               );
             })}
+            <TablePagination
+              total={filteredFlows.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </div>
