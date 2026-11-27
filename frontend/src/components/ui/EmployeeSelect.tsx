@@ -40,7 +40,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   // ปิด Dropdown เมื่อคลิกนอกพื้นที่
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (containerRef.current && event.target instanceof Node && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
         setSearchQuery('');
       }

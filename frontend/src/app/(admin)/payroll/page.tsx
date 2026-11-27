@@ -4164,23 +4164,23 @@ export default function PayrollPage() {
             {/* ── PANEL 1: TOP PERIOD SELECTOR & ACTIONS BAR (คงเดิม) ── */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5">
               {/* ── TIER 1: Period Selection & Period Management (สร้าง/ลบรอบ) ── */}
-              <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-2">
-                {/* Left: Period Selector & Status Badge */}
-                <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <div
-                    id="tour-payroll-period-selector"
-                    data-tour="tour-payroll-period-selector"
-                    className="flex items-center gap-1.5 flex-wrap min-w-0"
-                  >
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
-                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap hidden 2xl:inline">
-                        รอบเงินเดือน:
-                      </span>
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                {/* Left: Period Selector */}
+                <div
+                  id="tour-payroll-period-selector"
+                  data-tour="tour-payroll-period-selector"
+                  className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap min-w-0 w-full xl:w-auto"
+                >
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap hidden 2xl:inline">
+                      รอบเงินเดือน:
+                    </span>
+                  </div>
 
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap sm:flex-nowrap">
                     {/* 1. ตัวเลือกเดือน (แสดงครบ 12 เดือนสะอาดๆ ไม่ซ้ำแถว) */}
                     {(() => {
                       const activeMonth =
@@ -4228,7 +4228,7 @@ export default function PayrollPage() {
 
                       return (
                         <>
-                          <div className="relative inline-block shrink-0">
+                          <div className="relative inline-block flex-1 sm:flex-none min-w-[100px] sm:min-w-[115px]">
                             <CustomSelect
                               value={String(activeMonth)}
                               onChange={(e) => {
@@ -4237,7 +4237,7 @@ export default function PayrollPage() {
                               }}
                               numbered={false}
                               size="sm"
-                              className="min-w-[105px] sm:min-w-[115px]"
+                              className="w-full sm:min-w-[115px]"
                               buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                               title="เลือกเดือน"
                             >
@@ -4278,11 +4278,11 @@ export default function PayrollPage() {
                           </div>
 
                           {/* 2. ตัวเลือกปี พ.ศ. */}
-                          <div className="relative inline-block shrink-0">
+                          <div className="relative inline-block flex-1 sm:flex-none min-w-[95px] sm:w-[106px]">
                             <YearPicker
                               value={activeYear}
                               onChange={(y) => handleYearFilterChange(y)}
-                              className="w-[106px]"
+                              className="w-full sm:w-[106px]"
                               buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
                               title="เลือกปีรอบเงินเดือน"
                             />
@@ -4290,7 +4290,7 @@ export default function PayrollPage() {
 
                           {/* 3. ตัวเลือกกลุ่มรอบการจ่าย (แสดงเฉพาะเมื่อมีมากกว่า 1 ความถี่ เช่น รายเดือน + รายปักษ์) */}
                           {showCycleDropdown && (
-                            <div className="relative inline-block shrink-0">
+                            <div className="relative inline-block w-full sm:w-auto shrink-0 sm:min-w-[110px]">
                               <CustomSelect
                                 value={activeCycle}
                                 onChange={(e) => {
@@ -4302,7 +4302,7 @@ export default function PayrollPage() {
                                 }}
                                 numbered={false}
                                 size="sm"
-                                className="min-w-[110px] sm:min-w-[130px]"
+                                className="w-full sm:min-w-[130px]"
                                 buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                                 title="เลือกกลุ่มรอบการจ่าย"
                               >
@@ -4334,61 +4334,65 @@ export default function PayrollPage() {
                       );
                     })()}
                   </div>
-
-                  {/* สถานะรอบ */}
-                  {selectedPeriod ? (
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
-                        selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
-                          : selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : selectedPeriod.status === 'PAID'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      {selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
-                        ? 'ผู้อนุมัติกำลังตรวจสอบ'
-                        : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
-                        ? 'ฝ่ายการเงินกำลังตรวจสอบ'
-                        : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
-                        ? 'ได้รับการอนุมัติแล้ว'
-                        : selectedPeriod.status === 'PAID'
-                        ? 'จ่ายเงินแล้ว'
-                        : selectedPeriod.status === 'CLOSED'
-                        ? 'ปิดรอบแล้ว'
-                        : selectedPeriod.status === 'DRAFT' || selectedPeriod.status === 'REVIEW'
-                        ? 'ฝ่ายบุคคลกำลังตรวจสอบ'
-                        : selectedPeriod.statusText}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
-                      ยังไม่มีรอบเงินเดือน
-                    </span>
-                  )}
-                  {(!isAdmin &&
-                    [canAccessHrView, canAccessFinanceView, canAccessApproverView, canAccessBankView].filter(Boolean)
-                      .length <= 1) && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600 whitespace-nowrap shrink-0">
-                      {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
-                      {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
-                      {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
-                      {processSubTab === 'BANK' && 'โอนเงินธนาคาร (Bank Transfer)'}
-                    </span>
-                  )}
                 </div>
 
-                {/* Right: Primary Role Workflow Actions */}
-                <div
-                  id="tour-payroll-workflow-actions"
-                  data-tour="tour-payroll-workflow-actions"
-                  className="flex flex-wrap xl:flex-nowrap items-center gap-1.5 ml-auto shrink-0"
-                >
+                  {/* Right / Second row on mobile: Status Badge + Primary Role Workflow Actions */}
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between xl:justify-end gap-2.5 w-full xl:w-auto pt-2.5 xl:pt-0 border-t xl:border-t-0 border-slate-100 dark:border-slate-700/60">
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedPeriod ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
+                            selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
+                              : selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : selectedPeriod.status === 'PAID'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
+                            ? 'ผู้อนุมัติกำลังตรวจสอบ'
+                            : selectedPeriod.status === 'SUBMITTED_TO_FINANCE'
+                            ? 'ฝ่ายการเงินกำลังตรวจสอบ'
+                            : selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING' || selectedPeriod.status === 'PROCESSING_BANK'
+                            ? 'ได้รับการอนุมัติแล้ว'
+                            : selectedPeriod.status === 'PAID'
+                            ? 'จ่ายเงินแล้ว'
+                            : selectedPeriod.status === 'CLOSED'
+                            ? 'ปิดรอบแล้ว'
+                            : selectedPeriod.status === 'DRAFT' || selectedPeriod.status === 'REVIEW'
+                            ? 'ฝ่ายบุคคลกำลังตรวจสอบ'
+                            : selectedPeriod.statusText}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                          ยังไม่มีรอบเงินเดือน
+                        </span>
+                      )}
+                      {(!isAdmin &&
+                        [canAccessHrView, canAccessFinanceView, canAccessApproverView, canAccessBankView].filter(Boolean)
+                          .length <= 1) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-600 whitespace-nowrap shrink-0">
+                          {processSubTab === 'HR' && 'ฝ่ายบุคคล (HR)'}
+                          {processSubTab === 'FINANCE' && 'ฝ่ายการเงิน (Finance)'}
+                          {processSubTab === 'APPROVER' && 'ผู้บริหาร (CEO / Approver)'}
+                          {processSubTab === 'BANK' && 'โอนเงินธนาคาร (Bank Transfer)'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Right: Primary Role Workflow Actions */}
+                    <div
+                      id="tour-payroll-workflow-actions"
+                      data-tour="tour-payroll-workflow-actions"
+                      className="flex items-center gap-1.5 w-full sm:w-auto shrink-0 justify-end sm:justify-start"
+                    >
                   {(!selectedPeriod || selectedProcessMonth != null) ? (
                     (canAccessHrView || isAdmin) ? (
                       <Button
@@ -4397,6 +4401,7 @@ export default function PayrollPage() {
                         type="button"
                         variant="primary"
                         size="sm"
+                        className="w-full sm:w-auto justify-center"
                         disabled={isCreatingPeriod}
                         loading={isCreatingPeriod}
                         onClick={() => {
@@ -4411,7 +4416,7 @@ export default function PayrollPage() {
                         {payCycleGroups.length > 1 ? ` (${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle})` : ''}
                       </Button>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                      <span className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                         <Clock className="w-4 h-4 text-slate-400" />
                         <span>ยังไม่ได้สร้างรอบเงินเดือนประจำเดือนนี้</span>
                       </span>
@@ -4667,6 +4672,7 @@ export default function PayrollPage() {
                       )}
                     </>
                   )}
+                  </div>
                 </div>
               </div>
 
@@ -4882,12 +4888,12 @@ export default function PayrollPage() {
 
             {/* If no period exists for this selected month */}
             {(!selectedPeriod || selectedProcessMonth != null) ? (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-12 text-center space-y-4 shadow-xs">
-                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 mx-auto flex items-center justify-center">
-                  <Calendar className="w-8 h-8" />
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6 sm:p-12 text-center space-y-4 shadow-xs">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 mx-auto flex items-center justify-center">
+                  <Calendar className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <div className="max-w-md mx-auto space-y-1.5">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
                     ยังไม่มีรอบเงินเดือนประจำเดือน{' '}
                     {THAI_MONTH_NAMES[
                       (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
@@ -4912,21 +4918,24 @@ export default function PayrollPage() {
                     variant="primary"
                     disabled={isCreatingPeriod}
                     loading={isCreatingPeriod}
+                    className="max-w-full"
                     onClick={() => {
                       const targetMonth =
                         selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
                       handleCreatePeriodsForPayCycle(activeYear, targetMonth, selectedProcessCycle);
                     }}
-                    icon={<Plus className="w-4 h-4" />}
+                    icon={<Plus className="w-4 h-4 shrink-0" />}
                   >
-                    สร้างรอบเงินเดือน{' '}
-                    {payCycleGroups.length > 1
-                      ? `${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle} · `
-                      : ''}
-                    {THAI_MONTH_NAMES[
-                      (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
-                    ]}{' '}
-                    {activeYear + 543}
+                    <span className="truncate">
+                      สร้างรอบเงินเดือน{' '}
+                      {payCycleGroups.length > 1
+                        ? `${PAY_CYCLE_LABELS[selectedProcessCycle] || selectedProcessCycle} · `
+                        : ''}
+                      {THAI_MONTH_NAMES[
+                        (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
+                      ]}{' '}
+                      {activeYear + 543}
+                    </span>
                   </Button>
                 )}
               </div>

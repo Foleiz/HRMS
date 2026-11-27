@@ -44,13 +44,14 @@ export const YearPicker: React.FC<{
       });
     }
     const onDown = (e: MouseEvent | TouchEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      const t = e.target;
+      if (t instanceof Node && (triggerRef.current?.contains(t) || menuRef.current?.contains(t))) return;
       setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     const onScroll = (e: Event) => {
-      if (menuRef.current?.contains(e.target as Node)) return;
+      const t = e.target;
+      if (t instanceof Node && menuRef.current?.contains(t)) return;
       setOpen(false);
     };
     document.addEventListener('pointerdown', onDown);
