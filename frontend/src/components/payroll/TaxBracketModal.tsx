@@ -377,7 +377,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
             onClick={() => setShowConfirmSave(true)}
             icon={<Save className="w-3.5 h-3.5" />}
           >
-            {isLoading ? 'กำลังบันทึก...' : 'บันทึกโครงสร้างภาษี'}
+            {isLoading ? 'กำลังบันทึก...' : 'บันทึก'}
           </Button>
         </div>
       </div>
@@ -410,7 +410,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                 size="sm"
                 onClick={handleSaveSubmit}
               >
-                ยืนยันและบันทึก
+                บันทึก
               </Button>
             </div>
           </div>

@@ -201,7 +201,7 @@ export default function ContractSettingsModal({
               ยกเลิก
             </Button>
             <Button type="submit" variant="primary" icon={<Check className="w-4 h-4" />}>
-              บันทึกการตั้งค่า
+              บันทึก
             </Button>
           </div>
         </form>

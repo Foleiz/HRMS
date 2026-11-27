@@ -435,7 +435,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   size="sm"
                   loading={formSubmitting}
                 >
-                  {editingItem ? 'บันทึกการแก้ไข' : 'สร้างสวัสดิการ'}
+                  {editingItem ? 'บันทึก' : 'สร้างสวัสดิการ'}
                 </Button>
               </div>
             </form>

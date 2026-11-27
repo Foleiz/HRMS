@@ -1439,7 +1439,7 @@ export default function EditEmployeeModal({
                 variant="primary"
                 loading={isSubmitting}
               >
-                บันทึกข้อมูล
+                บันทึก
               </Button>
             </div>
           </form>

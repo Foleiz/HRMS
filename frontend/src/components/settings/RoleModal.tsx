@@ -268,7 +268,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               type="submit"
               loading={isSubmitting}
             >
-              บันทึกบทบาท
+              บันทึก
             </Button>
           </div>
         </form>

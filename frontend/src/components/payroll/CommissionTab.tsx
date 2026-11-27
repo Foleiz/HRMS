@@ -1418,7 +1418,7 @@ export default function CommissionTab() {
                 onClick={handleSaveEdit}
                 className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
               >
-                บันทึกการแก้ไข
+                บันทึก
               </Button>
             </div>
           </div>
@@ -1597,7 +1597,7 @@ export default function CommissionTab() {
                   onClick={handleSaveAdd}
                   className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
                 >
-                  บันทึกข้อมูล
+                  บันทึก
                 </Button>
               </div>
             </div>

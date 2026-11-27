@@ -1395,7 +1395,7 @@ function EmployeeEditPageContent() {
               variant="primary"
               loading={isSubmitting}
             >
-              บันทึกข้อมูล
+              บันทึก
             </Button>
           </div>
         </form>

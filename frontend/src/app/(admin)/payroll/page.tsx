@@ -6201,7 +6201,7 @@ export default function PayrollPage() {
                     icon={<CheckCircle className="w-4 h-4" />}
                     fullWidth
                   >
-                    บันทึกการโอน
+                    บันทึก
                   </Button>
                 </div>
               </div>

@@ -2444,10 +2444,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   type="button"
                   disabled={!hasChanges || !canEditRole}
                   loading={isSavingMatrix}
-                  aria-label="บันทึกสิทธิ์การใช้งาน"
+                  aria-label="บันทึก"
                   onClick={handleSave}
                 >
-                  บันทึกสิทธิ์การใช้งาน
+                  บันทึก
                 </Button>
               </div>
             </div>

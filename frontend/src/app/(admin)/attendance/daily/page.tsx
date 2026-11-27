@@ -1899,7 +1899,7 @@ function DailyAttendanceContent() {
             <ModalFooter
               onCancel={() => setEditModalOpen(false)}
               cancelText="ยกเลิก"
-              submitText="บันทึกการแก้ไข"
+              submitText="บันทึก"
               loading={savingEdit}
               loadingText="กำลังบันทึก..."
               submit={true}
