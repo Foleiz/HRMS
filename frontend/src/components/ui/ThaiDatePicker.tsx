@@ -221,11 +221,12 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
     if (!open) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
+      const target = e.target;
       if (
-        containerRef.current?.contains(target) ||
-        triggerRef.current?.contains(target) ||
-        popoverRef.current?.contains(target)
+        target instanceof Node &&
+        (containerRef.current?.contains(target) ||
+          triggerRef.current?.contains(target) ||
+          popoverRef.current?.contains(target))
       ) {
         return;
       }
@@ -239,7 +240,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
     };
 
     const handleScroll = (e: Event) => {
-      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+      if (e.target instanceof Node && popoverRef.current?.contains(e.target)) {
         return;
       }
       updatePosition();
@@ -683,11 +684,12 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
     if (!open) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
+      const target = e.target;
       if (
-        containerRef.current?.contains(target) ||
-        triggerRef.current?.contains(target) ||
-        popoverRef.current?.contains(target)
+        target instanceof Node &&
+        (containerRef.current?.contains(target) ||
+          triggerRef.current?.contains(target) ||
+          popoverRef.current?.contains(target))
       ) {
         return;
       }
@@ -701,7 +703,7 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
     };
 
     const handleScroll = (e: Event) => {
-      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+      if (e.target instanceof Node && popoverRef.current?.contains(e.target)) {
         return;
       }
       updatePosition();

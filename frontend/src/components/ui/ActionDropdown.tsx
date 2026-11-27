@@ -115,10 +115,10 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
     updatePosition();
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
+      const target = e.target;
       if (
-        triggerRef.current?.contains(target) ||
-        menuRef.current?.contains(target)
+        target instanceof Node &&
+        (triggerRef.current?.contains(target) || menuRef.current?.contains(target))
       ) {
         return;
       }
@@ -133,7 +133,7 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
 
     const handleScroll = (e: Event) => {
       // Don't close if scrolling inside the dropdown menu itself
-      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+      if (e.target instanceof Node && menuRef.current?.contains(e.target)) {
         return;
       }
       setIsOpen(false);

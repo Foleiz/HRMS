@@ -349,6 +349,7 @@ export default function RenewContractModal({
               </label>
               <CustomSelect
                 value={employeeTypeId ? String(employeeTypeId) : ''}
+                numbered={false}
                 onChange={(val) => {
                   const selectedId = Number(val);
                   setEmployeeTypeId(selectedId);
