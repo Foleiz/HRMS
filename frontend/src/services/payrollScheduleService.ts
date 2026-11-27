@@ -142,7 +142,7 @@ const adjustForWeekendIfNeeded = (dateObj: Date, adjustWeekend: boolean): Date =
 
 export const PAY_CYCLE_LABELS: Record<string, string> = {
   MONTHLY: 'รายเดือน',
-  SEMI_MONTHLY: 'รายปักษ์ (15 วัน)',
+  SEMI_MONTHLY: 'ทุกครึ่งเดือน (15 วัน)',
   WEEKLY: 'รายสัปดาห์',
 };
 

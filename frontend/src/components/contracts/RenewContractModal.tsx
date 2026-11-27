@@ -79,15 +79,42 @@ export default function RenewContractModal({
     return diffDays > 0 ? diffDays : 0;
   };
 
-  // Load employee types
+  const mapTypeCodeToContractType = (typeCode?: string): string => {
+    const code = (typeCode || '').toUpperCase();
+    if (code.includes('PROB')) return 'PROBATION';
+    if (code.includes('PERM')) return 'PERMANENT';
+    if (code.includes('CONT') || code.includes('FIXED')) return 'FIXED_TERM';
+    return 'OTHER';
+  };
+
+  // Load employee types & initialize selection
   useEffect(() => {
     if (isOpen) {
       employeeTypeService
-        .getAll()
-        .then((types) => setEmployeeTypes(types.filter((t) => t.status === 'ACTIVE')))
+        .getAll({ status: 'ACTIVE' })
+        .then((types) => {
+          const active = types.filter((t) => t.status === 'ACTIVE');
+          setEmployeeTypes(active);
+
+          const matched =
+            (contract?.employeeTypeId && active.find((t) => t.id === contract.employeeTypeId)) ||
+            active.find((t) => t.typeCode.toUpperCase().includes('CONT')) ||
+            active[0];
+
+          if (matched) {
+            setEmployeeTypeId(matched.id);
+            const mapped = mapTypeCodeToContractType(matched.typeCode);
+            setContractType(mapped);
+            setEndDate((prevEnd) => {
+              if (mapped === 'PERMANENT') return '';
+              return prevEnd || (startDate ? calculateAutoEndDate(startDate, mapped) : '');
+            });
+          }
+        })
         .catch((err) => console.error('Failed to load employee types:', err));
     }
-  }, [isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, contract?.id]);
 
   // Initialize form when contract changes
   useEffect(() => {
@@ -98,8 +125,8 @@ export default function RenewContractModal({
       setFileSize(null);
       setNotes('');
 
-      // กำหนดประเภทสัญญาเริ่มต้น: สำหรับการต่ออายุสัญญาให้เริ่มต้นที่สัญญาจ้าง (มีกำหนดระยะเวลา)
-      setContractType('FIXED_TERM');
+      const initialContractType = contract.contractType || 'FIXED_TERM';
+      setContractType(initialContractType);
 
       // วันที่เริ่มต้นสัญญาใหม่: หากมีวันสิ้นสุดเดิม ให้ใช้วันถัดจากวันสิ้นสุดเดิม หากไม่มีให้ใช้วันนี้
       let defStartDate = '';
@@ -121,7 +148,7 @@ export default function RenewContractModal({
       setStartDate(defStartDate);
 
       // วันที่สิ้นสุดสัญญาใหม่: เริ่มต้นคำนวณตามการตั้งค่าสัญญาจ้าง
-      setEndDate(calculateAutoEndDate(defStartDate, 'FIXED_TERM'));
+      setEndDate(initialContractType === 'PERMANENT' ? '' : calculateAutoEndDate(defStartDate, initialContractType));
 
       if (contract.employeeTypeId) {
         setEmployeeTypeId(contract.employeeTypeId);
@@ -211,10 +238,18 @@ export default function RenewContractModal({
       setIsSubmitting(true);
       setErrorMessage(null);
 
+      const selectedType = employeeTypes.find((t) => t.id === employeeTypeId);
+      const resolvedWageType =
+        selectedType?.wageType?.toUpperCase() === 'DAILY'
+          ? 'DAILY'
+          : selectedType?.wageType?.toUpperCase() === 'MONTHLY'
+          ? 'MONTHLY'
+          : contract.wageType || 'MONTHLY';
+
       await onSubmit(contract.id, {
         contractType,
         employeeTypeId,
-        wageType: contract.wageType || 'MONTHLY',
+        wageType: resolvedWageType,
         startDate,
         endDate: contractType === 'PERMANENT' ? undefined : (endDate || undefined),
         notes: notes.trim() || undefined,
@@ -313,9 +348,12 @@ export default function RenewContractModal({
                 ประเภทสัญญาฉบับต่ออายุ <span className="text-rose-500">*</span>
               </label>
               <CustomSelect
-                value={contractType}
+                value={employeeTypeId ? String(employeeTypeId) : ''}
                 onChange={(val) => {
-                  const nextType = String(val);
+                  const selectedId = Number(val);
+                  setEmployeeTypeId(selectedId);
+                  const typeObj = employeeTypes.find((t) => t.id === selectedId);
+                  const nextType = mapTypeCodeToContractType(typeObj?.typeCode);
                   setContractType(nextType);
                   if (nextType === 'PERMANENT') {
                     setEndDate('');
@@ -323,12 +361,11 @@ export default function RenewContractModal({
                     setEndDate(calculateAutoEndDate(startDate, nextType));
                   }
                 }}
-                options={[
-                  { value: 'FIXED_TERM', label: 'สัญญาจ้างมีกำหนดระยะเวลา (Fixed-term)' },
-                  { value: 'PROBATION', label: 'ขยายระยะเวลาทดลองงาน (Probation)' },
-                  { value: 'PERMANENT', label: 'บรรจุเป็นพนักงานประจำ (Permanent)' },
-                  { value: 'OTHER', label: 'สัญญาจ้างประเภทอื่นๆ / ฝึกงาน' },
-                ]}
+                options={employeeTypes.map((t) => ({
+                  value: String(t.id),
+                  label: t.typeName,
+                }))}
+                placeholder="เลือกประเภทสัญญา"
                 className="w-full"
               />
             </div>

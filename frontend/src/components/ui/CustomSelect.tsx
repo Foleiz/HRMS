@@ -350,8 +350,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     updatePosition();
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) {
+      const target = e.target;
+      if (target instanceof Node && (triggerRef.current?.contains(target) || menuRef.current?.contains(target))) {
         return;
       }
       setIsOpen(false);
@@ -362,7 +362,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
 
     const handleScroll = (e: Event) => {
-      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+      const target = e.target;
+      if (target instanceof Node && menuRef.current?.contains(target)) return;
       setIsOpen(false);
     };
 

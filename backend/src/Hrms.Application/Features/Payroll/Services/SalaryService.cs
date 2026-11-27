@@ -2334,7 +2334,7 @@ public class SalaryService : ISalaryService
         {
             var cycleLabel = payCycle switch
             {
-                "SEMI_MONTHLY" => "รายปักษ์",
+                "SEMI_MONTHLY" => "ทุกครึ่งเดือน",
                 "WEEKLY" => "รายสัปดาห์",
                 _ => "รายเดือน"
             };
@@ -2410,7 +2410,7 @@ public class SalaryService : ISalaryService
         return payCycle switch
         {
             "WEEKLY" => $"{baseLabel} (รายสัปดาห์ สัปดาห์ที่ {periodSequence})",
-            "SEMI_MONTHLY" => $"{baseLabel} (รายปักษ์ งวดที่ {periodSequence})",
+            "SEMI_MONTHLY" => $"{baseLabel} (ทุกครึ่งเดือน งวดที่ {periodSequence})",
             _ => baseLabel
         };
     }

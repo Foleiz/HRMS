@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CalendarClock,
   Save,
@@ -9,8 +9,6 @@ import {
   CreditCard,
   Loader2,
   Briefcase,
-  Calendar,
-  Sparkles,
 } from 'lucide-react';
 import {
   PayrollScheduleConfig,
@@ -19,23 +17,16 @@ import {
 } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 import {
-  generatePeriodSlotsForConfig,
   PAY_CYCLE_LABELS,
   WAGE_TYPE_LABELS,
-  THAI_MONTH_NAMES,
 } from '@/services/payrollScheduleService';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface PayrollScheduleTabProps {
   canEdit?: boolean;
 }
-
-const formatThaiSlash = (iso: string) => {
-  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-  if (!y || !m || !d) return iso;
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
-};
 
 const getCycleBadgeStyle = (cycle: string, isSelected: boolean) => {
   if (isSelected) return 'bg-white/20 text-white border-white/25';
@@ -121,18 +112,6 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
     }
   };
 
-  const now = new Date();
-  const previewYear = now.getFullYear();
-  const previewMonth = now.getMonth() + 1;
-
-  const previewSlots = useMemo(() => {
-    if (!draft) return [];
-    return generatePeriodSlotsForConfig(previewYear, previewMonth, {
-      ...draft,
-      employeeTypeName: undefined,
-    });
-  }, [draft, previewYear, previewMonth]);
-
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-12 flex items-center justify-center gap-3 text-slate-500">
@@ -143,10 +122,10 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-200">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch min-h-[calc(100vh-8rem)] animate-in fade-in duration-200">
       {/* Left Sidebar: Compact List of Contract / Employee Types */}
-      <aside className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
-        <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+      <aside className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
+        <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
           <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-primary" />
             ประเภทสัญญาจ้าง
@@ -156,7 +135,7 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
           </span>
         </div>
 
-        <div className="p-2.5 space-y-1.5">
+        <div className="p-2.5 space-y-1.5 flex-1 overflow-y-auto min-h-0">
           {configs.map((cfg) => {
             const isSelected = cfg.employeeTypeId === selectedTypeId;
             return (
@@ -179,11 +158,11 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                     )}`}
                   >
                     {cfg.payCycle === 'SEMI_MONTHLY'
-                      ? 'รายปักษ์'
+                      ? 'ทุกครึ่งเดือน'
                       : PAY_CYCLE_LABELS[cfg.payCycle] || cfg.payCycle}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-2 mt-1">
+                <div className="mt-1">
                   <span
                     className={`text-[11px] ${
                       isSelected ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'
@@ -191,20 +170,6 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                   >
                     ฐานค่าจ้าง: {WAGE_TYPE_LABELS[cfg.wageType] || cfg.wageType}
                   </span>
-                  {cfg.isConfigured && (
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-medium ${
-                        isSelected ? 'text-emerald-200' : 'text-emerald-600 dark:text-emerald-400'
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected ? 'bg-emerald-300' : 'bg-emerald-500'
-                        }`}
-                      />
-                      ตั้งค่าแล้ว
-                    </span>
-                  )}
                 </div>
               </button>
             );
@@ -214,9 +179,9 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
 
       {/* Right Main Card: Unified Clean Settings Panel */}
       {draft && (
-        <section className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
+        <section className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
           {/* Card Header with Save Button */}
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
                 <CalendarClock className="w-5 h-5" />
@@ -230,9 +195,6 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                     ฐานค่าจ้าง: {WAGE_TYPE_LABELS[draft.wageType] || draft.wageType}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  กำหนดความถี่การจ่ายและช่วงวันตัดรอบ — สัญญาที่ตั้งความถี่เดียวกันจะถูกรวมอยู่ในรอบจ่ายเดียวกันอัตโนมัติ
-                </p>
               </div>
             </div>
 
@@ -259,7 +221,7 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
             )}
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 flex-1 flex flex-col overflow-y-auto min-h-0">
             {/* Section 1: Pay Cycle */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -275,7 +237,7 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                     },
                     {
                       value: 'SEMI_MONTHLY' as PayCycleType,
-                      title: 'รายปักษ์ (15 วัน)',
+                      title: 'ทุกครึ่งเดือน (15 วัน)',
                       desc: '2 งวดต่อเดือน (1–15 และ 16–สิ้นเดือน)',
                     },
                     {
@@ -324,19 +286,24 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
               {draft.payCycle === 'MONTHLY' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันเริ่มคำนวณ</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันเริ่มต้นรอบทำงาน</label>
                     <div className="flex gap-2">
-                      <select
+                      <CustomSelect
                         disabled={!canEdit}
                         value={draft.startDayType}
+                        numbered={false}
                         onChange={(e) =>
-                          setDraft({ ...draft, startDayType: e.target.value as 'FIRST_DAY' | 'CUSTOM_DAY' })
+                          setDraft({
+                            ...draft,
+                            startDayType: (e?.target?.value ?? e) as 'FIRST_DAY' | 'CUSTOM_DAY',
+                          })
                         }
-                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                        size="lg"
+                        className="flex-1 min-w-0"
                       >
                         <option value="FIRST_DAY">ทุกวันที่ 1 ของเดือน</option>
                         <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
-                      </select>
+                      </CustomSelect>
                       {draft.startDayType === 'CUSTOM_DAY' && (
                         <input
                           type="number"
@@ -352,19 +319,24 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันสิ้นสุดคำนวณ</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันตัดรอบเวลาทำงาน (คิดเงินเดือน)</label>
                     <div className="flex gap-2">
-                      <select
+                      <CustomSelect
                         disabled={!canEdit}
                         value={draft.endDayType}
+                        numbered={false}
                         onChange={(e) =>
-                          setDraft({ ...draft, endDayType: e.target.value as 'LAST_DAY' | 'CUSTOM_DAY' })
+                          setDraft({
+                            ...draft,
+                            endDayType: (e?.target?.value ?? e) as 'LAST_DAY' | 'CUSTOM_DAY',
+                          })
                         }
-                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                        size="lg"
+                        className="flex-1 min-w-0"
                       >
                         <option value="LAST_DAY">วันสุดท้ายของเดือน (28/30/31)</option>
                         <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
-                      </select>
+                      </CustomSelect>
                       {draft.endDayType === 'CUSTOM_DAY' && (
                         <input
                           type="number"
@@ -399,17 +371,22 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                       วันตัดรอบเบิกสวัสดิการ
                     </label>
                     <div className="flex gap-2">
-                      <select
+                      <CustomSelect
                         disabled={!canEdit}
                         value={draft.claimCutoffType}
+                        numbered={false}
                         onChange={(e) =>
-                          setDraft({ ...draft, claimCutoffType: e.target.value as 'SAME_AS_PAYMENT' | 'CUSTOM_DAY' })
+                          setDraft({
+                            ...draft,
+                            claimCutoffType: (e?.target?.value ?? e) as 'SAME_AS_PAYMENT' | 'CUSTOM_DAY',
+                          })
                         }
-                        className="flex-1 h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100"
+                        size="lg"
+                        className="flex-1 min-w-0"
                       >
                         <option value="CUSTOM_DAY">กำหนดวันที่เอง</option>
                         <option value="SAME_AS_PAYMENT">ตรงกับวันจ่ายเงิน</option>
-                      </select>
+                      </CustomSelect>
                       {draft.claimCutoffType === 'CUSTOM_DAY' && (
                         <input
                           type="number"
@@ -550,38 +527,6 @@ export default function PayrollScheduleTab({ canEdit = true }: PayrollScheduleTa
                   />
                   <span>เลื่อนวันจ่ายเป็นวันศุกร์ก่อนหน้า หากตรงกับวันเสาร์–อาทิตย์</span>
                 </label>
-              </div>
-            </div>
-
-            {/* Section 3: Live Monthly Preview */}
-            <div className="pt-5 border-t border-slate-100 dark:border-slate-700 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  ตัวอย่างงวดประจำเดือน {THAI_MONTH_NAMES[previewMonth - 1]} {previewYear + 543} ({previewSlots.length} งวด)
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                {previewSlots.map((slot) => (
-                  <div
-                    key={slot.sequence}
-                    className="bg-slate-50/80 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700 px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-800 dark:text-slate-100 truncate">{slot.label}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                        {formatThaiSlash(slot.startDate)} – {formatThaiSlash(slot.endDate)}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] text-slate-400 block">วันจ่าย</span>
-                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatThaiSlash(slot.paymentDate)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
