@@ -495,7 +495,7 @@ export default function EmployeeTypesPage() {
                             menuClassName="w-44"
                             items={[
                               {
-                                label: 'แก้ไขประเภทพนักงาน',
+                                label: 'แก้ไข',
                                 icon: <Edit2 className="w-3.5 h-3.5 text-slate-400" />,
                                 onClick: () => {
                                   setSelectedTypeForEdit(item);
