@@ -3482,7 +3482,7 @@ export default function PayrollPage() {
                       }}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
                     >
-                      ล้างตัวกรอง
+                      ล้าง
                     </button>
                   )}
 
@@ -5048,7 +5048,7 @@ export default function PayrollPage() {
                           }}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
                         >
-                          ล้างตัวกรอง
+                          ล้าง
                         </button>
                       )}
                     </div>
@@ -5272,7 +5272,7 @@ export default function PayrollPage() {
                           }}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
                         >
-                          ล้างตัวกรอง
+                          ล้าง
                         </button>
                       )}
                     </div>
@@ -5487,7 +5487,7 @@ export default function PayrollPage() {
                           }}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
                         >
-                          ล้างตัวกรอง
+                          ล้าง
                         </button>
                       )}
                     </div>

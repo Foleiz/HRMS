@@ -931,7 +931,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           disabled={loading || savingDraft}
           icon={<RotateCcw className="w-3.5 h-3.5" />}
         >
-          ล้างฟอร์ม
+          ล้าง
         </Button>
         <Button
           variant="secondary"

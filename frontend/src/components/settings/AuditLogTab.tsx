@@ -629,7 +629,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               className="h-8 px-3 text-slate-600 hover:bg-slate-50 text-xs font-semibold rounded-lg border border-slate-200 flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3 text-slate-400" />
-              <span>ล้างค่า</span>
+              <span>ล้าง</span>
             </button>
             <Button
               type="button"

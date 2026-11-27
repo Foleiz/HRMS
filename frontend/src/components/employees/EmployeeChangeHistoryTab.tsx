@@ -566,7 +566,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               className="h-8 px-3 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3 text-slate-400" />
-              <span>ล้างค่า</span>
+              <span>ล้าง</span>
             </button>
             <Button type="button" size="sm" onClick={applyFilter}>
               ปรับใช้ตัวกรอง
@@ -588,7 +588,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               onClick={clearFilter}
               className="text-primary dark:text-blue-400 font-semibold hover:underline cursor-pointer"
             >
-              ล้างตัวกรอง
+              ล้าง
             </button>
           )}
         </div>

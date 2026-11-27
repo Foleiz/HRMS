@@ -212,7 +212,7 @@ function GuidePageContent() {
                   size="sm"
                   onClick={() => setSearchQuery('')}
                 >
-                  ล้างคำค้นหา
+                  ล้าง
                 </Button>
               </div>
             </div>

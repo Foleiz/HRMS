@@ -300,7 +300,7 @@ export default function ResignationPage() {
           departmentName={profile.departmentName}
           action={
             <Button variant="secondary" type="button" onClick={handleResetForm} icon={<RotateCcw className="w-4 h-4" />}>
-              ล้างฟอร์ม
+              ล้าง
             </Button>
           }
         />
